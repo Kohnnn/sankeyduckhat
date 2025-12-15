@@ -5,11 +5,17 @@
 <meta name="viewport" content="initial-scale=1">
 <title>SankeyMATIC: Build a Sankey Diagram</title>
 <link rel="stylesheet" href="build.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@200..800&family=Roboto:wght@100;300;400;500;700;900&family=Open+Sans:wght@300..800&family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/canvg@3/lib/umd.js" crossorigin="anonymous"></script>
 <script defer src="constants.js"></script>
 <script defer src="sankey.js"></script>
 <script defer src="lz-string.min.js"></script>
+<script defer src="color_palettes.js"></script>
+<script defer src="templates.js"></script>
+<script defer src="data_editor.js"></script>
 <script defer src="sankeymatic.js"></script>
 <meta name="description" content="Make beautiful Sankey diagrams. Export them as images or SVG with this free data visualization tool." />
 <meta property="og:title" content="SankeyMATIC: Build a Sankey Diagram" />
@@ -30,44 +36,13 @@
 <body>
 <header class="header vs f-middle">
   <nav class="header__nav hs-sm-vs space-between">
-  <a href="/" title="SankeyMATIC home page" class="header__logo hs f-middle align-center"><img alt="SankeyMATIC logo" src="i/SKM-trsp-300.png" height="27" width="27" class="skm_logo_small" />&nbsp;SankeyMATIC</a>
-  <ul class="header__links hs f-middle">
-    <li><a href="/news/" title="What's New with SankeyMATIC">News</a></li>
-    <li><a href="/data/" title="Interesting Diagrams from the Real World">Data</a></li>
-    <li><a href="/gallery/" title="Gallery of SankeyMATIC Examples">Gallery</a></li>
-    <li><a href="/manual/" title="How to use SankeyMATIC to the fullest">Manual</a></li>
-    <li><a href="/about/" title="About SankeyMATIC and how to support the site">About</a></li>
-  </ul>
+  <a href="/" title="Sankey Diagram Builder" class="header__logo hs f-middle align-center">Sankey Diagram Builder</a>
   </nav>
 </header>
-<div class="callout-container pad-small">If you find SankeyMATIC useful, please consider <a href="../about/" class="internal-link" title="(new window) About SankeyMATIC and how to support the site" target="_blank">donating to support further development</a>. Thanks!</div>
+
 
 <main>
-<div id="example_diagrams" class="text_center">
-<div class="hs-sm-vs f-middle gap-small">
-<h4>Sample Diagrams &amp; Starting Points:</h4>
-<div class="hs-md-vs gap-tiny">
-<div class="hs space-between">
-<button type="button" id="load_example_simple" onclick="replaceGraph('simple_start'); return false;">Start Simple</button>
-<button type="button" id="load_example_financial_results" onclick="replaceGraph('financial_results'); return false;">Financial Results</button>
-<button type="button" id="load_example_job_search" onclick="replaceGraph('job_search'); return false;">Job Search</button>
-</div>
-<div class="hs space-between">
-<!-- <button type="button" id="load_example_energy_all" onclick="replaceGraph('energy_flows_all'); return false;">Energy Flows</button> &nbsp; -->
-<button type="button" id="load_example_journey" onclick="replaceGraph('journey'); return false;">Journey</button>
-<button type="button" id="load_example_election" onclick="replaceGraph('election'); return false;">Ranked Election</button>
-<button type="button" id="load_example_basic_budget" onclick="replaceGraph('default_budget'); return false;">Budget</button>
-</div>
-</div>
-</div>
 
-<p id="replace_graph_warning" style="display: none;">
-<em>This will <strong>erase</strong> your changes. Are you sure?</em><br>
-<input type="hidden" id="demo_graph_chosen" value="" />
-<button type="button" id="replace_graph_yes" onclick="replaceGraphConfirmed(); return false;">Yes, replace the diagram</button>
-<button type="button" id="replace_graph_no" onclick="hideReplaceGraphWarning(); return false;">Cancel</button>
-</p>
-</div>
 
 <div class="center_basic">
 <form id="skm_form" onsubmit="process_sankey(); return false;">
@@ -82,7 +57,15 @@ Inputs<span id="input_options_hint">:</span></h2>
 
 <div id="input_options" class="text_center grid_sidebar_right">
 <div>
-    <textarea id="flows_in" title="Diagram Inputs" rows="19" cols="40" class="font_sans" onchange="process_sankey();" onkeyup="debounced_process_sankey();">// Enter Flows between Nodes, like this:
+    <!-- Tabbed Interface -->
+    <div class="input-tabs">
+        <button type="button" class="tab-button active" data-tab="text-input" onclick="switchInputTab('text-input'); return false;">Text Input</button>
+        <button type="button" class="tab-button" data-tab="data-editor" onclick="switchInputTab('data-editor'); return false;">Data Editor</button>
+    </div>
+    
+    <!-- Text Input Tab -->
+    <div id="text-input-tab" class="tab-content active">
+        <textarea id="flows_in" title="Diagram Inputs" rows="19" cols="40" class="font_sans" onchange="process_sankey();" onkeyup="debounced_process_sankey();">// Enter Flows between Nodes, like this:
 //         Source [AMOUNT] Target
 
 Wages [1500] Budget
@@ -103,6 +86,36 @@ Budget [*] Savings
 
 // Use the controls below to customize
 // your diagram's appearance...</textarea>
+    </div>
+    
+    <!-- Data Editor Tab -->
+    <div id="data-editor-tab" class="tab-content">
+        <div id="data-editor-container">
+            <div class="data-editor-toolbar">
+                <button type="button" id="add-row-button" onclick="DataEditorUI.addRow(); return false;">+ Add Row</button>
+                <button type="button" id="export-csv-button" onclick="DataEditorUI.exportCSV(); return false;">Export CSV</button>
+                <button type="button" id="import-csv-button" onclick="document.getElementById('csv-file-input').click(); return false;">Import CSV</button>
+                <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display: none;" onchange="DataEditorUI.importCSV(event); return false;">
+            </div>
+            <div class="data-editor-table-container">
+                <table id="data-editor-table" class="data-editor-table">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Amount</th>
+                            <th>Comparison</th>
+                            <th>Color</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-editor-tbody">
+                        <!-- Rows will be dynamically generated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="separated_stack">
@@ -175,8 +188,15 @@ Labels<span id="label_options_hint">...</span></h2>
 <span class="no_wrap" onmouseover="revealVal('labelvalue_weight');" onmouseout="fadeVal('labelvalue_weight');"><label for="labelvalue_weight" class="sr-only">Style for Node Values</label>
 <span class="smalllabel font_light">Light</span><span class="output_container"><input id="labelvalue_weight" class="slider_xsmall" type="range" min="100" max="700" step="300" value="400" list="tick400" onfocus="revealVal('labelvalue_weight');" onblur="fadeVal('labelvalue_weight');" oninput="updateOutput('labelvalue_weight'); process_sankey();" onchange="process_sankey();"><output id="labelvalue_weight_val" for="labelvalue_weight" class="fade-init output_6">-</output></span><span class="smalllabel font_bolder">Bold</span></span>
 </div>
+
+<div class="hs align-baseline gap-medium">
+<span><input type="checkbox" id="labels_comparisonline" value="1" onchange="process_sankey();">
+<label for="labels_comparisonline" class="ropt">Show <strong>Comparison %</strong></label></span>
+</div>
 </div>
 
+<details open><summary><strong>Typography</strong></summary>
+<div class="vs gap-small align-center">
 <div class="hs gap-medium indented align-baseline b-pad">
 <span>
 <strong>Font:</strong>
@@ -186,6 +206,22 @@ Labels<span id="label_options_hint">...</span></h2>
 </span>
 <span><label for="labels_color"><strong>Color:</strong></label> <input type="color" id="labels_color" size="7" maxlength="7" value="#000000" onchange="process_sankey();"></span>
 </div>
+
+<div class="hs gap-medium indented align-baseline b-pad">
+<span>
+<label for="labels_googlefont"><strong>Google Font:</strong></label>
+<select id="labels_googlefont" onchange="process_sankey();">
+<option value="">-- Use system font --</option>
+<option value="Inter">Inter</option>
+<option value="Manrope">Manrope</option>
+<option value="Roboto">Roboto</option>
+<option value="Open Sans">Open Sans</option>
+<option value="Lato">Lato</option>
+</select>
+</span>
+</div>
+</div>
+</details><!-- End Typography -->
 
 <details open><summary><strong>Sizes</strong></summary>
 <div class="vs gap-small align-center">
@@ -310,6 +346,23 @@ When a Node has an <strong>empty side</strong>, place its label there.
 <div class="vs gap-small">
 <span><label for="value_prefix">Prefix:</label> <input type="text" id="value_prefix" size="4" maxlength="10" onchange="process_sankey();"></span>
 <span><label for="value_suffix">Suffix:</label> <input type="text" id="value_suffix" size="4" maxlength="10" onchange="process_sankey();"></span>
+<span>
+<label for="labels_decimalplaces"><strong>Decimal places:</strong></label>
+<select id="labels_decimalplaces" onchange="process_sankey();">
+<option value="0">0</option>
+<option value="1">1</option>
+<option value="2" selected="selected">2</option>
+<option value="all">All</option>
+</select>
+</span>
+<span>
+<label for="labels_valuemode"><strong>Value Mode:</strong></label>
+<select id="labels_valuemode" onchange="process_sankey();">
+<option value="absolute" selected="selected">Absolute</option>
+<option value="short">Short Scale (1k/1M)</option>
+<option value="hidden">Hidden</option>
+</select>
+</span>
 </div>
 
 <div class="text_center">
@@ -511,6 +564,35 @@ Diagram Scales match as closely as possible.
 
 </div> <!-- End LAYOUT -->
 
+<!-- TEMPLATES -->
+
+<h2 class="ui_head" onclick="togglePanel('template_options');">
+<span id="template_options_indicator" class="indicator">+</span>
+Templates<span id="template_options_hint">...</span></h2>
+
+<div id="template_options" class="form_chunk" style="display: none;">
+<p class="form_elements1 text_center">
+<strong>Save and restore visual styling configurations</strong>
+</p>
+
+<div class="form_elements2">
+<label for="template_select"><strong>Saved Templates:</strong></label>
+<select id="template_select" class="template_dropdown">
+<option value="">-- Select a template --</option>
+</select>
+</div>
+
+<div class="form_elements3 text_center">
+<button id="template_save_button" type="button" onclick="Templates.showSaveDialog(); return false;" class="template_button">💾 Save Current Settings</button>
+<button id="template_apply_button" type="button" onclick="Templates.applySelected(); return false;" class="template_button">✓ Apply Template</button>
+<button id="template_delete_button" type="button" onclick="Templates.deleteSelected(); return false;" class="template_button">🗑 Delete Template</button>
+</div>
+
+<p class="form_elements1 text_center">
+<small>Templates save all visual settings but NOT your flow data</small>
+</p>
+</div> <!-- End TEMPLATES -->
+
 </div> <!-- End Left Column -->
 
 <div class="diagram_export">
@@ -613,6 +695,8 @@ Diagram Size &amp; Background<span id="diagram_options_hint">:</span></h2>
 </div>
 <p id="reset_moves_area" class="form_elements1">
 Move Nodes by <em>dragging</em>. Double-click a Node to reset, or: <button type="button" id="reset_all_moved_nodes" onclick="resetMovesAndRender(); return false;">Reset all moved Nodes</button>
+<br>
+Move Labels by <em>dragging</em>, or: <button type="button" id="reset_all_moved_labels" onclick="resetLabelMovesAndRender(); return false;">Reset all moved Labels</button>
 </p>
 
 <p id="chart">
@@ -621,10 +705,6 @@ Move Nodes by <em>dragging</em>. Double-click a Node to reset, or: <button type=
 </p>
 <canvas id="png_preview" height="600" width="600" style="background-color: transparent; display: none;"></canvas>
 <div id="chartfooter">
-<p class="form_elements1 text_center">
-<input type="checkbox" id="meta_mentionsankeymatic" value="1" onchange="process_sankey();" checked>
-<label class="smalllabel ropt" for="meta_mentionsankeymatic">Include &ldquo;Made at SankeyMATIC.com&rdquo;</label>
-</p>
 </div>
 </div> <!-- diagram_main -->
 
@@ -673,40 +753,12 @@ Move Nodes by <em>dragging</em>. Double-click a Node to reset, or: <button type=
 </div>
 
 <footer class="footer vs align-center reset-fonts">
-  <div class="callout-container pad-medium">
-  <span class="indented">If you find SankeyMATIC useful, please consider <a href="../about/" class="internal-link" title="(new window) About SankeyMATIC and how to support the site" target="_blank">donating to support further development</a>. Thanks!</span>
-  </div>
   <div class="footer__inner hs-md-vs align-center space-around">
-    <div class="footer__content text_left">
+    <div class="footer__content text_center">
     <p>
-    Follow:
-  🦣&nbsp;<strong><a href="https://vis.social/@SankeyMATIC" title="(new window) SankeyMATIC's Mastodon account" target="_blank" rel="noopener me">@SankeyMATIC@vis.social</a></strong>
+    Built with <a href="http://d3js.org/" title="(new window) D3's home page" target="_blank" rel="noopener">D3.js</a>
     </p>
-    <p>
-    <strong>SankeyMATIC</strong> is produced by
-  <a href="http://nowthis.com/" title="(new window) Steve's personal site" target="_blank" rel="noopener">Steve Bogart</a>
-  <small>(🦣&nbsp;<a href="https://tilde.zone/@nowthis" title="(new window) Steve's Mastodon account" target="_blank" rel="noopener">@nowthis@tilde.zone</a>)</small>.
-    </p>
-    <p>
-  <small><a href="https://github.com/nowthis/sankeymatic" title="(new window) SankeyMATIC source code at GitHub" target="_blank" rel="noopener"><strong>Source code</strong> is available</a> at GitHub.<br>
-  SankeyMATIC builds on the open source tool <a href="http://d3js.org/" title="(new window) D3's home page" target="_blank" rel="noopener">D3.js</a><br>
-  &amp; a modified version of its <a href="https://github.com/d3/d3-sankey" title="(new window) The D3 Sankey plugin at GitHub" target="_blank" rel="noopener">Sankey plugin</a>.
-    </small>
-    </p>
-  <p><a href="/privacy/">Privacy Policy</a></p>
     </div>
-
-    <div class="footer__nav">
-    <ul class="hs-sm-vs align-center">
-    <li><a title="SankeyMATIC home page" href="/">Home</a></li>
-    <li><a title="What's New with SankeyMATIC" href="/news/">News</a></li>
-    <li><a href="/data/" title="Interesting Diagrams from the Real World">Data</a></li>
-    <li><a title="Gallery of SankeyMATIC Examples" href="/gallery/">Gallery</a></li>
-    <li><a title="How to use SankeyMATIC to the fullest" href="/manual/">Manual</a></li>
-    <li><a title="About SankeyMATIC and how to support the site" href="/about/">About</a></li>
-    </ul>
-    </div>
-
   </div>
 </footer>
 

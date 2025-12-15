@@ -1,30 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap');
+
 :root {
-  --nav-level-1-bg: #013355;
-  --deep-blue: #036;
-  --dark-blue: #047;
-  --secondary-background: #057;
-  --medium-blue: #069;
-  --button-blue: #10afff;
-  --light-blue: #27a;
-  --lighter-blue: #5ec9ff;
-  --gray-blue: #9ac;
-  --pale-blue-0: #c0eaff;
-  --pale-blue-1: #e7f7ff;
+  /* New color palette */
+  --primary-red: #DA2B1F;
+  --primary-red-90: #E15549;
+  --primary-red-75: #E87F73;
+  --primary-red-60: #EFA99D;
+  
+  --secondary-blue: #00308C;
+  --secondary-blue-90: #3359A3;
+  --secondary-blue-75: #6682BA;
+  --secondary-blue-60: #99ABD1;
+  
+  --positive-green: #00FF00;
+  --positive-green-90: #33FF33;
+  --positive-green-75: #66FF66;
+  --positive-green-60: #99FF99;
+  
+  --neutral-bg: #E6E6E6;
+  --neutral-bg-90: #EBEBEB;
+  --neutral-bg-75: #F0F0F0;
+  --neutral-bg-60: #F5F5F5;
 
-  --bg-medium: #bdf;
-  --bg-light: #def;
-  --bg-pale: #eef7ff;
-  --bg-palest: #fbfeff;
+  /* Legacy colors for compatibility */
+  --nav-level-1-bg: var(--secondary-blue);
+  --deep-blue: var(--secondary-blue);
+  --dark-blue: var(--secondary-blue-90);
+  --secondary-background: var(--secondary-blue-75);
+  --medium-blue: var(--secondary-blue-60);
+  --button-blue: var(--secondary-blue-75);
+  --light-blue: var(--secondary-blue-60);
+  --lighter-blue: var(--secondary-blue-60);
+  --gray-blue: var(--neutral-bg);
+  --pale-blue-0: var(--neutral-bg-75);
+  --pale-blue-1: var(--neutral-bg-90);
+
+  --bg-medium: var(--neutral-bg);
+  --bg-light: var(--neutral-bg-75);
+  --bg-pale: var(--neutral-bg-90);
+  --bg-palest: var(--neutral-bg-60);
   --bg-pale-warning: #fffff8;
-  --bg-attention: #e3ff9f;
-  --bg-plain-primary: #e6e6e6;
-  --bg-plain-secondary: #f8f8f8;
+  --bg-attention: var(--positive-green-75);
+  --bg-plain-primary: var(--neutral-bg);
+  --bg-plain-secondary: var(--neutral-bg-90);
 
-  --selected-option: #00557f;
-  --warning: darkred;
+  --selected-option: var(--secondary-blue);
+  --warning: var(--primary-red);
 
   --gray60: #999;
-  --lighter-gray: #f1f5f9;
+  --lighter-gray: var(--neutral-bg-75);
   --text-plain: #333;
 
   --border-base: 1px solid var(--medium-blue);
@@ -42,7 +66,7 @@
 
 body {
   font-size: small;
-  font-family: sans-serif;
+  font-family: 'Manrope', sans-serif;
   background-color: #FBFDFD;
   margin: 0;
 }
@@ -392,7 +416,7 @@ dfn {
 }
 
 .form_elements2 {
-  background-color: #ddf0ff;
+  background-color: var(--secondary-blue-60);
   margin: 2px 3px 5px;
   padding: 2px 3px;
 }
@@ -425,20 +449,20 @@ dfn {
 
 h2.ui_head {
   font-size: medium;
-  background-color: var(--dark-blue);
+  background-color: var(--primary-red);
 }
 
 h2.ui_head:hover {
-  background-color: var(--medium-blue);
+  background-color: var(--primary-red-90);
 }
 
 h3.ui_head {
   font-size: small;
-  background-color: #37b;
+  background-color: var(--primary-red-75);
 }
 
 h3.ui_head:hover {
-  background-color: #39d;
+  background-color: var(--primary-red-90);
 }
 
 span.toggleable {
@@ -597,7 +621,7 @@ svg g#sankey_labels rect {
 
 .diagram_controls {
   padding: 0 2px;
-  background-color: #cce8ff;
+  background-color: var(--secondary-blue-60);
   vertical-align: start;
 }
 
@@ -721,7 +745,7 @@ button#save_as_svg:hover {
 
 #example_diagrams {
   width: fit-content;
-  background-color: #f3f4ff;
+  background-color: var(--neutral-bg-75);
   border: var(--border-base);
   border-style: dotted;
   border-radius: 0.7em;
@@ -1148,4 +1172,142 @@ fieldset.simple {
   }
 
   .footer__nav ul li { margin: 0.3em; }
+}
+
+/* Data Editor Tabs */
+.input-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--secondary-blue);
+  margin-bottom: 0;
+}
+
+.tab-button {
+  background-color: var(--neutral-bg);
+  border: 1px solid var(--secondary-blue);
+  border-bottom: none;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: small;
+  color: var(--text-plain);
+  transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+  background-color: var(--neutral-bg-75);
+}
+
+.tab-button.active {
+  background-color: white;
+  color: var(--secondary-blue);
+  font-weight: bold;
+  border-bottom: 2px solid white;
+  margin-bottom: -2px;
+}
+
+.tab-content {
+  display: none;
+  padding: 0;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Data Editor Styles */
+.data-editor-toolbar {
+  display: flex;
+  gap: 0.5em;
+  padding: 0.5em;
+  background-color: var(--neutral-bg-90);
+  border: 1px solid var(--secondary-blue-60);
+  border-bottom: none;
+}
+
+.data-editor-toolbar button {
+  background-color: var(--secondary-blue);
+  color: white;
+  border: 1px solid var(--secondary-blue-90);
+  padding: 0.4em 0.8em;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: small;
+  border-radius: 0.3em;
+}
+
+.data-editor-toolbar button:hover {
+  background-color: var(--secondary-blue-90);
+}
+
+.data-editor-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--secondary-blue-60);
+}
+
+.data-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Manrope', sans-serif;
+  font-size: small;
+  background-color: white;
+}
+
+.data-editor-table thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--secondary-blue);
+  color: white;
+  z-index: 10;
+}
+
+.data-editor-table th {
+  padding: 0.5em;
+  text-align: left;
+  font-weight: bold;
+  border: 1px solid var(--secondary-blue-90);
+}
+
+.data-editor-table td {
+  padding: 0.3em;
+  border: 1px solid var(--neutral-bg);
+}
+
+.data-editor-table tbody tr:hover {
+  background-color: var(--neutral-bg-90);
+}
+
+.data-editor-table tbody tr.invalid {
+  background-color: #ffe4d3;
+}
+
+.data-editor-table input[type="text"],
+.data-editor-table input[type="number"] {
+  width: 100%;
+  padding: 0.3em;
+  border: 1px solid var(--neutral-bg);
+  font-family: 'Manrope', sans-serif;
+  font-size: small;
+  box-sizing: border-box;
+}
+
+.data-editor-table input[type="text"]:focus,
+.data-editor-table input[type="number"]:focus {
+  outline: 2px solid var(--secondary-blue);
+  border-color: var(--secondary-blue);
+}
+
+.data-editor-table .delete-row-button {
+  background-color: var(--primary-red);
+  color: white;
+  border: none;
+  padding: 0.3em 0.6em;
+  cursor: pointer;
+  border-radius: 0.3em;
+  font-size: small;
+}
+
+.data-editor-table .delete-row-button:hover {
+  background-color: var(--primary-red-90);
 }

@@ -50,6 +50,37 @@ glob.togglePanel = (panel) => {
   return null;
 };
 
+// switchInputTab: Switch between Text Input and Data Editor tabs
+glob.switchInputTab = (tabName) => {
+  // Update tab buttons
+  const buttons = document.querySelectorAll('.tab-button');
+  buttons.forEach(btn => {
+    if (btn.getAttribute('data-tab') === tabName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  // Update tab content
+  const textTab = el('text-input-tab');
+  const editorTab = el('data-editor-tab');
+  
+  if (tabName === 'text-input') {
+    textTab.classList.add('active');
+    editorTab.classList.remove('active');
+  } else if (tabName === 'data-editor') {
+    textTab.classList.remove('active');
+    editorTab.classList.add('active');
+    // Sync data from text input to table when switching to editor
+    if (typeof DataEditorUI !== 'undefined' && DataEditorUI.syncFromText) {
+      DataEditorUI.syncFromText();
+    }
+  }
+  
+  return null;
+};
+
 /**
  * Kick off a function after a certain period has passed.
  * Used to trigger live updates when the user stops typing.
@@ -204,6 +235,11 @@ function setUpNewInputs(newData, dataSource) {
 // Format is: nodeName => [moveX, moveY]
 glob.rememberedMoves = new Map();
 
+// rememberedLabelMoves: Used to track the user's repositioning of specific labels
+// (which should be preserved across diagram renders).
+// Format is: nodeName => [moveX, moveY]
+glob.rememberedLabelMoves = new Map();
+
 // resetMovesAndRender: Clear all manual moves of nodes AND re-render the
 // diagram:
 glob.resetMovesAndRender = () => {
@@ -212,9 +248,29 @@ glob.resetMovesAndRender = () => {
   return null;
 };
 
+// resetLabelMovesAndRender: Clear all manual moves of labels AND re-render the
+// diagram:
+glob.resetLabelMovesAndRender = () => {
+  glob.rememberedLabelMoves.clear();
+  
+  // Remove all labelmove lines from the input
+  const inputEl = el(userInputsField);
+  const lines = inputEl.value.split('\n');
+  const filteredLines = lines.filter(line => !line.match(reLabelMoveLine));
+  inputEl.value = filteredLines.join('\n');
+  
+  glob.process_sankey();
+  return null;
+};
+
 function updateResetNodesUI() {
   // Check whether we should enable the 'reset moved nodes' button:
   el('reset_all_moved_nodes').disabled = !glob.rememberedMoves.size;
+}
+
+function updateResetLabelsUI() {
+  // Check whether we should enable the 'reset moved labels' button:
+  el('reset_all_moved_labels').disabled = !glob.rememberedLabelMoves.size;
 }
 
 // contrasting_gray_color:
@@ -271,8 +327,41 @@ function updateMarks(stringIn, numberMarks) {
     .replaceAll('!', numberMarks.group);
 }
 
+// formatShortScale: format a number with k/M/B suffixes
+function formatShortScale(numberIn, nStyle) {
+  let value = numberIn;
+  let suffix = '';
+  
+  if (Math.abs(value) >= 1e9) {
+    value = value / 1e9;
+    suffix = 'B';
+  } else if (Math.abs(value) >= 1e6) {
+    value = value / 1e6;
+    suffix = 'M';
+  } else if (Math.abs(value) >= 1e3) {
+    value = value / 1e3;
+    suffix = 'k';
+  }
+  
+  const nString = updateMarks(
+    d3.format(`,.${nStyle.decimalPlaces}${nStyle.trimString}f`)(value),
+    nStyle.marks
+  );
+  return `${nStyle.prefix}${nString}${suffix}${nStyle.suffix}`;
+}
+
 // formatUserData: produce a value in the user's designated format:
 function formatUserData(numberIn, nStyle) {
+  // Handle value mode
+  if (nStyle.valueMode === 'hidden') {
+    return '';
+  }
+  
+  if (nStyle.valueMode === 'short') {
+    return formatShortScale(numberIn, nStyle);
+  }
+  
+  // Default: absolute mode
   const nString = updateMarks(
     d3.format(`,.${nStyle.decimalPlaces}${nStyle.trimString}f`)(numberIn),
     nStyle.marks
@@ -641,100 +730,7 @@ const msg = {
   },
 };
 
-// MARK Loading Sample Graphs
-
-// hideReplaceGraphWarning: Called directly from the page (and from below)
-// Dismiss the note about overwriting the user's current inputs.
-glob.hideReplaceGraphWarning = () => {
-  // Hide the overwrite-warning paragraph (if it's showing)
-  el('replace_graph_warning').style.display = 'none';
-  return null;
-};
-
-// replaceGraphConfirmed: Called directly from the page (and from below).
-// It's ok to overwrite the user's inputs now. Let's go.
-// (Note: In order to reach this code, we have to have already verified the
-// presence of the named recipe, so we don't re-verify.)
-glob.replaceGraphConfirmed = () => {
-  const graphName = elV('demo_graph_chosen'),
-    savedRecipe = sampleDiagramRecipes.get(graphName);
-
-  // Update any settings which accompanied the stored diagram:
-  // In case the new breakpoint > the prior max, reset those now:
-  glob.resetMaxBreakpoint(MAXBREAKPOINT);
-  Object.entries(savedRecipe.settings).forEach(([fld, newVal]) => {
-    const fldData = skmSettings.get(fld),
-      [validSetting, finalValue] = settingIsValid(fldData, newVal, {});
-    if (validSetting) { setValueOnPage(fld, fldData[0], finalValue); }
-  });
-
-  // First, verify that the flow input field is visible.
-  // (If it's been hidden, the setting of flows won't work properly.)
-  const flowsPanel = 'input_options';
-  if (el(flowsPanel).style.display === 'none') {
-    glob.togglePanel(flowsPanel);
-  }
-
-  // Then select all the existing input text...
-  const flowsEl = el(userInputsField);
-  flowsEl.focus();
-  flowsEl.select();
-  // ... then replace it with the new content.
-  flowsEl.setRangeText(savedRecipe.flows, 0, flowsEl.selectionEnd, 'start');
-
-  // Un-focus the input field (on tablets, this keeps the keyboard from
-  // auto-popping-up):
-  flowsEl.blur();
-
-  // If the replace-graph warning is showing, hide it:
-  glob.hideReplaceGraphWarning();
-
-  // Take away any remembered moves (just in case any share a name with a
-  // node in the new diagram) & immediately draw the new diagram::
-  glob.resetMovesAndRender();
-  return null;
-};
-
-// replaceGraph: Called directly from the page.
-// User clicked a button which may cause their work to be erased.
-// Run some checks before we commit...
-glob.replaceGraph = (graphName) => {
-  // Is there a recipe with the given key? If not, exit early:
-  const savedRecipe = sampleDiagramRecipes.get(graphName);
-  if (!savedRecipe) {
-    // (This shouldn't happen unless the user is messing around in the DOM)
-    msg.add(
-      `Requested sample diagram ${highlightSafeValue(graphName)} not found.`,
-      'issue'
-    );
-    return null;
-  }
-
-  // Set the 'demo_graph_chosen' value according to the user's click:
-  el('demo_graph_chosen').value = graphName;
-
-  // When it's easy to revert to the user's current set of inputs, we don't
-  // bother asking to confirm. This happens in two scenarios:
-  // 1) the inputs are empty, or
-  // 2) the user is looking at inputs which exactly match any of the sample
-  // diagrams.
-  const userInputs = elV(userInputsField),
-    inputsMatchAnySample = Array.from(sampleDiagramRecipes.values())
-      .some((r) => r.flows === userInputs);
-
-  if (inputsMatchAnySample || userInputs === '') {
-    // The user has NOT changed the input from one of the samples,
-    // or the whole field is blank. Go ahead with the change:
-    glob.replaceGraphConfirmed();
-  } else {
-    // Show the warning and do NOT replace the graph:
-    el('replace_graph_warning').style.display = '';
-    el('replace_graph_yes').textContent
-      = `Yes, replace the graph with '${savedRecipe.name}'`;
-  }
-
-  return null;
-};
+// MARK Loading Sample Graphs - REMOVED
 
 // MARK Color Theme handling
 
@@ -805,12 +801,20 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
 
   // To measure text sizes, first we make a dummy SVG area the user won't
   // see, with the same size and font details as the real diagram:
+  // Helper function to get effective font family (Google Font or system font)
+  const getEffectiveFontFamily = () => {
+    if (cfg.labels_googlefont && cfg.labels_googlefont.trim() !== '') {
+      return `"${cfg.labels_googlefont}", ${cfg.labels_fontface}`;
+    }
+    return cfg.labels_fontface;
+  };
+
   const scratchRoot = d3.select('#svg_scratch')
     .attr('height', cfg.size_h)
     .attr('width', cfg.size_w)
     .attr('text-anchor', 'middle')
     .attr('opacity', '0') // Keep all this invisible...
-    .attr('font-family', cfg.labels_fontface)
+    .attr('font-family', getEffectiveFontFamily())
     .attr('font-size', `${ep(cfg.labelname_size)}px`);
   scratchRoot.selectAll('*').remove(); // Clear out any past items
 
@@ -1042,9 +1046,10 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
    * Also, scale their relative sizes according to the user's instructions.
    * @param {object} n - Node we are making the label for
    * @param {number} magnification - amount to scale this entire label
+   * @param {number} totalInput - total input value for the diagram (for comparison %)
    * @returns {textFragment[]} List of text items
    */
-  function getLabelPieces(n, magnification) {
+  function getLabelPieces(n, magnification, totalInput = 0) {
     const overallSize = cfg.labelname_size * magnification,
       // The relative-size values 50 to 150 become -.5 to .5:
       relativeSizeAdjustment = (cfg.labels_relativesize - 100) / 100,
@@ -1068,20 +1073,44 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
         size: valueSize,
         newLine: (cfg.labelname_appears && cfg.labelvalue_position === 'below'),
       };
+    
+    // Create comparison line object if enabled
+    const comparisonObj = cfg.labels_comparisonline && totalInput > 0 ? {
+      txt: `${((n.value / totalInput) * 100).toFixed(1)}%`,
+      weight: cfg.labelvalue_weight,
+      size: valueSize * 0.85, // Slightly smaller than value
+      newLine: true,
+    } : null;
+    
     if (!cfg.labelvalue_appears) {
       // If no values && name is also blank, hide the whole label:
       if (nameObjs.length === 0) { n.hideWholeLabel = true; }
-      return nameObjs;
+      return comparisonObj ? [...nameObjs, comparisonObj] : nameObjs;
     }
-    if (!cfg.labelname_appears) { return [valObj]; }
+    if (!cfg.labelname_appears) { 
+      return comparisonObj ? [valObj, comparisonObj] : [valObj]; 
+    }
+    
+    // Build the result based on label position
+    let result;
     switch (cfg.labelvalue_position) {
       case 'before': // separate the value from the name with 1 space
         valObj.txt += ' '; // FALLS THROUGH to 'above'
-      case 'above': return [valObj, ...nameObjs];
+      case 'above': 
+        result = [valObj, ...nameObjs];
+        break;
       case 'after': // Add a colon just before the value
         nameObjs[nameObjs.length - 1].txt += ': '; // FALLS THROUGH
-      default: return [...nameObjs, valObj]; // 'below'
+      default: 
+        result = [...nameObjs, valObj]; // 'below'
     }
+    
+    // Add comparison line at the end if enabled
+    if (comparisonObj) {
+      result.push(comparisonObj);
+    }
+    
+    return result;
   }
 
   /**
@@ -1118,6 +1147,21 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
     nodeScaleFn // returns a Number from 0 to 1:
       = (v) => (minVal === maxVal ? 1 : (v - minVal) / (maxVal - minVal));
 
+  // Calculate total input value for comparison line
+  const totalInputValue = allNodes
+    .filter(shadowFilter)
+    .filter((n) => !n.hideWholeLabel)
+    .reduce((sum, n) => {
+      // Sum up input values for nodes that are sources (have outgoing flows)
+      const hasOutgoing = n.sourceLinks && n.sourceLinks.length > 0;
+      const hasIncoming = n.targetLinks && n.targetLinks.length > 0;
+      // Only count nodes that are pure sources or have more output than input
+      if (hasOutgoing && !hasIncoming) {
+        return sum + n.value;
+      }
+      return sum;
+    }, 0);
+
   // Set up label information for each Node:
   if (cfg.labelname_appears || cfg.labelvalue_appears) {
     allNodes.filter(shadowFilter)
@@ -1132,7 +1176,7 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
           magnifyLabel
             = cfg.labels_magnify === 100 ? 1 : 1 + nodePositionInRange,
           id = `label${n.index}`; // label0, label1..
-        n.labelList = getLabelPieces(n, magnifyLabel);
+        n.labelList = getLabelPieces(n, magnifyLabel, totalInputValue);
         if (n.labelList.length === 0) {
           // If nothing to show after all, hide this one:
           n.hideWholeLabel = true;
@@ -1716,7 +1760,7 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
   const diagLabels = diagMain.append('g')
     .attr('id', 'sankey_labels')
     // These font spec defaults apply to all labels within
-    .attr('font-family', cfg.labels_fontface)
+    .attr('font-family', getEffectiveFontFamily())
     .attr('font-size', `${ep(cfg.labelname_size)}px`)
     .attr('fill', cfg.labels_color);
   if (cfg.meta_mentionsankeymatic) {
@@ -1742,17 +1786,24 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
 
   if (!cfg.labels_hide && (cfg.labelname_appears || cfg.labelvalue_appears)) {
     // Add labels in a distinct layer on the top (so nodes can't block them)
-    diagLabels.selectAll()
+    // Wrap each label in a group for draggability
+    const labelGroups = diagLabels.selectAll('.label-group')
       .data(allNodes.filter(shadowFilter))
       .enter()
       .filter((n) => !n.hideWholeLabel)
-      .append('text')
+      .append('g')
+        .attr('class', 'label-group')
+        .attr('id', (n) => `${n.label.dom_id}_group`)
+        .attr('transform', (n) => `translate(${ep(n.label.x)}, ${ep(n.label.y)})`);
+
+    // Add the text element to each group
+    labelGroups.append('text')
         .attr('id', (n) => n.label.dom_id)
         // Associate this label with its Node using the CSS class:
         .attr('class', (n) => n.css_class)
         .attr('text-anchor', (n) => n.label.anchor)
-        .attr('x', (n) => ep(n.label.x))
-        .attr('y', (n) => ep(n.label.y))
+        .attr('x', 0)  // Relative to group
+        .attr('y', 0)  // Relative to group
         .attr('font-weight', (n) => n.labelList[0].weight)
         .attr('font-size', (n) => `${ep(n.labelList[0].size)}px`)
         // Nudge the text to be vertically centered:
@@ -1760,7 +1811,7 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
         .text((n) => n.labelList[0].txt)
       .filter((n) => n.labelList.length > 1)
       .each(function handleSpans(n) {
-          addTSpans(d3.select(this), n.labelList.slice(1), n.labelList[0].size, n.label.x);
+          addTSpans(d3.select(this), n.labelList.slice(1), n.labelList[0].size, 0);
         });
 
     // For any nodes with a label highlight defined, render it:
@@ -1768,12 +1819,14 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
       .filter((n) => n.label?.bg)
       .forEach((n) => {
       // Use each label's size to make custom round-rects underneath:
-      const labelTextSelector = `#${n.label.dom_id}`,
+      const labelGroupSelector = `#${n.label.dom_id}_group`,
+        labelTextSelector = `#${n.label.dom_id}`,
+        labelGroup = diagLabels.select(labelGroupSelector),
         labelBB
           = diagLabels.select(labelTextSelector).node().getBBox(),
         bg = n.label.bg;
-      // Put the highlight rectangle just before each text:
-      diagLabels.insert('rect', labelTextSelector)
+      // Put the highlight rectangle just before the text in the group:
+      labelGroup.insert('rect', `#${n.label.dom_id}`)
         .attr('id', bg.dom_id)
         // Attach a class to make a drag operation affect a Node's label too:
         .attr('class', n.css_class)
@@ -1788,6 +1841,81 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
         .attr('stroke-width', ep(bg.stroke_width))
         .attr('stroke-opacity', ep(bg.stroke_opacity));
     });
+
+    // Add transparent drag handles to each label group
+    labelGroups.each(function(n) {
+      const labelGroup = d3.select(this),
+        labelText = labelGroup.select(`#${n.label.dom_id}`),
+        labelBB = labelText.node().getBBox();
+      
+      // Insert drag handle before all other elements
+      labelGroup.insert('rect', ':first-child')
+        .attr('class', 'drag-handle')
+        .attr('x', ep(labelBB.x))
+        .attr('y', ep(labelBB.y))
+        .attr('width', ep(labelBB.width))
+        .attr('height', ep(labelBB.height))
+        .attr('fill', 'transparent')
+        .attr('cursor', 'move');
+    });
+
+    // Drag behavior functions for labels
+    function dragLabelStarted(event, n) {
+      // Store the initial position for this drag gesture
+      const currentTransform = d3.select(this).attr('transform');
+      const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+      if (match) {
+        n.labelDragStart = {
+          x: parseFloat(match[1]),
+          y: parseFloat(match[2])
+        };
+      } else {
+        n.labelDragStart = { x: n.label.x, y: n.label.y };
+      }
+    }
+
+    function draggingLabel(event, n) {
+      // Calculate the new position
+      const newX = n.labelDragStart.x + event.dx;
+      const newY = n.labelDragStart.y + event.dy;
+      
+      // Update the transform
+      d3.select(this).attr('transform', `translate(${ep(newX)}, ${ep(newY)})`);
+      
+      // Store the offset relative to original position
+      const offsetX = newX - n.label.x;
+      const offsetY = newY - n.label.y;
+      glob.rememberedLabelMoves.set(n.name, [offsetX, offsetY]);
+    }
+
+    function dragLabelEnded(event, n) {
+      // Finalize the position
+      const currentTransform = d3.select(this).attr('transform');
+      const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+      if (match) {
+        const finalX = parseFloat(match[1]);
+        const finalY = parseFloat(match[2]);
+        const offsetX = finalX - n.label.x;
+        const offsetY = finalY - n.label.y;
+        
+        // Store in rememberedLabelMoves
+        if (Math.abs(offsetX) < 0.01 && Math.abs(offsetY) < 0.01) {
+          // No significant move, remove from memory
+          glob.rememberedLabelMoves.delete(n.name);
+        } else {
+          glob.rememberedLabelMoves.set(n.name, [offsetX, offsetY]);
+        }
+        
+        // Update the reset button state
+        updateResetLabelsUI();
+      }
+    }
+
+    // Apply drag behavior to label groups
+    labelGroups.call(d3.drag()
+      .on('start', dragLabelStarted)
+      .on('drag', draggingLabel)
+      .on('end', dragLabelEnded));
   }
 
   // Now that all of the SVG nodes and labels exist, it's time to re-apply
@@ -1820,6 +1948,32 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
     // Re-layout the diagram once, after all of the above moves:
     reLayoutDiagram();
   }
+
+  // Apply any remembered label moves:
+  if (glob.rememberedLabelMoves.size) {
+    const movedLabels = new Set(glob.rememberedLabelMoves.keys());
+
+    allNodes.filter(shadowFilter)
+      .filter((n) => movedLabels.has(n.name))
+      .forEach((n) => {
+        const [offsetX, offsetY] = glob.rememberedLabelMoves.get(n.name);
+        const labelGroup = diagLabels.select(`#${n.label.dom_id}_group`);
+        if (labelGroup.node()) {
+          const newX = n.label.x + offsetX;
+          const newY = n.label.y + offsetY;
+          labelGroup.attr('transform', `translate(${ep(newX)}, ${ep(newY)})`);
+        }
+        movedLabels.delete(n.name);
+      });
+
+    // Clean up any labels that no longer exist:
+    movedLabels.forEach((nodeName) => {
+      glob.rememberedLabelMoves.delete(nodeName);
+    });
+  }
+
+  // Update the reset labels button state:
+  updateResetLabelsUI();
 } // end of render_sankey
 
 // MARK Serializing the diagram
@@ -1893,6 +2047,16 @@ function getDiagramDefinition(verbose) {
     addIfV('', movesMarker, '');
     glob.rememberedMoves.forEach((move, nodeName) => {
       add(`move ${nodeName} ${ep(move[0])}, ${ep(move[1])}`);
+    });
+  }
+
+  // If there are any manually-moved labels, add them to the output:
+  if (glob.rememberedLabelMoves.size) {
+    if (!glob.rememberedMoves.size) {
+      addIfV('', movesMarker, '');
+    }
+    glob.rememberedLabelMoves.forEach((move, nodeName) => {
+      add(`labelmove ${nodeName} ${ep(move[0])}, ${ep(move[1])}`);
     });
   }
 
@@ -2227,6 +2391,17 @@ ${unquotingResult.message}`
       // match against. Assume the node names are provided in good faith.
       const [nodeName, moveX, moveY] = moveParts.slice(-3);
       glob.rememberedMoves.set(nodeName, [Number(moveX), Number(moveY)]);
+      linesWithValidSettings.add(row);
+      return;
+    }
+
+    // Is it a Label Move line?
+    const labelMoveParts = lineIn.match(reLabelMoveLine);
+    if (labelMoveParts !== null) {
+      linesWithSettings.add(row);
+      // Save this as a rememberedLabelMove.
+      const [nodeName, moveX, moveY] = labelMoveParts.slice(-3);
+      glob.rememberedLabelMoves.set(nodeName, [Number(moveX), Number(moveY)]);
       linesWithValidSettings.add(row);
       return;
     }
@@ -2782,17 +2957,23 @@ ${escapeHTML(ef.target.logName ?? ef.target.tipName)}${unknownMsg}`
   // MARK Diagram does have data, so prepare to render.
 
   // Set up the numberStyle object:
+  // Determine decimal places based on user setting
+  const effectiveDecimalPlaces = approvedCfg.labels_decimalplaces === 'all' 
+    ? maxDecimalPlaces 
+    : parseInt(approvedCfg.labels_decimalplaces, 10);
+
   const [groupMark, decimalMark] = approvedCfg.value_format,
     numberStyle = {
       marks: {
         group: groupMark === 'X' ? '' : groupMark,
         decimal: decimalMark,
       },
-      decimalPlaces: maxDecimalPlaces,
+      decimalPlaces: effectiveDecimalPlaces,
       // 'trimString' = string to be used in the d3.format expression later:
       trimString: approvedCfg.labelvalue_fullprecision ? '' : '~',
       prefix: approvedCfg.value_prefix,
       suffix: approvedCfg.value_suffix,
+      valueMode: approvedCfg.labels_valuemode,
     };
 
   // Deal with inheritance swap if graph is reversed:
