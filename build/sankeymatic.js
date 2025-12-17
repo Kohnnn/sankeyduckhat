@@ -3359,27 +3359,8 @@ function initializeTabbedSidebar() {
   }
 }
 
-// Override the original togglePanel function to work with tabs
-const originalTogglePanel = glob.togglePanel;
-glob.togglePanel = (panel) => {
-  // Map old panel names to new tab IDs
-  const panelToTabMap = {
-    'input_options': 'inputs',
-    'label_options': 'labels',
-    'node_options': 'nodes',
-    'flow_options': 'flows',
-    'layout_options': 'layout',
-    'template_options': 'templates'
-  };
-
-  const tabId = panelToTabMap[panel];
-  if (tabId && typeof tabbedSidebar !== 'undefined') {
-    tabbedSidebar.toggleTab(tabId);
-  } else {
-    // Fall back to original behavior for panels not in tabs
-    originalTogglePanel(panel);
-  }
-};
+// Restore original togglePanel functionality (no tabs)
+// The original togglePanel function is already defined above and works correctly
 
 // Load a diagram definition from the URL if there was one:
 loadFromQueryString();
@@ -3388,8 +3369,8 @@ glob.process_sankey();
 
 // Initialize all components in the correct order
 setTimeout(() => {
-  // Initialize the tabbed sidebar first
-  initializeTabbedSidebar();
+  // Skip tabbed sidebar - use original collapsible sections instead
+  // initializeTabbedSidebar();
   
   // Initialize AI integration components
   initializeAIIntegration();

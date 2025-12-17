@@ -565,9 +565,9 @@ h3.ui_head:hover {
 }
 
 /* Hide original headers when using tabbed interface */
-.tabbed-sidebar-main ~ h2.ui_head {
+/* .tabbed-sidebar-main ~ h2.ui_head {
   display: none !important;
-}
+} */
 
 /* Adjust tab header styling to match existing UI */
 .tab-header {
