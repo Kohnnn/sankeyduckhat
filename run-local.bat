@@ -1,10 +1,11 @@
 @echo off
-REM SankeyMATIC Local Server with Template Storage
+REM SankeyMATIC Local Server with AI Integration
 REM This batch file starts a local web server to run SankeyMATIC
-REM Templates and settings are automatically saved in browser localStorage
+REM Features: AI-powered data parsing, Data Editor, Template Storage
 
 echo ========================================
 echo   SankeyMATIC Local Server
+echo   with AI Integration
 echo ========================================
 echo.
 
@@ -23,11 +24,20 @@ echo.
 echo SankeyMATIC will be available at:
 echo   http://localhost:8000/build/
 echo.
-echo Templates will be saved automatically in your browser's localStorage
+echo Features:
+echo   - Text Input and Data Editor tabs
+echo   - AI-powered financial data parsing
+echo   - Flow validation and balance checking
+echo   - Template storage in browser localStorage
+echo.
+echo Opening browser...
 echo.
 echo Press Ctrl+C to stop the server
 echo ========================================
 echo.
+
+REM Open browser after a short delay
+start "" "http://localhost:8000/build/"
 
 REM Start Python HTTP server in the current directory
 python -m http.server 8000
