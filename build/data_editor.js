@@ -575,6 +575,9 @@
       
       // Sync to text input
       syncToText();
+      
+      // Notify data change for Sync Manager
+      notifyDataChange();
     }
   }
 
@@ -589,6 +592,7 @@
     if (DataEditor.deleteRow(rowId)) {
       renderTable();
       syncToText();
+      notifyDataChange();
     }
   }
 
@@ -601,6 +605,7 @@
     DataEditor.addRow();
     renderTable();
     syncToText();
+    notifyDataChange();
   }
 
   /**
@@ -642,6 +647,7 @@
       const rows = DataEditor.parseFromDSL(dslText);
       DataEditor.setRows(rows);
       renderTable();
+      notifyDataChange();
     }
 
     syncInProgress = false;
@@ -697,6 +703,90 @@
     event.target.value = '';
   }
 
+  // Sync Manager integration methods
+  let dataChangeCallbacks = [];
+  
+  /**
+   * Register callback for data changes (for Sync Manager integration)
+   * @param {Function} callback - Callback function that receives rows array
+   */
+  function onDataChange(callback) {
+    if (typeof callback === 'function') {
+      dataChangeCallbacks.push(callback);
+    }
+  }
+  
+  /**
+   * Notify data change callbacks
+   * @private
+   */
+  function notifyDataChange() {
+    const rows = DataEditor.getRows();
+    dataChangeCallbacks.forEach(callback => {
+      try {
+        callback(rows);
+      } catch (error) {
+        console.error('Error in data change callback:', error);
+      }
+    });
+  }
+  
+  /**
+   * Update flows from external source (for Sync Manager integration)
+   * @param {FlowRow[]} flows - Array of flow rows to set
+   */
+  function updateFlows(flows) {
+    if (!Array.isArray(flows)) {
+      console.warn('DataEditorUI.updateFlows: flows must be an array');
+      return;
+    }
+    
+    DataEditor.setRows(flows);
+    renderTable();
+    syncToText();
+    notifyDataChange();
+  }
+  
+  /**
+   * Get current flows (for Sync Manager integration)
+   * @returns {FlowRow[]} Current flow rows
+   */
+  function getCurrentFlows() {
+    return DataEditor.getRows();
+  }
+  
+  /**
+   * Highlight specific rows (for AI suggestions)
+   * @param {string[]} rowIds - Array of row IDs to highlight
+   */
+  function highlightRows(rowIds) {
+    if (!Array.isArray(rowIds)) {
+      console.warn('DataEditorUI.highlightRows: rowIds must be an array');
+      return;
+    }
+    
+    // Clear existing highlights
+    clearHighlights();
+    
+    // Apply new highlights
+    rowIds.forEach(rowId => {
+      const row = document.querySelector(`tr[data-row-id="${rowId}"]`);
+      if (row) {
+        row.classList.add('ai-highlight');
+      }
+    });
+  }
+  
+  /**
+   * Clear all row highlights
+   */
+  function clearHighlights() {
+    const highlightedRows = document.querySelectorAll('tr.ai-highlight');
+    highlightedRows.forEach(row => {
+      row.classList.remove('ai-highlight');
+    });
+  }
+
   // Export the UI module
   glob.DataEditorUI = {
     renderTable,
@@ -704,7 +794,13 @@
     syncFromText,
     addRow,
     exportCSV,
-    importCSV
+    importCSV,
+    // Sync Manager integration methods
+    onDataChange,
+    updateFlows,
+    getCurrentFlows,
+    highlightRows,
+    clearHighlights
   };
 
 })(typeof window !== 'undefined' ? window : global);
@@ -713,6 +809,8 @@
 // Initialize the Data Editor UI when the DOM is ready
 if (typeof document !== 'undefined') {
   function initializeDataEditor() {
+    console.log('Initializing Data Editor and AI Integration components...');
+    
     // Set up text input change listener with debouncing
     const textarea = document.getElementById('flows_in');
     if (textarea) {
@@ -728,6 +826,61 @@ if (typeof document !== 'undefined') {
         }, 500);
       });
     }
+
+    // Initialize AI Service
+    if (typeof window.aiService !== 'undefined') {
+      window.aiService.initialize()
+        .then(() => {
+          console.log('AI Service initialized successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to initialize AI Service:', error);
+        });
+    }
+
+    // Initialize Sync Manager and register components
+    if (typeof window.syncManager !== 'undefined' && typeof DataEditorUI !== 'undefined') {
+      window.syncManager.registerDataEditor(DataEditorUI);
+      console.log('Data Editor registered with Sync Manager');
+      
+      // Set up sync event listeners
+      window.syncManager.onSync((source, data) => {
+        console.log(`Sync event from ${source}:`, data.length, 'flows');
+      });
+    }
+
+    // Initialize AI Chat UI
+    const aiChatContainer = document.getElementById('ai-chat-ui-container');
+    if (aiChatContainer && typeof aiChatUI !== 'undefined') {
+      aiChatUI.render(aiChatContainer);
+      
+      // Connect AI Chat UI to services
+      if (typeof window.aiService !== 'undefined' && typeof window.syncManager !== 'undefined') {
+        aiChatUI.connectServices(window.aiService, window.syncManager);
+        window.syncManager.registerAIChat(aiChatUI);
+        console.log('AI Chat UI connected to services');
+      }
+      
+      // Set up event handlers
+      aiChatUI.onImagePaste((imageData) => {
+        console.log('Image pasted in AI Chat:', imageData.size, 'bytes');
+      });
+      
+      aiChatUI.onFileUpload((file) => {
+        console.log('File uploaded in AI Chat:', file.name, file.size, 'bytes');
+      });
+    }
+
+    // Initialize Validation Status Bar
+    if (typeof window.validationStatusBar !== 'undefined') {
+      const statusContainer = document.getElementById('validation-status-container');
+      if (statusContainer) {
+        window.validationStatusBar.initialize(statusContainer);
+        console.log('Validation Status Bar initialized');
+      }
+    }
+
+    console.log('Data Editor and AI Integration initialization complete');
   }
 
   if (document.readyState === 'loading') {

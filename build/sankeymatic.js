@@ -2165,6 +2165,34 @@ was not decodable.`,
 }
 
 // MAIN FUNCTION:
+// updateValidationStatusBar: Update the validation status bar with flow balance information
+function updateValidationStatusBar(flows) {
+  // Initialize the status bar if it hasn't been initialized yet
+  if (typeof window.validationStatusBar !== 'undefined' && !window.validationStatusBar.initialized) {
+    window.validationStatusBar.initialize('#validation-status-container');
+  }
+
+  // Convert flows to the format expected by the flow validator
+  const flowRows = flows.map((flow, index) => ({
+    id: `flow_${index}`,
+    source: flow.source.name,
+    target: flow.target.name,
+    amount: flow.value,
+    isValid: true,
+    errors: []
+  }));
+
+  // Validate the flows using the flow validator
+  if (typeof window.flowValidator !== 'undefined') {
+    const balanceResult = window.flowValidator.validateBalance(flowRows);
+    
+    // Update the status bar with the validation result
+    if (typeof window.validationStatusBar !== 'undefined') {
+      window.validationStatusBar.updateStatus(balanceResult);
+    }
+  }
+}
+
 // process_sankey: Called directly from the page and within this script.
 // Gather inputs from user; validate them; render updated diagram
 glob.process_sankey = () => {
@@ -3129,6 +3157,9 @@ Total Outputs: <strong>${withUnits(grandTotal[OUT])}</strong>`;
 
   updateResetNodesUI();
 
+  // Update validation status bar with flow balance information
+  updateValidationStatusBar(approvedFlows);
+
   // All done. Give control back to the browser:
   return null;
 };
@@ -3136,10 +3167,233 @@ Total Outputs: <strong>${withUnits(grandTotal[OUT])}</strong>`;
 // Debounced version of process_sankey as event handler for keystrokes:
 glob.debounced_process_sankey = debounce(glob.process_sankey);
 
+/**
+ * Initialize AI integration components
+ * Sets up AI Service, Sync Manager, and connects all components
+ */
+function initializeAIIntegration() {
+  console.log('Initializing AI Integration components...');
+  
+  try {
+    // Initialize AI Service
+    if (typeof window.aiService !== 'undefined') {
+      window.aiService.initialize()
+        .then(() => {
+          console.log('AI Service initialized successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to initialize AI Service:', error);
+        });
+    } else {
+      console.warn('AI Service not available');
+    }
+
+    // Initialize Sync Manager and register components
+    if (typeof window.syncManager !== 'undefined') {
+      // Register Data Editor if available
+      if (typeof DataEditorUI !== 'undefined') {
+        window.syncManager.registerDataEditor(DataEditorUI);
+        console.log('Data Editor registered with Sync Manager');
+      }
+      
+      // Set up sync event listeners
+      window.syncManager.onSync((source, data) => {
+        console.log(`Sync event from ${source}:`, data.length, 'flows');
+        
+        // Update AI Service context when data changes
+        if (source === 'editor' && typeof window.aiService !== 'undefined') {
+          window.aiService.setContext(data);
+        }
+      });
+    } else {
+      console.warn('Sync Manager not available');
+    }
+
+    // Initialize AI Chat UI if container exists
+    const aiChatContainer = document.getElementById('ai-chat-ui-container');
+    if (aiChatContainer && typeof aiChatUI !== 'undefined') {
+      aiChatUI.render(aiChatContainer);
+      
+      // Connect AI Chat UI to services
+      if (typeof window.aiService !== 'undefined' && typeof window.syncManager !== 'undefined') {
+        aiChatUI.connectServices(window.aiService, window.syncManager);
+        window.syncManager.registerAIChat(aiChatUI);
+        console.log('AI Chat UI connected to services');
+      }
+      
+      // Set up event handlers
+      aiChatUI.onImagePaste((imageData) => {
+        console.log('Image pasted in AI Chat:', imageData.size, 'bytes');
+      });
+      
+      aiChatUI.onFileUpload((file) => {
+        console.log('File uploaded in AI Chat:', file.name, file.size, 'bytes');
+      });
+    } else {
+      console.log('AI Chat UI container not found - AI Chat will not be available');
+    }
+
+    // Initialize Validation Status Bar
+    if (typeof window.validationStatusBar !== 'undefined') {
+      const statusContainer = document.getElementById('validation-status-container');
+      if (statusContainer) {
+        window.validationStatusBar.initialize(statusContainer);
+        console.log('Validation Status Bar initialized');
+      } else {
+        console.warn('Validation Status Bar container not found');
+      }
+    } else {
+      console.warn('Validation Status Bar not available');
+    }
+
+    console.log('AI Integration initialization complete');
+    
+  } catch (error) {
+    console.error('Error during AI Integration initialization:', error);
+  }
+}
+
+/**
+ * Initialize the tabbed sidebar interface
+ * Converts existing sidebar panels into a tabbed layout
+ */
+function initializeTabbedSidebar() {
+  // Get references to existing panels
+  const inputOptionsPanel = el('input_options');
+  const labelOptionsPanel = el('label_options');
+  const nodeOptionsPanel = el('node_options');
+  const flowOptionsPanel = el('flow_options');
+  const layoutOptionsPanel = el('layout_options');
+  const templateOptionsPanel = el('template_options');
+
+  if (!inputOptionsPanel || !labelOptionsPanel || !nodeOptionsPanel || !flowOptionsPanel) {
+    console.warn('Could not find all required panels for tabbed sidebar');
+    return;
+  }
+
+  // Create tab configurations
+  const tabConfigs = [
+    {
+      id: 'inputs',
+      title: 'Inputs',
+      content: inputOptionsPanel,
+      defaultExpanded: true // Inputs tab expanded by default
+    },
+    {
+      id: 'labels',
+      title: 'Labels',
+      content: labelOptionsPanel,
+      defaultExpanded: false
+    },
+    {
+      id: 'nodes',
+      title: 'Nodes',
+      content: nodeOptionsPanel,
+      defaultExpanded: false
+    },
+    {
+      id: 'flows',
+      title: 'Flows',
+      content: flowOptionsPanel,
+      defaultExpanded: false
+    }
+  ];
+
+  // Add layout options if available
+  if (layoutOptionsPanel) {
+    tabConfigs.push({
+      id: 'layout',
+      title: 'Layout Options',
+      content: layoutOptionsPanel,
+      defaultExpanded: false
+    });
+  }
+
+  // Add template options if available
+  if (templateOptionsPanel) {
+    tabConfigs.push({
+      id: 'templates',
+      title: 'Templates',
+      content: templateOptionsPanel,
+      defaultExpanded: false
+    });
+  }
+
+  // Initialize the tabbed sidebar
+  if (typeof tabbedSidebar !== 'undefined') {
+    tabbedSidebar.initialize(tabConfigs);
+
+    // Create a container for the tabbed sidebar
+    const sidebarContainer = document.createElement('div');
+    sidebarContainer.id = 'tabbed-sidebar-container';
+    sidebarContainer.className = 'tabbed-sidebar-main';
+
+    // Find the parent container (the left column of the grid)
+    const leftColumn = document.querySelector('.center.diagram_controls');
+    if (leftColumn) {
+      // Hide the original headers and panels
+      const headers = leftColumn.querySelectorAll('h2.ui_head');
+      headers.forEach(header => {
+        header.style.display = 'none';
+      });
+
+      // Hide the original panels
+      [inputOptionsPanel, labelOptionsPanel, nodeOptionsPanel, flowOptionsPanel, layoutOptionsPanel, templateOptionsPanel]
+        .filter(panel => panel)
+        .forEach(panel => {
+          panel.style.display = 'none';
+        });
+
+      // Insert the tabbed sidebar container at the beginning
+      leftColumn.insertBefore(sidebarContainer, leftColumn.firstChild);
+
+      // Render the tabs
+      tabbedSidebar.renderTabs(sidebarContainer);
+
+      console.log('Tabbed sidebar initialized successfully');
+    } else {
+      console.error('Could not find left column container for tabbed sidebar');
+    }
+  } else {
+    console.error('TabbedSidebar not available');
+  }
+}
+
+// Override the original togglePanel function to work with tabs
+const originalTogglePanel = glob.togglePanel;
+glob.togglePanel = (panel) => {
+  // Map old panel names to new tab IDs
+  const panelToTabMap = {
+    'input_options': 'inputs',
+    'label_options': 'labels',
+    'node_options': 'nodes',
+    'flow_options': 'flows',
+    'layout_options': 'layout',
+    'template_options': 'templates'
+  };
+
+  const tabId = panelToTabMap[panel];
+  if (tabId && typeof tabbedSidebar !== 'undefined') {
+    tabbedSidebar.toggleTab(tabId);
+  } else {
+    // Fall back to original behavior for panels not in tabs
+    originalTogglePanel(panel);
+  }
+};
+
 // Load a diagram definition from the URL if there was one:
 loadFromQueryString();
 // Render the present inputs:
 glob.process_sankey();
+
+// Initialize all components in the correct order
+setTimeout(() => {
+  // Initialize the tabbed sidebar first
+  initializeTabbedSidebar();
+  
+  // Initialize AI integration components
+  initializeAIIntegration();
+}, 100);
 }(typeof window === 'undefined' ? global : window));
 
 // Make the linter happy about imported objects:

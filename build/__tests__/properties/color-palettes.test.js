@@ -92,6 +92,3 @@ describe('Color Palettes - Property-Based Tests', () => {
     );
   });
 });
-
-  /**
-   * **Feature: sank

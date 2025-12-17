@@ -16,6 +16,10 @@
 <script defer src="color_palettes.js"></script>
 <script defer src="templates.js"></script>
 <script defer src="data_editor.js"></script>
+<script defer src="tabbed_sidebar.js"></script>
+<script defer src="ai_chat_ui.js"></script>
+<script defer src="flow_validator.js" type="module"></script>
+<script defer src="validation_status_bar.js" type="module"></script>
 <script defer src="sankeymatic.js"></script>
 <meta name="description" content="Make beautiful Sankey diagrams. Export them as images or SVG with this free data visualization tool." />
 <meta property="og:title" content="SankeyMATIC: Build a Sankey Diagram" />
@@ -113,6 +117,11 @@ Budget [*] Savings
                         <!-- Rows will be dynamically generated -->
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- AI Chat UI Container -->
+            <div id="ai-chat-ui-container">
+                <!-- AI Chat UI will be rendered here -->
             </div>
         </div>
     </div>
@@ -705,6 +714,8 @@ Move Labels by <em>dragging</em>, or: <button type="button" id="reset_all_moved_
 </p>
 <canvas id="png_preview" height="600" width="600" style="background-color: transparent; display: none;"></canvas>
 <div id="chartfooter">
+  <!-- Validation Status Bar will be rendered here -->
+  <div id="validation-status-container"></div>
 </div>
 </div> <!-- diagram_main -->
 
