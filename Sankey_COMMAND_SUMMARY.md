@@ -60,3 +60,11 @@ App funtion specific:
         *   Table -> Text serialization (DSL generation) when editing.
     *   Added "Export CSV" and "Import CSV" buttons.
     *   Added row validation (visual highlighting for invalid data).
+
+
+
+The label still can not be drag and change separately from the node. You should know that the label is the text box.
+
+
+
+Also add option to change each text box size and alignment

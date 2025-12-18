@@ -1913,3 +1913,353 @@ fieldset.simple {
     font-size: 0.8em;
   }
 }
+
+
+/* ============ STUDIO UI ENHANCEMENTS ============ */
+
+/* Infinite Canvas Support */
+.diagram-area {
+  position: relative;
+  overflow: auto;
+  cursor: grab;
+}
+
+.diagram-area:active {
+  cursor: grabbing;
+}
+
+.diagram-area.panning {
+  cursor: grabbing;
+}
+
+/* Node and Label Dragging */
+.node rect {
+  cursor: move;
+  transition: opacity 0.2s;
+}
+
+.node rect:hover {
+  opacity: 0.8 !important;
+}
+
+svg text {
+  cursor: move;
+  user-select: none;
+}
+
+svg text:hover {
+  filter: brightness(0.9);
+}
+
+/* Label Independence Indicator */
+svg text.label-unlocked {
+  outline: 1px dashed #1a73e8;
+  outline-offset: 2px;
+}
+
+svg text.label-selected {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* Custom Label Backgrounds */
+.label-bg-rect {
+  pointer-events: none;
+}
+
+/* Node Popup Enhancements */
+.node-popup-slider {
+  width: 100%;
+  margin: 4px 0;
+}
+
+.node-popup-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.node-popup-color-row input[type="color"] {
+  flex-shrink: 0;
+}
+
+.node-popup-color-row .opacity-slider {
+  flex: 1;
+}
+
+/* JSON Editor Syntax Highlighting */
+.json-editor-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Multi-Image Upload Grid */
+.image-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.image-preview-item {
+  aspect-ratio: 1;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #e0e0e0;
+  transition: border-color 0.2s;
+}
+
+.image-preview-item:hover {
+  border-color: #1a73e8;
+}
+
+.image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.image-preview-item:hover .remove-btn {
+  opacity: 1;
+}
+
+/* Progress Bar Animation */
+.progress-bar-fill {
+  transition: width 0.3s ease-out;
+  background: linear-gradient(90deg, #1a73e8, #4285f4);
+}
+
+/* AI Chat Enhancements */
+#ai-chat-history {
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f5f5f5;
+}
+
+#ai-chat-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+#ai-chat-history::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+#ai-chat-history::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+/* Keyboard Shortcuts Hint */
+.keyboard-hint {
+  font-size: 10px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.keyboard-hint kbd {
+  background: #f1f3f4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  font-family: inherit;
+}
+
+/* Canvas Controls Toolbar */
+.canvas-controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: center;
+}
+
+.canvas-controls .tool-group {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.canvas-controls .tool-group:last-child {
+  border-right: none;
+}
+
+.canvas-controls button {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.canvas-controls button:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.canvas-controls button.active {
+  background: #1a73e8;
+  color: white;
+  border-color: #1a73e8;
+}
+
+/* Selection Mode Indicator */
+.selection-mode .diagram-area {
+  cursor: crosshair;
+}
+
+.selection-box {
+  position: absolute;
+  border: 2px dashed #1a73e8;
+  background: rgba(26, 115, 232, 0.1);
+  pointer-events: none;
+}
+
+/* Flow Hover Effects */
+svg path.flow:hover {
+  filter: brightness(1.1);
+}
+
+/* Tooltip Enhancements */
+svg title {
+  font-size: 12px;
+}
+
+/* Print Styles */
+@media print {
+  .menu-bar,
+  .right-panel,
+  .status-bar,
+  .canvas-controls {
+    display: none !important;
+  }
+  
+  .diagram-panel {
+    width: 100% !important;
+  }
+  
+  .diagram-area {
+    overflow: visible !important;
+  }
+}
+
+
+/* Label Dragging States */
+svg text.label-unlocked {
+  cursor: move !important;
+}
+
+svg text.label-selected {
+  outline: 2px solid #1a73e8;
+  outline-offset: 3px;
+}
+
+svg g[id$="_group"] {
+  cursor: pointer;
+}
+
+svg g[id$="_group"]:hover text {
+  filter: brightness(0.85);
+}
+
+/* Custom label background */
+.custom-label-bg {
+  pointer-events: none;
+}
+
+/* Node hover effect */
+svg rect:not(.custom-label-bg):hover {
+  filter: brightness(1.1);
+  cursor: pointer;
+}
+
+/* Popup improvements */
+.node-popup-row input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.node-popup-row input[type="number"]::-webkit-outer-spin-button,
+.node-popup-row input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Alignment buttons */
+.node-popup-alignment button {
+  min-width: 50px;
+  transition: all 0.2s;
+}
+
+.node-popup-alignment button:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+
+/* Label dragging and customization styles */
+.label-group,
+g[id$="_group"] {
+  cursor: move !important;
+  transition: filter 0.15s ease;
+}
+
+g[id$="_group"]:hover {
+  filter: brightness(1.05) drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+g[id$="_group"].dragging {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+  z-index: 1000;
+}
+
+.label-unlocked {
+  outline: 2px dashed #1a73e8;
+  outline-offset: 3px;
+}
+
+.drag-handle {
+  cursor: move;
+  fill: transparent;
+}
+
+/* Custom label background */
+.custom-label-bg {
+  pointer-events: none;
+}
+
+/* Label box styling */
+.label-box {
+  pointer-events: none;
+}
+
+/* Node hover effect */
+rect[id^="r"]:hover {
+  filter: brightness(1.1);
+  cursor: pointer;
+}
