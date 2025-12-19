@@ -171,6 +171,15 @@ const SelectionHandlers = {
           SelectionManager.select(this, 'label', { nodeId });
         }
       });
+      
+      // Double-click to open label settings popup
+      labelGroup.on('dblclick.labelPopup', (event) => {
+        event.stopPropagation();
+        const nodeId = labelGroup.attr('data-label-for');
+        if (nodeId && typeof openLabelPopup === 'function') {
+          openLabelPopup(nodeId, this);
+        }
+      });
     });
   },
   

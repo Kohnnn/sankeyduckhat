@@ -35,7 +35,9 @@ const DragBehaviors = {
     this._initialized = true;
     this._createDragBehaviors();
     this._setupNodeDrag();
-    this._setupLabelDrag();
+    // Note: Label drag is handled by sankeymatic.js's built-in drag behavior
+    // which integrates with rememberedLabelMoves for persistence
+    // this._setupLabelDrag(); // Disabled to avoid conflict
   },
 
   /**
@@ -227,7 +229,8 @@ const DragBehaviors = {
   refresh() {
     if (this._initialized && this._svg) {
       this._setupNodeDrag();
-      this._setupLabelDrag();
+      // Note: Label drag is handled by sankeymatic.js's built-in drag behavior
+      // this._setupLabelDrag(); // Disabled to avoid conflict
     }
   },
 

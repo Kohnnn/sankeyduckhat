@@ -180,6 +180,7 @@ const PropertiesPanelController = {
         <div class="properties-header">
           <span class="properties-icon">◼️</span>
           <span class="properties-title">Node Properties</span>
+          <button type="button" class="properties-edit-btn" onclick="if(typeof openNodePopup==='function')openNodePopup('${this._escapeHtml(nodeName)}')" title="Open full node editor">✏️ Edit</button>
         </div>
         
         <div class="properties-group">
@@ -236,12 +237,17 @@ const PropertiesPanelController = {
         <div class="properties-header">
           <span class="properties-icon">🏷️</span>
           <span class="properties-title">Label Properties</span>
+          <button type="button" class="properties-edit-btn" onclick="if(typeof openLabelPopup==='function')openLabelPopup('${this._escapeHtml(nodeId)}')" title="Open full label editor">✏️ Edit</button>
         </div>
         
         <div class="properties-group">
           <div class="property-row">
             <label for="prop-label-text">Label Text</label>
             <input type="text" id="prop-label-text" value="${this._escapeHtml(labelText)}" />
+          </div>
+          <div class="property-row">
+            <label>For Node</label>
+            <input type="text" value="${this._escapeHtml(nodeId)}" readonly class="readonly" />
           </div>
         </div>
         

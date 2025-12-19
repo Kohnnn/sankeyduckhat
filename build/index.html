@@ -491,7 +491,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
       </div>
       
       <div class="diagram-footer studio-canvas-footer">
-        ✏️ Click on any node to customize • Drag nodes and labels freely • Double-click to reset position
+        ⬜ Click node to edit appearance • 🏷️ Double-click label to edit text/style • Drag nodes and labels freely
       </div>
     </div>
 
@@ -589,20 +589,24 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
   </div>
 </div>
 
-<!-- Node Customization Popup -->
+<!-- Node Settings Popup (Node appearance only) -->
 <div class="node-popup-overlay" id="node-popup-overlay">
   <div class="node-popup">
     <div class="node-popup-header">
-      <h3>✏️ Customize Node</h3>
+      <h3>⬜ Node Settings</h3>
       <button class="node-popup-close" onclick="closeNodePopup()">&times;</button>
     </div>
     <div class="node-popup-body">
       <div class="node-popup-section">
-        <h4>Node Properties</h4>
+        <h4>Node Identity</h4>
         <div class="node-popup-row">
           <label>Name</label>
           <input type="text" id="popup-node-name" placeholder="Node name">
         </div>
+      </div>
+      
+      <div class="node-popup-section">
+        <h4>Appearance</h4>
         <div class="node-popup-row">
           <label>Fill Color</label>
           <input type="color" id="popup-node-fill" value="#888888">
@@ -618,11 +622,42 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
       </div>
       
       <div class="node-popup-section">
-        <h4>Label Properties</h4>
+        <h4>Quick Actions</h4>
         <div class="node-popup-row">
-          <label>Label Text</label>
+          <button class="btn btn-secondary" style="flex:1" onclick="openLabelPopupFromNode()">🏷️ Edit Label Settings</button>
+        </div>
+      </div>
+    </div>
+    <div class="node-popup-footer">
+      <button class="btn btn-secondary" onclick="resetNodeToDefault()">Reset</button>
+      <button class="btn btn-secondary" onclick="closeNodePopup()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyNodeCustomization()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Label Settings Popup (Label appearance and position) -->
+<div class="node-popup-overlay" id="label-popup-overlay">
+  <div class="node-popup">
+    <div class="node-popup-header">
+      <h3>🏷️ Label Settings</h3>
+      <button class="node-popup-close" onclick="closeLabelPopup()">&times;</button>
+    </div>
+    <div class="node-popup-body">
+      <div class="node-popup-section">
+        <h4>Label Text</h4>
+        <div class="node-popup-row">
+          <label>Display Text</label>
           <input type="text" id="popup-label-text" placeholder="Custom label">
         </div>
+        <div class="node-popup-row">
+          <label>For Node</label>
+          <input type="text" id="popup-label-node-ref" readonly style="background:#f5f5f5;color:#666;">
+        </div>
+      </div>
+      
+      <div class="node-popup-section">
+        <h4>Typography</h4>
         <div class="node-popup-row">
           <label>Font Size</label>
           <input type="number" id="popup-label-fontsize" value="16" min="8" max="72" style="width:80px">
@@ -640,13 +675,20 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
             <button type="button" onclick="setLabelAlignment('right')" id="align-right">Right</button>
           </div>
         </div>
+      </div>
+      
+      <div class="node-popup-section">
+        <h4>Background Box</h4>
         <div class="node-popup-row">
-          <label>Background</label>
-          <input type="color" id="popup-label-bg" value="#ffffff">
+          <label>Enable</label>
           <div class="node-popup-toggle">
             <input type="checkbox" id="popup-label-bg-enabled">
-            <span style="font-size:11px;">Enable BG</span>
+            <span style="font-size:11px;">Show background</span>
           </div>
+        </div>
+        <div class="node-popup-row">
+          <label>BG Color</label>
+          <input type="color" id="popup-label-bg" value="#ffffff">
         </div>
         <div class="node-popup-row">
           <label>Box Width</label>
@@ -661,27 +703,26 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
       </div>
       
       <div class="node-popup-section">
-        <h4>Position & Movement</h4>
-        <div class="node-popup-row">
-          <div class="node-popup-toggle">
-            <input type="checkbox" id="popup-label-locked" checked>
-            <label style="flex:none;">Lock label to node</label>
-          </div>
-        </div>
+        <h4>Position</h4>
         <div class="node-popup-row">
           <label>X Offset</label>
           <input type="number" id="popup-label-x" value="0" style="width:80px">
+          <span style="font-size:11px;color:#666;">px from default</span>
         </div>
         <div class="node-popup-row">
           <label>Y Offset</label>
           <input type="number" id="popup-label-y" value="0" style="width:80px">
+          <span style="font-size:11px;color:#666;">px from default</span>
+        </div>
+        <div class="node-popup-row">
+          <span style="font-size:11px;color:#888;">💡 Tip: Drag labels directly on the diagram to reposition them</span>
         </div>
       </div>
     </div>
     <div class="node-popup-footer">
-      <button class="btn btn-secondary" onclick="resetNodeToDefault()">Reset to Default</button>
-      <button class="btn btn-secondary" onclick="closeNodePopup()">Cancel</button>
-      <button class="btn btn-primary" onclick="applyNodeCustomization()">Apply</button>
+      <button class="btn btn-secondary" onclick="resetLabelToDefault()">Reset</button>
+      <button class="btn btn-secondary" onclick="closeLabelPopup()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyLabelCustomization()">Apply</button>
     </div>
   </div>
 </div>
@@ -1321,6 +1362,9 @@ function resetAllLabelsCustom() {
   renderDiagram();
 }
 
+// Track which node/label is being edited
+let currentEditingLabelName = null;
+
 function openNodePopup(nodeName, element) {
   currentEditingNodeName = nodeName;
   const popup = document.getElementById('node-popup-overlay');
@@ -1340,6 +1384,36 @@ function openNodePopup(nodeName, element) {
     });
   }
   
+  document.getElementById('popup-node-name').value = nodeName;
+  document.getElementById('popup-node-fill').value = currentFillColor;
+  document.getElementById('popup-node-border').value = custom.borderColor || '#666666';
+  document.getElementById('popup-node-opacity').value = custom.opacity || 100;
+  
+  popup.classList.add('active');
+}
+
+function closeNodePopup() {
+  document.getElementById('node-popup-overlay').classList.remove('active');
+  currentEditingNodeName = null;
+}
+
+// Open label popup from node popup
+function openLabelPopupFromNode() {
+  const nodeName = currentEditingNodeName;
+  closeNodePopup();
+  if (nodeName) {
+    openLabelPopup(nodeName);
+  }
+}
+
+// Open label popup directly (for clicking on labels)
+function openLabelPopup(nodeName, element) {
+  currentEditingLabelName = nodeName;
+  const popup = document.getElementById('label-popup-overlay');
+  
+  // Load existing customizations or defaults
+  const custom = nodeCustomizations[nodeName] || {};
+  
   // Get current label position from sankeymatic.js's rememberedLabelMoves
   let currentLabelX = custom.labelX || 0;
   let currentLabelY = custom.labelY || 0;
@@ -1351,11 +1425,7 @@ function openNodePopup(nodeName, element) {
     currentLabelY = Math.round(offsetY);
   }
   
-  document.getElementById('popup-node-name').value = nodeName;
-  document.getElementById('popup-node-fill').value = currentFillColor;
-  document.getElementById('popup-node-border').value = custom.borderColor || '#666666';
-  document.getElementById('popup-node-opacity').value = custom.opacity || 100;
-  
+  document.getElementById('popup-label-node-ref').value = nodeName;
   document.getElementById('popup-label-text').value = custom.labelText || nodeName;
   document.getElementById('popup-label-fontsize').value = custom.labelFontSize || 16;
   document.getElementById('popup-label-bg').value = custom.labelBg || '#ffffff';
@@ -1363,7 +1433,6 @@ function openNodePopup(nodeName, element) {
   document.getElementById('popup-label-color').value = custom.labelColor || '#000000';
   document.getElementById('popup-label-width').value = custom.labelWidth || 0;
   document.getElementById('popup-label-height').value = custom.labelHeight || 0;
-  document.getElementById('popup-label-locked').checked = custom.labelLocked !== false;
   document.getElementById('popup-label-x').value = Math.round(currentLabelX);
   document.getElementById('popup-label-y').value = Math.round(currentLabelY);
   
@@ -1372,9 +1441,9 @@ function openNodePopup(nodeName, element) {
   popup.classList.add('active');
 }
 
-function closeNodePopup() {
-  document.getElementById('node-popup-overlay').classList.remove('active');
-  currentEditingNodeName = null;
+function closeLabelPopup() {
+  document.getElementById('label-popup-overlay').classList.remove('active');
+  currentEditingLabelName = null;
 }
 
 function setLabelAlignment(align) {
@@ -1395,53 +1464,22 @@ function applyNodeCustomization() {
   const nodeName = currentEditingNodeName;
   const newName = document.getElementById('popup-node-name').value.trim();
   
-  // Store customizations
+  // Get existing customizations to preserve label settings
+  const existingCustom = nodeCustomizations[nodeName] || {};
+  
+  // Store node-only customizations (preserve existing label settings)
   const custom = {
+    ...existingCustom,
     fillColor: document.getElementById('popup-node-fill').value,
     borderColor: document.getElementById('popup-node-border').value,
-    opacity: parseInt(document.getElementById('popup-node-opacity').value),
-    labelText: document.getElementById('popup-label-text').value,
-    labelBg: document.getElementById('popup-label-bg').value,
-    labelBgEnabled: document.getElementById('popup-label-bg-enabled').checked,
-    labelColor: document.getElementById('popup-label-color').value,
-    labelAlign: getLabelAlignment(),
-    labelWidth: parseInt(document.getElementById('popup-label-width').value) || 0,
-    labelHeight: parseInt(document.getElementById('popup-label-height').value) || 0,
-    labelLocked: document.getElementById('popup-label-locked').checked,
-    labelX: parseInt(document.getElementById('popup-label-x').value) || 0,
-    labelY: parseInt(document.getElementById('popup-label-y').value) || 0,
-    labelFontSize: parseInt(document.getElementById('popup-label-fontsize')?.value) || 16
+    opacity: parseInt(document.getElementById('popup-node-opacity').value)
   };
   
   nodeCustomizations[nodeName] = custom;
   nodeColors[nodeName] = custom.fillColor;
   
-  // Update customLayout with the new label position
-  if (!customLayout[nodeName]) {
-    customLayout[nodeName] = {};
-  }
-  
-  // If there's an original position, calculate absolute position from offset
-  if (customLayout[nodeName].originalX !== undefined) {
-    customLayout[nodeName].labelX = customLayout[nodeName].originalX + custom.labelX;
-    customLayout[nodeName].labelY = customLayout[nodeName].originalY + custom.labelY;
-  }
-  
-  // Store label dimensions
-  customLayout[nodeName].labelW = custom.labelWidth;
-  customLayout[nodeName].labelH = custom.labelHeight;
-  
-  // Update rememberedLabelMoves for sankeymatic.js persistence
-  if (window.rememberedLabelMoves) {
-    if (custom.labelX !== 0 || custom.labelY !== 0) {
-      window.rememberedLabelMoves.set(nodeName, [custom.labelX, custom.labelY]);
-    } else if (custom.labelLocked) {
-      window.rememberedLabelMoves.delete(nodeName);
-    }
-  }
-  
   // Apply changes directly to SVG elements
-  applyCustomizationToSVG(nodeName, custom);
+  applyNodeCustomizationToSVG(nodeName, custom);
   
   // If name changed, update table and migrate customizations
   if (newName && newName !== nodeName) {
@@ -1473,7 +1511,72 @@ function applyNodeCustomization() {
   saveProgressToLocal();
 }
 
-function applyCustomizationToSVG(nodeName, custom) {
+// Apply label customization from the label popup
+function applyLabelCustomization() {
+  if (!currentEditingLabelName) return;
+  
+  const nodeName = currentEditingLabelName;
+  
+  // Get existing customizations to preserve node settings
+  const existingCustom = nodeCustomizations[nodeName] || {};
+  
+  // Store label-only customizations (preserve existing node settings)
+  const custom = {
+    ...existingCustom,
+    labelText: document.getElementById('popup-label-text').value,
+    labelBg: document.getElementById('popup-label-bg').value,
+    labelBgEnabled: document.getElementById('popup-label-bg-enabled').checked,
+    labelColor: document.getElementById('popup-label-color').value,
+    labelAlign: getLabelAlignment(),
+    labelWidth: parseInt(document.getElementById('popup-label-width').value) || 0,
+    labelHeight: parseInt(document.getElementById('popup-label-height').value) || 0,
+    labelX: parseInt(document.getElementById('popup-label-x').value) || 0,
+    labelY: parseInt(document.getElementById('popup-label-y').value) || 0,
+    labelFontSize: parseInt(document.getElementById('popup-label-fontsize')?.value) || 16
+  };
+  
+  nodeCustomizations[nodeName] = custom;
+  
+  // Update customLayout with the new label position
+  if (!customLayout[nodeName]) {
+    customLayout[nodeName] = {};
+  }
+  
+  // If there's an original position, calculate absolute position from offset
+  if (customLayout[nodeName].originalX !== undefined) {
+    customLayout[nodeName].labelX = customLayout[nodeName].originalX + custom.labelX;
+    customLayout[nodeName].labelY = customLayout[nodeName].originalY + custom.labelY;
+  }
+  
+  // Store label dimensions
+  customLayout[nodeName].labelW = custom.labelWidth;
+  customLayout[nodeName].labelH = custom.labelHeight;
+  
+  // Update rememberedLabelMoves for sankeymatic.js persistence
+  if (window.rememberedLabelMoves) {
+    if (custom.labelX !== 0 || custom.labelY !== 0) {
+      window.rememberedLabelMoves.set(nodeName, [custom.labelX, custom.labelY]);
+    } else {
+      window.rememberedLabelMoves.delete(nodeName);
+    }
+  }
+  
+  // Apply changes directly to SVG elements
+  applyLabelCustomizationToSVG(nodeName, custom);
+  
+  closeLabelPopup();
+  saveProgressToLocal();
+}
+
+// Reset label to default
+function resetLabelToDefault() {
+  if (!currentEditingLabelName) return;
+  resetLabelPosition(currentEditingLabelName);
+  closeLabelPopup();
+}
+
+// Apply node-only customization to SVG
+function applyNodeCustomizationToSVG(nodeName, custom) {
   const svg = document.getElementById('sankey_svg');
   if (!svg) return;
   
@@ -1487,16 +1590,21 @@ function applyCustomizationToSVG(nodeName, custom) {
       rect.setAttribute('opacity', custom.opacity / 100);
     }
   });
+}
+
+// Apply label-only customization to SVG
+function applyLabelCustomizationToSVG(nodeName, custom) {
+  const svg = document.getElementById('sankey_svg');
+  if (!svg) return;
   
   // Find the label group and text
-  const labelGroups = svg.querySelectorAll('g[id$="_group"]');
+  const labelGroups = svg.querySelectorAll('g.sankey-label');
   labelGroups.forEach(group => {
+    const labelFor = group.getAttribute('data-label-for');
+    if (labelFor !== nodeName) return;
+    
     const textEl = group.querySelector('text');
     if (!textEl) return;
-    
-    const textContent = textEl.textContent?.trim();
-    const labelName = textContent?.split('\n')[0]?.trim();
-    if (labelName !== nodeName) return;
     
     // Apply label color
     textEl.setAttribute('fill', custom.labelColor);
@@ -1504,7 +1612,6 @@ function applyCustomizationToSVG(nodeName, custom) {
     // Apply font size
     if (custom.labelFontSize && custom.labelFontSize > 0) {
       textEl.setAttribute('font-size', custom.labelFontSize + 'px');
-      // Also update tspans
       textEl.querySelectorAll('tspan').forEach(tspan => {
         tspan.setAttribute('font-size', custom.labelFontSize + 'px');
       });
@@ -1519,22 +1626,12 @@ function applyCustomizationToSVG(nodeName, custom) {
       const newX = customLayout[nodeName].originalX + custom.labelX;
       const newY = customLayout[nodeName].originalY + custom.labelY;
       group.setAttribute('transform', `translate(${newX}, ${newY})`);
-      
-      // Update customLayout
       customLayout[nodeName].labelX = newX;
       customLayout[nodeName].labelY = newY;
     }
     
-    // Visual feedback for unlocked labels
-    if (!custom.labelLocked) {
-      textEl.classList.add('label-unlocked');
-      group.style.cursor = 'move';
-    } else {
-      textEl.classList.remove('label-unlocked');
-      group.style.cursor = 'pointer';
-    }
-    
     // Update label text if changed
+    const textContent = textEl.textContent?.trim();
     if (custom.labelText && custom.labelText !== nodeName) {
       const tspan = textEl.querySelector('tspan');
       if (tspan) {
