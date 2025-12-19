@@ -1,0 +1,321 @@
+# Implementation Plan: Sankey Studio Canvas Refactor
+
+## Overview
+
+This implementation transforms the existing SankeyMATIC into a professional Sankey Studio with canvas-first interactions. The plan prioritizes the critical node/label decoupling early, followed by viewport system, interaction state management, and UI components. All changes wrap the existing sankey.js engine without modifying its core logic.
+
+## Tasks
+
+- [x] 1. Create StudioUI Core Module
+  - [x] 1.1 Create `build/studio-ui.js` with StudioUI manager object
+    - Define state properties: currentTool, selectedElement, interactionMode, viewport
+    - Implement event emitter pattern (on, emit, off methods)
+    - Export as global `StudioUI` object
+    - _Requirements: 2.1_
+  - [x] 1.2 Write property test for StudioUI state management
+    - **Property 4: Tool State Synchronization**
+    - **Validates: Requirements 2.3, 10.5**
+
+- [x] 2. Implement Independent Node and Label Rendering (CRITICAL)
+  - [x] 2.1 Refactor node rendering to separate node rect from label
+    - Modify `render_sankey` function to create nodes as `<g class="sankey-node">` containing only `<rect>`
+    - Add `data-node-id` attribute to node groups
+    - Ensure nodes have `pointer-events: all` for interaction
+    - _Requirements: 5.1, 4.7_
+  - [x] 2.2 Create independent label rendering system
+    - Create labels as separate `<g class="sankey-label">` elements NOT nested in node groups
+    - Each label group contains: `<rect class="label-bg">` and `<text>` elements
+    - Add `data-label-for` attribute linking to node ID
+    - Store initial label position relative to node but as independent coordinates
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [x] 2.3 Implement CustomLayoutStore for position persistence
+    - Create `build/custom-layout-store.js`
+    - Implement separate Maps for nodePositions and labelPositions
+    - Add methods: setNodePosition, setLabelPosition, getNodePosition, getLabelPosition
+    - Implement JSON serialization for persistence
+    - _Requirements: 3.1, 3.2_
+  - [x] 2.4 Write property test for node/label independence
+    - **Property 6: Label Position Independence**
+    - **Validates: Requirements 3.2, 5.2, 5.3, 5.6**
+  - [x] 2.5 Write property test for label structure
+    - **Property 10: Label Structure Correctness**
+    - **Validates: Requirements 5.1**
+
+- [x] 3. Checkpoint - Node/Label Independence
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify nodes and labels render as separate SVG groups
+  - Verify dragging node does not move label and vice versa
+
+- [x] 4. Implement Viewport System
+  - [x] 4.1 Create viewport wrapper structure
+    - Wrap existing SVG content in `<g class="viewport">` element
+    - Add CSS grid background element (fixed position, doesn't transform)
+    - Update `initializeDiagram` function to create viewport structure
+    - _Requirements: 1.1, 1.5_
+  - [x] 4.2 Implement ViewportController in `build/viewport-controller.js`
+    - Implement D3 zoom behavior with transform tracking
+    - Add pan method with delta translation
+    - Add zoom method with center point preservation
+    - Add fitToScreen and reset methods
+    - Add screenToDiagram coordinate conversion
+    - _Requirements: 1.2, 1.3, 1.4, 1.6_
+  - [x] 4.3 Wire viewport controls to UI
+    - Connect zoom buttons to ViewportController
+    - Implement Ctrl+Scroll zoom handler
+    - Implement middle-click/spacebar+drag pan handler
+    - Update zoom level display
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [x] 4.4 Write property test for viewport zoom center
+    - **Property 2: Zoom Maintains Center Point**
+    - **Validates: Requirements 1.3, 1.6**
+
+- [x] 5. Implement Selection System
+  - [x] 5.1 Create SelectionManager in `build/selection-manager.js`
+    - Implement select/deselect methods
+    - Track selection type (node, flow, label, canvas)
+    - Store reference to selected SVG element and data
+    - _Requirements: 2.2, 6.5_
+  - [x] 5.2 Implement visual selection feedback
+    - Add CSS class `.selected` with animated stroke-dasharray for nodes
+    - Add CSS class `.selected` with increased stroke-width for flows
+    - Add CSS class `.selected` with border highlight for labels
+    - Implement applySelectionStyle and removeSelectionStyle methods
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [x] 5.3 Wire selection to click handlers
+    - Add click handlers to node rects
+    - Add click handlers to flow paths
+    - Add click handlers to label groups
+    - Add click handler to canvas background for deselection
+    - _Requirements: 2.2, 2.5_
+  - [x] 5.4 Write property test for selection visual feedback
+    - **Property 12: Selection Visual Feedback**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+  - [x] 5.5 Write property test for single selection
+    - **Property 13: Single Selection Enforcement**
+    - **Validates: Requirements 6.5**
+
+- [x] 6. Checkpoint - Selection System
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify clicking node/flow/label shows selection highlight
+  - Verify clicking canvas deselects
+
+- [x] 7. Implement Flow Identification Metadata
+  - [x] 7.1 Modify flow rendering to add data attributes
+    - Update flow path creation to add `data-source="[NodeName]"` attribute
+    - Update flow path creation to add `data-target="[NodeName]"` attribute
+    - Ensure attributes are set during render loop
+    - _Requirements: 7.1, 7.2_
+  - [x] 7.2 Implement flow lookup by data attributes
+    - Create helper function to find flow data by source/target
+    - Use data attributes in click handler to identify clicked flow
+    - _Requirements: 7.3_
+  - [x] 7.3 Write property test for flow metadata
+    - **Property 14: Flow Metadata Attributes**
+    - **Validates: Requirements 7.1, 7.2**
+
+- [x] 8. Implement Drag Handlers
+  - [x] 8.1 Create DragHandler in `build/drag-handler.js`
+    - Implement startDrag, updateDrag, endDrag methods
+    - Track drag type (node vs label)
+    - Calculate position deltas during drag
+    - _Requirements: 3.1, 3.2_
+  - [x] 8.2 Implement node drag behavior
+    - Add D3 drag behavior to node rect elements
+    - Update node visual position during drag
+    - On drag end, persist to CustomLayoutStore
+    - Ensure label position is NOT affected
+    - _Requirements: 3.1, 5.2_
+  - [x] 8.3 Implement label drag behavior
+    - Add D3 drag behavior to label group elements
+    - Update label visual position during drag
+    - On drag end, persist to CustomLayoutStore
+    - Ensure node position is NOT affected
+    - _Requirements: 3.2, 5.3_
+  - [x] 8.4 Write property test for position persistence
+    - **Property 5: Node Position Persistence Round-Trip**
+    - **Validates: Requirements 3.1**
+
+- [x] 9. Implement Properties Panel
+  - [x] 9.1 Create PropertiesPanelController in `build/properties-panel.js`
+    - Implement updateForSelection method
+    - Create panel content generators for each selection type
+    - Wire to StudioUI selection changes
+    - _Requirements: 2.4, 4.3_
+  - [x] 9.2 Implement canvas properties view
+    - Show diagram width, height inputs
+    - Show margin controls (top, right, bottom, left)
+    - Show theme selector
+    - Show node spacing control
+    - _Requirements: 4.4_
+  - [x] 9.3 Implement node properties view
+    - Show node name (read-only)
+    - Show fill color picker
+    - Show opacity slider
+    - Show border color picker
+    - _Requirements: 4.5_
+  - [x] 9.4 Implement label properties view (separate from node)
+    - Show label text input
+    - Show font size control
+    - Show text color picker
+    - Show alignment buttons (left/center/right)
+    - Show background color with enable toggle
+    - Show width/height dimension controls
+    - _Requirements: 4.5, 5.4_
+  - [x] 9.5 Implement flow properties view
+    - Show source node name
+    - Show target node name
+    - Show amount input
+    - Show color mode selector
+    - Show curvature slider
+    - _Requirements: 4.6_
+  - [x] 9.6 Wire property changes to data model
+    - Implement onPropertyChange handler
+    - Update visual representation immediately
+    - Update underlying data model
+    - Trigger re-render if needed
+    - _Requirements: 3.5_
+  - [x] 9.7 Write property test for panel synchronization
+    - **Property 8: Property Panel Synchronization**
+    - **Validates: Requirements 3.5**
+
+- [x] 10. Checkpoint - Properties Panel
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify panel updates when selection changes
+  - Verify property changes reflect in diagram
+
+- [x] 11. Implement Toolbar Tool System
+  - [x] 11.1 Create toolbar HTML structure
+    - Add tool buttons: Select, Pan, Add Node, Add Flow
+    - Add action buttons: Undo, Redo, Export
+    - Style with active state indicators
+    - _Requirements: 4.1_
+  - [x] 11.2 Implement tool switching logic
+    - Wire toolbar buttons to StudioUI.setTool
+    - Update cursor based on active tool
+    - Toggle button active states
+    - _Requirements: 10.5_
+  - [x] 11.3 Implement Select tool behavior
+    - Enable element selection on click
+    - Show properties panel for selected element
+    - _Requirements: 10.1_
+  - [x] 11.4 Implement Pan tool behavior
+    - Enable viewport panning on drag
+    - Disable element selection while pan tool active
+    - _Requirements: 10.2_
+  - [x] 11.5 Implement Add Node tool behavior
+    - On canvas click, create new node at position
+    - Generate placeholder node data
+    - Trigger re-render through sankey.js
+    - _Requirements: 10.3_
+  - [x] 11.6 Implement Add Flow tool behavior
+    - Track first node click
+    - On second node click, create flow between nodes
+    - Generate placeholder flow data row
+    - Trigger re-render through sankey.js
+    - _Requirements: 10.4, 3.3_
+  - [x] 11.7 Write property test for tool behavior
+    - **Property 17: Tool-Specific Behavior**
+    - **Validates: Requirements 10.1, 10.2, 10.3, 10.4**
+
+- [x] 12. Implement Undo/Redo System
+  - [x] 12.1 Create UndoManager in `build/undo-manager.js`
+    - Implement action stack with max size
+    - Store state snapshots or action deltas
+    - Implement undo and redo methods
+    - _Requirements: 10.6, 10.7_
+  - [x] 12.2 Integrate undo/redo with user actions
+    - Record node position changes
+    - Record label position changes
+    - Record property changes
+    - Record flow additions/deletions
+    - _Requirements: 10.6, 10.7_
+  - [x] 12.3 Wire undo/redo buttons
+    - Connect toolbar buttons to UndoManager
+    - Update button disabled states based on stack
+    - _Requirements: 10.6, 10.7_
+  - [x] 12.4 Write property test for undo/redo
+    - **Property 18: Undo/Redo Round-Trip**
+    - **Validates: Requirements 10.6, 10.7**
+
+- [x] 13. Implement Studio CSS Theme
+  - [x] 13.1 Create `build/studio-theme.css`
+    - Define CSS variables for light theme
+    - Define CSS variables for dark theme
+    - Style toolbar with professional appearance
+    - Style properties panel with clean layout
+    - _Requirements: 9.1, 9.2_
+  - [x] 13.2 Implement canvas grid background
+    - Create SVG pattern for dot grid
+    - Apply as fixed background (doesn't pan/zoom)
+    - Support theme-aware colors
+    - _Requirements: 1.5, 9.4_
+  - [x] 13.3 Implement selection animation styles
+    - Define `@keyframes` for selection pulse
+    - Apply stroke-dasharray animation to selected nodes
+    - Style hover states for interactive elements
+    - _Requirements: 6.1, 9.5_
+  - [x] 13.4 Implement theme toggle
+    - Add theme toggle button to toolbar
+    - Switch CSS variables on toggle
+    - Persist theme preference
+    - _Requirements: 9.2_
+
+- [x] 14. Implement Three-Panel Layout
+  - [x] 14.1 Refactor HTML structure for studio layout
+    - Create top toolbar container
+    - Create central canvas container
+    - Create right properties panel container
+    - Use CSS Grid/Flexbox for responsive layout
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 14.2 Integrate existing data editor into layout
+    - Move data table to collapsible section or tab
+    - Ensure bi-directional sync with diagram
+    - _Requirements: 3.3, 3.4_
+
+- [x] 15. Preserve Sankey.js Integration
+  - [x] 15.1 Ensure custom layouts apply after sankey.js calculations
+    - Hook into render pipeline after sankey.js completes
+    - Apply CustomLayoutStore offsets to calculated positions
+    - Maintain sankey.js as source of truth for base positions
+    - _Requirements: 8.2, 8.3_
+  - [x] 15.2 Ensure new elements pass through sankey.js
+    - New nodes added via toolbar go through data model
+    - New flows added via toolbar go through data model
+    - Trigger full sankey.js recalculation on data changes
+    - _Requirements: 8.4_
+  - [x] 15.3 Write property test for sankey.js integration
+    - **Property 16: Sankey.js Position Source of Truth**
+    - **Validates: Requirements 8.2, 8.3**
+
+- [x] 16. Final Integration and Polish
+  - [x] 16.1 Wire all modules together in main entry point
+    - Initialize StudioUI on page load
+    - Initialize ViewportController
+    - Initialize SelectionManager
+    - Initialize PropertiesPanelController
+    - _Requirements: 2.1_
+  - [x] 16.2 Update existing event handlers
+    - Migrate existing node click to new selection system
+    - Migrate existing drag to new DragHandler
+    - Preserve existing export functionality
+    - _Requirements: 10.8_
+  - [x] 16.3 Add keyboard shortcuts
+    - Space + drag for pan
+    - Ctrl + scroll for zoom
+    - Escape to deselect
+    - Delete to remove selected element
+    - _Requirements: 1.2, 1.3_
+
+- [x] 17. Final Checkpoint
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify complete workflow: create diagram, select elements, edit properties, export
+  - Verify node and label independence throughout all interactions
+
+## Notes
+
+- All tasks including property-based tests are required for comprehensive coverage
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- The node/label decoupling (Task 2) is prioritized early as it's the critical architectural change
+- Property tests validate universal correctness properties from the design document
+- Unit tests validate specific examples and edge cases

@@ -1,0 +1,792 @@
+/**
+ * Studio Layout CSS
+ * Three-panel layout architecture for Sankey Studio
+ * 
+ * Layout Structure:
+ * - Top: Menu bar + Studio toolbar
+ * - Center: Canvas area (majority of screen)
+ * - Right: Properties panel (collapsible)
+ * - Bottom: Status bar
+ * 
+ * Requirements: 4.1, 4.2, 4.3
+ */
+
+/* ==========================================================================
+   Three-Panel Layout Container
+   Uses CSS Grid for responsive layout
+   ========================================================================== */
+
+.studio-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--studio-bg-secondary, #f5f5f5);
+}
+
+/* ==========================================================================
+   Top Section: Menu Bar + Toolbar
+   ========================================================================== */
+
+.studio-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--studio-bg-primary, #fff);
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+  z-index: 100;
+}
+
+/* Menu bar styling */
+.studio-menu-bar {
+  display: flex;
+  background: var(--studio-bg-primary, #fff);
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+  padding: 0;
+  align-items: center;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+/* Studio toolbar - already styled in studio-theme.css */
+.studio-toolbar-container {
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Main Content Area: Canvas + Properties Panel
+   Uses Flexbox for horizontal layout
+   ========================================================================== */
+
+.studio-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* Important for flex children to scroll properly */
+}
+
+/* ==========================================================================
+   Central Canvas Area
+   Occupies majority of screen (Requirement 4.2)
+   ========================================================================== */
+
+.studio-canvas-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--studio-bg-primary, #fff);
+  overflow: hidden;
+  min-width: 0; /* Prevent flex item from overflowing */
+}
+
+/* Title bar above canvas */
+.studio-canvas-title {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+  background: var(--studio-bg-secondary, #fafafa);
+  flex-shrink: 0;
+}
+
+.studio-canvas-title-input {
+  border: none;
+  font-size: 20px;
+  font-weight: 600;
+  width: 100%;
+  background: transparent;
+  text-align: center;
+  color: var(--studio-text-primary, #333);
+}
+
+.studio-canvas-title-input:focus {
+  outline: 2px solid var(--studio-primary, #1a73e8);
+  border-radius: 4px;
+}
+
+/* Canvas viewport area */
+.studio-canvas-viewport {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  padding: 20px;
+  background: var(--studio-bg-canvas, #fff);
+  position: relative;
+}
+
+/* Canvas footer/hint bar */
+.studio-canvas-footer {
+  padding: 8px 20px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--studio-text-tertiary, #999);
+  border-top: 1px solid var(--studio-border-light, #e0e0e0);
+  background: var(--studio-bg-secondary, #fafafa);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Right Properties Panel
+   Context-sensitive settings (Requirement 4.3)
+   ========================================================================== */
+
+.studio-properties-panel {
+  width: 320px;
+  min-width: 280px;
+  max-width: 480px;
+  border-left: 1px solid var(--studio-border-light, #e0e0e0);
+  display: flex;
+  flex-direction: column;
+  background: var(--studio-bg-primary, #fff);
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+/* Collapsed state */
+.studio-properties-panel.collapsed {
+  width: 0;
+  min-width: 0;
+  border-left: none;
+  overflow: hidden;
+}
+
+/* Properties panel header */
+.studio-properties-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--studio-panel-header-bg, #f8f9fa);
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--studio-text-primary, #333);
+  flex-shrink: 0;
+}
+
+.studio-properties-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-properties-header-icon {
+  font-size: 16px;
+}
+
+.studio-properties-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.studio-properties-header-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--studio-border-medium, #ddd);
+  background: var(--studio-bg-primary, #fff);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--studio-text-primary, #333);
+  transition: background 0.15s ease;
+}
+
+.studio-properties-header-btn:hover {
+  background: var(--studio-bg-hover, #f5f5f5);
+}
+
+/* Properties panel content */
+.studio-properties-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Properties panel sections */
+.studio-properties-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+}
+
+.studio-properties-section:last-child {
+  border-bottom: none;
+}
+
+.studio-properties-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--studio-text-secondary, #666);
+  margin-bottom: 12px;
+}
+
+/* Properties panel rows */
+.studio-properties-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.studio-properties-row:last-child {
+  margin-bottom: 0;
+}
+
+.studio-properties-row label {
+  flex: 0 0 80px;
+  font-size: 12px;
+  color: var(--studio-text-secondary, #666);
+}
+
+.studio-properties-row input[type="text"],
+.studio-properties-row input[type="number"],
+.studio-properties-row select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--studio-panel-input-border, #ddd);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--studio-panel-input-bg, #fff);
+  color: var(--studio-text-primary, #333);
+}
+
+.studio-properties-row input:focus,
+.studio-properties-row select:focus {
+  outline: none;
+  border-color: var(--studio-panel-input-focus-border, #1a73e8);
+}
+
+.studio-properties-row input[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--studio-panel-input-border, #ddd);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.studio-properties-row input[type="range"] {
+  flex: 1;
+}
+
+.studio-properties-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================================================
+   Data Editor Panel (Collapsible/Tabbed)
+   ========================================================================== */
+
+.studio-data-panel {
+  width: 480px;
+  min-width: 400px;
+  max-width: 600px;
+  border-left: 1px solid var(--studio-border-light, #e0e0e0);
+  display: flex;
+  flex-direction: column;
+  background: var(--studio-bg-primary, #fff);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Collapsed state */
+.studio-data-panel.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+
+/* Data panel tabs */
+.studio-data-tabs {
+  display: flex;
+  background: var(--studio-bg-tertiary, #f1f3f4);
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+  flex-shrink: 0;
+}
+
+.studio-data-tab {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--studio-text-secondary, #666);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.studio-data-tab:hover {
+  background: var(--studio-bg-hover, #f5f5f5);
+  color: var(--studio-text-primary, #333);
+}
+
+.studio-data-tab.active {
+  color: var(--studio-primary, #1a73e8);
+  border-bottom-color: var(--studio-primary, #1a73e8);
+  background: var(--studio-bg-primary, #fff);
+}
+
+/* Data panel content */
+.studio-data-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-data-tab-content {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.studio-data-tab-content.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   Bottom Status Bar
+   ========================================================================== */
+
+.studio-status-bar {
+  padding: 8px 20px;
+  background: var(--studio-success-bg, #e8f5e9);
+  border-top: 1px solid var(--studio-success, #c8e6c9);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--studio-success, #2e7d32);
+  flex-shrink: 0;
+}
+
+.studio-status-bar.warning {
+  background: var(--studio-warning-bg, #fff3e0);
+  border-color: var(--studio-warning, #ffe0b2);
+  color: var(--studio-warning, #e65100);
+}
+
+.studio-status-bar.error {
+  background: var(--studio-error-bg, #ffebee);
+  border-color: var(--studio-error, #ffcdd2);
+  color: var(--studio-error, #c62828);
+}
+
+.studio-status-bar.info {
+  background: var(--studio-info-bg, #e3f2fd);
+  border-color: var(--studio-info, #bbdefb);
+  color: var(--studio-info, #1565c0);
+}
+
+.studio-status-icon {
+  font-size: 14px;
+}
+
+.studio-status-message {
+  flex: 1;
+}
+
+.studio-status-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   Panel Toggle Buttons
+   ========================================================================== */
+
+.studio-panel-toggle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 40px;
+  background: var(--studio-bg-primary, #fff);
+  border: 1px solid var(--studio-border-light, #e0e0e0);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--studio-text-secondary, #666);
+  z-index: 10;
+  transition: all 0.15s ease;
+}
+
+.studio-panel-toggle:hover {
+  background: var(--studio-bg-hover, #f5f5f5);
+  color: var(--studio-text-primary, #333);
+}
+
+.studio-panel-toggle.left {
+  left: -10px;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+.studio-panel-toggle.right {
+  right: -10px;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+/* ==========================================================================
+   Resizable Panel Handles
+   ========================================================================== */
+
+.studio-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.studio-resize-handle:hover,
+.studio-resize-handle.active {
+  background: var(--studio-primary, #1a73e8);
+}
+
+.studio-resize-handle.left {
+  left: 0;
+}
+
+.studio-resize-handle.right {
+  right: 0;
+}
+
+/* ==========================================================================
+   Responsive Layout
+   ========================================================================== */
+
+/* Medium screens - stack panels */
+@media screen and (max-width: 1200px) {
+  .studio-properties-panel {
+    width: 280px;
+    min-width: 240px;
+  }
+  
+  .studio-data-panel {
+    width: 400px;
+    min-width: 320px;
+  }
+}
+
+/* Small screens - hide side panels by default */
+@media screen and (max-width: 900px) {
+  .studio-main {
+    flex-direction: column;
+  }
+  
+  .studio-properties-panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: 200px;
+    border-left: none;
+    border-top: 1px solid var(--studio-border-light, #e0e0e0);
+  }
+  
+  .studio-properties-panel.collapsed {
+    height: 0;
+  }
+  
+  .studio-data-panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: 250px;
+    border-left: none;
+    border-top: 1px solid var(--studio-border-light, #e0e0e0);
+  }
+  
+  .studio-data-panel.collapsed {
+    height: 40px;
+    min-height: 40px;
+  }
+}
+
+/* Very small screens */
+@media screen and (max-width: 600px) {
+  .studio-toolbar {
+    flex-wrap: wrap;
+    padding: 8px;
+  }
+  
+  .toolbar-label {
+    display: none;
+  }
+  
+  .studio-canvas-title {
+    padding: 8px 12px;
+  }
+  
+  .studio-canvas-title-input {
+    font-size: 16px;
+  }
+  
+  .studio-properties-header {
+    padding: 10px 12px;
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  .studio-header,
+  .studio-properties-panel,
+  .studio-data-panel,
+  .studio-status-bar,
+  .studio-canvas-footer {
+    display: none !important;
+  }
+  
+  .studio-canvas-container {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .studio-canvas-viewport {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+.studio-hidden {
+  display: none !important;
+}
+
+.studio-visible {
+  display: block !important;
+}
+
+.studio-flex {
+  display: flex !important;
+}
+
+.studio-overflow-hidden {
+  overflow: hidden !important;
+}
+
+.studio-overflow-auto {
+  overflow: auto !important;
+}
+
+
+/* ==========================================================================
+   AI Section Styles (within tabbed layout)
+   ========================================================================== */
+
+.studio-data-tab-content .ai-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--studio-bg-secondary, #f8f9fa);
+  border: none;
+}
+
+.studio-data-tab-content .ai-chat-area {
+  flex: 1;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-data-tab-content .ai-chat-input {
+  flex: 1;
+  min-height: 60px;
+  resize: vertical;
+  background: var(--studio-panel-input-bg, #fff);
+  border: 1px solid var(--studio-panel-input-border, #ddd);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--studio-text-primary, #333);
+}
+
+.studio-data-tab-content .ai-chat-input:focus {
+  outline: none;
+  border-color: var(--studio-panel-input-focus-border, #1a73e8);
+}
+
+.studio-data-tab-content .image-upload-area {
+  border: 2px dashed var(--studio-border-medium, #ddd);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--studio-bg-primary, #fff);
+  margin-bottom: 8px;
+}
+
+.studio-data-tab-content .image-upload-area:hover {
+  border-color: var(--studio-primary, #1a73e8);
+  background: var(--studio-bg-hover, #f8f9ff);
+}
+
+.studio-data-tab-content .add-row-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--studio-border-medium, #ddd);
+  background: var(--studio-bg-primary, #fff);
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--studio-text-primary, #333);
+  transition: background 0.15s ease;
+}
+
+.studio-data-tab-content .add-row-btn:hover {
+  background: var(--studio-bg-hover, #f5f5f5);
+}
+
+.studio-data-tab-content .ai-chat-btn {
+  padding: 8px 16px;
+  background: var(--studio-primary, #1a73e8);
+  color: var(--studio-text-inverse, #fff);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+
+.studio-data-tab-content .ai-chat-btn:hover {
+  background: var(--studio-primary-hover, #1557b0);
+}
+
+.studio-data-tab-content .ai-chat-btn:disabled {
+  background: var(--studio-text-disabled, #ccc);
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Data Table Wrapper in Tabbed Layout
+   ========================================================================== */
+
+.studio-data-tab-content .data-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  background: var(--studio-bg-primary, #fff);
+}
+
+.studio-data-tab-content .add-row-section {
+  padding: 12px 16px;
+  border-top: 1px solid var(--studio-border-light, #e0e0e0);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--studio-bg-secondary, #fafafa);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Bi-directional Sync Indicator
+   Visual feedback when data syncs between diagram and table
+   ========================================================================== */
+
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--studio-text-tertiary, #999);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--studio-bg-tertiary, #f1f3f4);
+}
+
+.sync-indicator.syncing {
+  color: var(--studio-primary, #1a73e8);
+  background: var(--studio-primary-light, #e8f0fe);
+}
+
+.sync-indicator.synced {
+  color: var(--studio-success, #34a853);
+  background: var(--studio-success-bg, #e6f4ea);
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.sync-indicator.syncing::before {
+  content: '🔄';
+  animation: sync-pulse 1s ease-in-out infinite;
+}
+
+.sync-indicator.synced::before {
+  content: '✓';
+}
+
+/* ==========================================================================
+   Collapsible Section Styles
+   ========================================================================== */
+
+.collapsible-section {
+  border-bottom: 1px solid var(--studio-border-light, #e0e0e0);
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--studio-bg-secondary, #fafafa);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.collapsible-header:hover {
+  background: var(--studio-bg-hover, #f0f0f0);
+}
+
+.collapsible-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--studio-text-primary, #333);
+}
+
+.collapsible-header-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.collapsible-section.collapsed .collapsible-header-icon {
+  transform: rotate(-90deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.collapsible-section.collapsed .collapsible-content {
+  max-height: 0;
+}
+
+.collapsible-section:not(.collapsed) .collapsible-content {
+  max-height: 1000px; /* Large enough to show content */
+}

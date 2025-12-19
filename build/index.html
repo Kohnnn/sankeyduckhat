@@ -5,6 +5,8 @@
 <meta name="viewport" content="initial-scale=1">
 <title>Sankey Diagram Builder</title>
 <link rel="stylesheet" href="build.css?v=5">
+<link rel="stylesheet" href="studio-theme.css?v=5">
+<link rel="stylesheet" href="studio-layout.css?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Manrope:wght@200..800&display=swap" rel="stylesheet">
@@ -17,6 +19,23 @@
 <script defer src="lz-string.min.js?v=5"></script>
 <script defer src="color_palettes.js?v=5"></script>
 <script defer src="templates.js?v=5"></script>
+<!-- Studio UI modules -->
+<script defer src="studio-ui.js?v=5"></script>
+<script defer src="viewport-controller.js?v=5"></script>
+<script defer src="custom-layout-store.js?v=5"></script>
+<script defer src="sankey-integration.js?v=5"></script>
+<script defer src="selection-manager.js?v=5"></script>
+<script defer src="selection-handlers.js?v=5"></script>
+<script defer src="properties-panel.js?v=5"></script>
+<script defer src="toolbar-controller.js?v=5"></script>
+<script defer src="theme-controller.js?v=5"></script>
+<script defer src="studio-layout.js?v=5"></script>
+<script defer src="data-sync.js?v=5"></script>
+<script defer src="undo-manager.js?v=5"></script>
+<script defer src="drag-handler.js?v=5"></script>
+<script defer src="drag-behaviors.js?v=5"></script>
+<script defer src="flow-utils.js?v=5"></script>
+<script defer src="studio-init.js?v=5"></script>
 <script defer src="sankeymatic.js?v=5"></script>
 <style>
 * { box-sizing: border-box; }
@@ -48,7 +67,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
 </style>
 </head>
 <body>
-<div class="app-container">
+<div class="app-container studio-container">
 <style>
 /* Diagram Panel */
 .diagram-panel { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
@@ -58,6 +77,118 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
 .diagram-area { flex: 1; display: flex; justify-content: center; align-items: center; overflow: auto; padding: 20px; background: #fff; position: relative; }
 #chart_container { position: relative; }
 .diagram-footer { padding: 8px 20px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #e0e0e0; background: #fafafa; }
+
+/* Studio Toolbar */
+.studio-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(to bottom, #fafafa, #f0f0f0);
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 28px;
+  background: #ddd;
+  margin: 0 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: #f0f0f0;
+  border-color: #ccc;
+}
+
+.toolbar-btn.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: white;
+}
+
+.toolbar-btn.active:hover {
+  background: #1557b0;
+  border-color: #1557b0;
+}
+
+.toolbar-btn:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 1px;
+}
+
+.toolbar-btn-secondary {
+  background: #f5f5f5;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.toolbar-btn-secondary:hover {
+  background: #e8e8e8;
+}
+
+.toolbar-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.zoom-display {
+  font-size: 12px;
+  min-width: 45px;
+  text-align: center;
+  color: #666;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tool-specific cursor styles */
+.diagram-area[data-tool="select"] { cursor: default; }
+.diagram-area[data-tool="pan"] { cursor: grab; }
+.diagram-area[data-tool="pan"]:active { cursor: grabbing; }
+.diagram-area[data-tool="addNode"] { cursor: crosshair; }
+.diagram-area[data-tool="addFlow"] { cursor: crosshair; }
+
+/* Flow source selection highlight */
+.flow-source-selected {
+  stroke: #1a73e8 !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 5,3;
+  animation: flow-source-pulse 1s ease-in-out infinite;
+}
+
+@keyframes flow-source-pulse {
+  0%, 100% { stroke-opacity: 1; }
+  50% { stroke-opacity: 0.5; }
+}
 
 /* Right Panel */
 .right-panel { width: 480px; min-width: 480px; border-left: 1px solid #e0e0e0; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
@@ -168,7 +299,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
 </style>
 
   <!-- Menu Bar -->
-  <div class="menu-bar">
+  <div class="menu-bar studio-menu-bar">
     <div class="menu-item">
       File
       <div class="menu-dropdown">
@@ -259,26 +390,99 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
   </div>
 
   <!-- Main Content -->
-  <div class="main-content">
-    <!-- Diagram Panel -->
-    <div class="diagram-panel">
-      <div class="diagram-title-bar">
-        <input type="text" class="diagram-title-input" id="diagram-title-input" value="My Sankey Diagram" placeholder="Enter diagram title...">
+  <div class="main-content studio-main">
+    <!-- Diagram Panel (Canvas Container) -->
+    <div class="diagram-panel studio-canvas-container">
+      <div class="diagram-title-bar studio-canvas-title">
+        <input type="text" class="diagram-title-input studio-canvas-title-input" id="diagram-title-input" value="My Sankey Diagram" placeholder="Enter diagram title...">
       </div>
       
-      <!-- Canvas Controls -->
-      <div class="canvas-controls" style="padding:8px 20px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #e0e0e0;background:#fafafa;">
-        <button class="add-row-btn" onclick="zoomCanvas(-0.1)" title="Zoom Out">➖</button>
-        <span id="zoom-level" style="font-size:12px;min-width:50px;text-align:center;">100%</span>
-        <button class="add-row-btn" onclick="zoomCanvas(0.1)" title="Zoom In">➕</button>
-        <button class="add-row-btn" onclick="resetZoom()" title="Reset Zoom">🔄 Reset</button>
-        <div style="flex:1;"></div>
-        <button class="add-row-btn" onclick="undoLastAction()" title="Undo">↩️ Undo</button>
-        <button class="add-row-btn" onclick="resetAllNodes()">Reset Nodes</button>
-        <button class="add-row-btn" onclick="resetAllLabels()">Reset Labels</button>
+      <!-- Studio Toolbar -->
+      <div class="studio-toolbar studio-toolbar-container" id="studio-toolbar">
+        <!-- Tool Buttons Group -->
+        <div class="toolbar-group toolbar-tools">
+          <button class="toolbar-btn active" data-tool="select" title="Select Tool (V)" aria-pressed="true">
+            <span class="toolbar-icon">🔍</span>
+            <span class="toolbar-label">Select</span>
+          </button>
+          <button class="toolbar-btn" data-tool="pan" title="Pan Tool (H)" aria-pressed="false">
+            <span class="toolbar-icon">✋</span>
+            <span class="toolbar-label">Pan</span>
+          </button>
+          <button class="toolbar-btn" data-tool="addNode" title="Add Node Tool (N)" aria-pressed="false">
+            <span class="toolbar-icon">⬜</span>
+            <span class="toolbar-label">Add Node</span>
+          </button>
+          <button class="toolbar-btn" data-tool="addFlow" title="Add Flow Tool (F)" aria-pressed="false">
+            <span class="toolbar-icon">↗️</span>
+            <span class="toolbar-label">Add Flow</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Zoom Controls Group -->
+        <div class="toolbar-group toolbar-zoom">
+          <button class="toolbar-btn" onclick="zoomCanvas(-0.1)" title="Zoom Out (Ctrl+Scroll)">
+            <span class="toolbar-icon">➖</span>
+          </button>
+          <span id="zoom-level" class="zoom-display">100%</span>
+          <button class="toolbar-btn" onclick="zoomCanvas(0.1)" title="Zoom In (Ctrl+Scroll)">
+            <span class="toolbar-icon">➕</span>
+          </button>
+          <button class="toolbar-btn" onclick="fitToScreen()" title="Fit to Screen">
+            <span class="toolbar-icon">📐</span>
+            <span class="toolbar-label">Fit</span>
+          </button>
+          <button class="toolbar-btn" onclick="resetZoom()" title="Reset Zoom">
+            <span class="toolbar-icon">🔄</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Action Buttons Group -->
+        <div class="toolbar-group toolbar-actions">
+          <button class="toolbar-btn" data-action="undo" title="Undo (Ctrl+Z)">
+            <span class="toolbar-icon">↩️</span>
+            <span class="toolbar-label">Undo</span>
+          </button>
+          <button class="toolbar-btn" data-action="redo" title="Redo (Ctrl+Y)">
+            <span class="toolbar-icon">↪️</span>
+            <span class="toolbar-label">Redo</span>
+          </button>
+          <button class="toolbar-btn" data-action="export" title="Export Diagram">
+            <span class="toolbar-icon">💾</span>
+            <span class="toolbar-label">Export</span>
+          </button>
+        </div>
+
+        <div class="toolbar-spacer"></div>
+
+        <!-- Reset Controls -->
+        <div class="toolbar-group toolbar-reset">
+          <button class="toolbar-btn toolbar-btn-secondary" onclick="resetAllNodes()" title="Reset Node Positions">
+            Reset Nodes
+          </button>
+          <button class="toolbar-btn toolbar-btn-secondary" onclick="resetAllLabels()" title="Reset Label Positions">
+            Reset Labels
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Theme Toggle -->
+        <div class="toolbar-group toolbar-theme">
+          <button class="toolbar-btn toolbar-btn-secondary" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
+            <span class="toolbar-icon" id="theme-icon">🌙</span>
+            <span class="toolbar-label" id="theme-label">Dark</span>
+          </button>
+        </div>
       </div>
       
-      <div class="diagram-area" id="diagram-area" style="overflow:auto;">
+      <div class="diagram-area studio-canvas-viewport" id="diagram-area" style="overflow:auto;">
+        <!-- Canvas grid background (fixed, doesn't pan/zoom) -->
+        <div class="canvas-grid-background" id="canvas-grid"></div>
         <div id="chart" style="transform-origin:center center;transition:transform 0.2s;">
           <svg id="sankey_svg" height="500" width="700" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
@@ -286,75 +490,92 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <canvas id="png_preview" height="500" width="700" style="display:none;"></canvas>
       </div>
       
-      <div class="diagram-footer">
+      <div class="diagram-footer studio-canvas-footer">
         ✏️ Click on any node to customize • Drag nodes and labels freely • Double-click to reset position
       </div>
     </div>
 
     <!-- Right Panel - Data Editor -->
-    <div class="right-panel">
-      <div class="panel-header">
-        <span>Data Editor</span>
-        <div class="panel-header-actions">
-          <button onclick="exportCSV()">Export CSV</button>
-          <button onclick="document.getElementById('csv_import').click()">Import CSV</button>
+    <div class="right-panel studio-data-panel">
+      <div class="panel-header studio-properties-header">
+        <span class="studio-properties-header-title">
+          <span class="studio-properties-header-icon">📊</span>
+          Data Editor
+        </span>
+        <div class="panel-header-actions studio-properties-header-actions">
+          <button class="studio-properties-header-btn" onclick="exportCSV()">Export CSV</button>
+          <button class="studio-properties-header-btn" onclick="document.getElementById('csv_import').click()">Import CSV</button>
+          <button class="studio-properties-header-btn" data-toggle-panel="data" title="Toggle Panel (Ctrl+Shift+\)">
+            <span class="toggle-icon">▶</span>
+          </button>
         </div>
       </div>
       
-      <div class="data-table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:25%">From</th>
-              <th style="width:25%">To</th>
-              <th style="width:20%">Amount</th>
-              <th style="width:15%">Comparison</th>
-              <th style="width:15%"></th>
-            </tr>
-          </thead>
-          <tbody id="data-table-body"></tbody>
-        </table>
+      <!-- Data Panel Tabs -->
+      <div class="studio-data-tabs">
+        <button class="studio-data-tab active" data-tab="data-editor">📊 Data</button>
+        <button class="studio-data-tab" data-tab="ai-assistant">🤖 AI Assistant</button>
       </div>
       
-      <div class="add-row-section">
-        <button class="add-row-btn" onclick="addDataRow()">+ Add</button>
-        <input type="number" id="add-row-count" value="1" min="1" max="20" style="width:50px">
-        <span>rows</span>
-        <div style="flex:1"></div>
-        <button class="add-row-btn" onclick="clearAllRows()">Clear All</button>
-      </div>
-      
-      <!-- AI Section with Multi-Image Upload -->
-      <div class="ai-section">
-        <div class="ai-section-header">
-          <span>🤖 AI Assistant</span>
-          <button class="ai-settings-btn" onclick="openSettingsModal()">⚙️ Settings</button>
+      <!-- Data Panel Content -->
+      <div class="studio-data-content">
+        <!-- Data Editor Tab Content -->
+        <div class="studio-data-tab-content active" data-tab-content="data-editor">
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:25%">From</th>
+                  <th style="width:25%">To</th>
+                  <th style="width:20%">Amount</th>
+                  <th style="width:15%">Comparison</th>
+                  <th style="width:15%"></th>
+                </tr>
+              </thead>
+              <tbody id="data-table-body"></tbody>
+            </table>
+          </div>
+          
+          <div class="add-row-section">
+            <button class="add-row-btn" onclick="addDataRow()">+ Add</button>
+            <input type="number" id="add-row-count" value="1" min="1" max="20" style="width:50px">
+            <span>rows</span>
+            <div style="flex:1"></div>
+            <button class="add-row-btn" onclick="clearAllRows()">Clear All</button>
+          </div>
         </div>
-        <div class="ai-chat-area">
-          <!-- Chat History -->
-          <div id="ai-chat-history" style="max-height:150px;overflow-y:auto;margin-bottom:8px;font-size:12px;border:1px solid #e0e0e0;border-radius:6px;padding:8px;background:#fff;min-height:50px;">
-            <div style="color:#999;font-size:11px;text-align:center;">Chat with AI about your data, or upload images to extract flows</div>
-          </div>
-          
-          <!-- Multi-Image Upload Area -->
-          <div class="image-upload-area" id="image-upload-area" onclick="document.getElementById('ai-image-input').click()">
-            <div>📷 Drop images here or click to upload</div>
-            <div style="font-size:11px;color:#999;margin-top:4px;">Supports multiple images • Ctrl+V to paste</div>
-          </div>
-          <div class="image-previews" id="image-previews"></div>
-          <div class="upload-progress" id="upload-progress" style="display:none;">
-            <div class="progress-bar"><div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div></div>
-            <div style="font-size:11px;color:#666;margin-top:4px;" id="progress-text">Processing...</div>
-          </div>
-          
-          <div class="ai-chat-input-wrapper" style="margin-top:12px;">
-            <textarea class="ai-chat-input" id="ai-chat-input" placeholder="Describe your data, ask questions, or type 'parse: [data]' to extract flows..."></textarea>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-            <input type="file" id="ai-image-input" accept="image/*" multiple style="display:none" onchange="handleMultiImageUpload(event)">
-            <button class="add-row-btn" onclick="pasteFromClipboard()" title="Paste from clipboard">📋 Paste</button>
-            <button class="ai-chat-btn" id="ai-send-btn" onclick="processAIChat()">💬 Send</button>
-            <div class="ai-status" id="ai-status"></div>
+        
+        <!-- AI Assistant Tab Content -->
+        <div class="studio-data-tab-content" data-tab-content="ai-assistant">
+          <div class="ai-section">
+            <div class="ai-chat-area">
+              <!-- Chat History -->
+              <div id="ai-chat-history" style="max-height:200px;overflow-y:auto;margin-bottom:8px;font-size:12px;border:1px solid var(--studio-border-light, #e0e0e0);border-radius:6px;padding:8px;background:var(--studio-bg-primary, #fff);min-height:80px;">
+                <div style="color:var(--studio-text-tertiary, #999);font-size:11px;text-align:center;">Chat with AI about your data, or upload images to extract flows</div>
+              </div>
+              
+              <!-- Multi-Image Upload Area -->
+              <div class="image-upload-area" id="image-upload-area" onclick="document.getElementById('ai-image-input').click()">
+                <div>📷 Drop images here or click to upload</div>
+                <div style="font-size:11px;color:var(--studio-text-tertiary, #999);margin-top:4px;">Supports multiple images • Ctrl+V to paste</div>
+              </div>
+              <div class="image-previews" id="image-previews"></div>
+              <div class="upload-progress" id="upload-progress" style="display:none;">
+                <div class="progress-bar"><div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div></div>
+                <div style="font-size:11px;color:var(--studio-text-secondary, #666);margin-top:4px;" id="progress-text">Processing...</div>
+              </div>
+              
+              <div class="ai-chat-input-wrapper" style="margin-top:12px;">
+                <textarea class="ai-chat-input" id="ai-chat-input" placeholder="Describe your data, ask questions, or type 'parse: [data]' to extract flows..."></textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+                <input type="file" id="ai-image-input" accept="image/*" multiple style="display:none" onchange="handleMultiImageUpload(event)">
+                <button class="add-row-btn" onclick="pasteFromClipboard()" title="Paste from clipboard">📋 Paste</button>
+                <button class="add-row-btn" onclick="openSettingsModal()" title="AI Settings">⚙️ Settings</button>
+                <button class="ai-chat-btn" id="ai-send-btn" onclick="processAIChat()">💬 Send</button>
+                <div class="ai-status" id="ai-status"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -362,9 +583,9 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
   </div>
 
   <!-- Status Bar -->
-  <div class="status-bar" id="status-bar">
-    <span>✓</span>
-    <span id="status-message">Ready - Add data to create your Sankey diagram</span>
+  <div class="status-bar studio-status-bar" id="status-bar">
+    <span class="studio-status-icon">✓</span>
+    <span class="studio-status-message" id="status-message">Ready - Add data to create your Sankey diagram</span>
   </div>
 </div>
 
@@ -2236,16 +2457,42 @@ function importCSV(event) {
 
 <script>
 // ============ ZOOM CONTROLS ============
+// Uses ViewportController for proper SVG-based zoom with center point preservation
+// Requirements: 1.2, 1.3, 1.4
+
 function zoomCanvas(delta) {
-  currentZoom = Math.max(0.25, Math.min(3, currentZoom + delta));
-  document.getElementById('chart').style.transform = `scale(${currentZoom})`;
-  document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+  // Use ViewportController if available, otherwise fall back to CSS transform
+  if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+    if (delta > 0) {
+      ViewportController.zoomIn();
+    } else {
+      ViewportController.zoomOut();
+    }
+  } else {
+    // Fallback to CSS transform for backward compatibility
+    currentZoom = Math.max(0.25, Math.min(3, currentZoom + delta));
+    document.getElementById('chart').style.transform = `scale(${currentZoom})`;
+    document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+  }
 }
 
 function resetZoom() {
-  currentZoom = 1.0;
-  document.getElementById('chart').style.transform = 'scale(1)';
-  document.getElementById('zoom-level').textContent = '100%';
+  // Use ViewportController if available
+  if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+    ViewportController.reset();
+  } else {
+    // Fallback to CSS transform
+    currentZoom = 1.0;
+    document.getElementById('chart').style.transform = 'scale(1)';
+    document.getElementById('zoom-level').textContent = '100%';
+  }
+}
+
+function fitToScreen() {
+  // Fit diagram to screen using ViewportController
+  if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+    ViewportController.fitToScreen();
+  }
 }
 
 // ============ UNDO FUNCTIONALITY ============
@@ -2515,6 +2762,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
   setupAutoSave();
   
+  // Initialize ToolbarController
+  const toolbarEl = document.getElementById('studio-toolbar');
+  const diagramAreaEl = document.getElementById('diagram-area');
+  if (typeof ToolbarController !== 'undefined' && toolbarEl) {
+    ToolbarController.init(toolbarEl, diagramAreaEl);
+  }
+  
   // Wait for sankeymatic.js to load, then render
   setTimeout(() => {
     renderDiagram();
@@ -2541,15 +2795,172 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(chartEl, { childList: true, subtree: true });
   }
   
-  // Mouse wheel zoom on canvas
+  // Mouse wheel zoom on canvas (Ctrl+Scroll)
+  // Requirement 1.3: Zoom centered on mouse position
   const diagramArea = document.getElementById('diagram-area');
   if (diagramArea) {
     diagramArea.addEventListener('wheel', function(e) {
       if (e.ctrlKey) {
         e.preventDefault();
-        zoomCanvas(e.deltaY > 0 ? -0.1 : 0.1);
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        
+        // Use ViewportController with center point if available
+        if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+          ViewportController.zoom(delta, e.clientX, e.clientY);
+        } else {
+          zoomCanvas(delta);
+        }
       }
     }, { passive: false });
+    
+    // Middle-click/spacebar+drag pan handler (Requirement 1.2)
+    let isPanning = false;
+    let panStartX = 0;
+    let panStartY = 0;
+    let spacebarHeld = false;
+    
+    // Track spacebar state and tool switching keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Skip if typing in input fields
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      // Spacebar for pan mode
+      if (e.code === 'Space' && !e.repeat) {
+        spacebarHeld = true;
+        diagramArea.classList.add('viewport-pan-mode');
+      }
+      
+      // Tool switching shortcuts (Requirements 10.5)
+      if (typeof ToolbarController !== 'undefined' && ToolbarController.isInitialized()) {
+        switch (e.key.toLowerCase()) {
+          case 'v': // Select tool
+            ToolbarController.setTool('select');
+            break;
+          case 'h': // Pan tool (Hand)
+            ToolbarController.setTool('pan');
+            break;
+          case 'n': // Add Node tool
+            ToolbarController.setTool('addNode');
+            break;
+          case 'f': // Add Flow tool
+            ToolbarController.setTool('addFlow');
+            break;
+          case 'escape': // Deselect / cancel
+            if (typeof SelectionManager !== 'undefined') {
+              SelectionManager.deselect();
+            }
+            ToolbarController.setTool('select');
+            break;
+        }
+      }
+      
+      // Undo/Redo shortcuts
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          if (typeof undoLastAction === 'function') {
+            undoLastAction();
+          }
+        } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+          e.preventDefault();
+          if (typeof redoLastAction === 'function') {
+            redoLastAction();
+          }
+        }
+      }
+    });
+    
+    document.addEventListener('keyup', function(e) {
+      if (e.code === 'Space') {
+        spacebarHeld = false;
+        diagramArea.classList.remove('viewport-pan-mode');
+        isPanning = false;
+      }
+    });
+    
+    // Pan with middle mouse button, spacebar+drag, or Pan tool active
+    // Requirement 10.2: Pan tool enables viewport panning on drag
+    diagramArea.addEventListener('mousedown', function(e) {
+      // Check if Pan tool is active
+      const panToolActive = typeof ToolbarController !== 'undefined' && ToolbarController.isPanningEnabled();
+      
+      // Middle mouse button (button 1), spacebar+left click, or Pan tool + left click
+      if (e.button === 1 || (spacebarHeld && e.button === 0) || (panToolActive && e.button === 0)) {
+        e.preventDefault();
+        isPanning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        diagramArea.classList.add('viewport-pan-mode');
+        
+        // Update cursor to grabbing when actively panning
+        if (panToolActive) {
+          diagramArea.style.cursor = 'grabbing';
+        }
+        
+        if (typeof StudioUI !== 'undefined') {
+          StudioUI.startInteraction('panning');
+        }
+      }
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (isPanning) {
+        const dx = e.clientX - panStartX;
+        const dy = e.clientY - panStartY;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        
+        if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+          ViewportController.pan(dx, dy);
+        }
+      }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (isPanning) {
+        isPanning = false;
+        if (!spacebarHeld) {
+          diagramArea.classList.remove('viewport-pan-mode');
+        }
+        
+        // Restore cursor for Pan tool
+        const panToolActive = typeof ToolbarController !== 'undefined' && ToolbarController.isPanningEnabled();
+        if (panToolActive) {
+          diagramArea.style.cursor = 'grab';
+        }
+        
+        if (typeof StudioUI !== 'undefined') {
+          StudioUI.endInteraction();
+        }
+      }
+    });
+    // Add Node tool click handler (Requirement 10.3)
+    diagramArea.addEventListener('click', function(e) {
+      // Only handle if Add Node tool is active
+      if (typeof ToolbarController === 'undefined' || !ToolbarController.isToolActive('addNode')) {
+        return;
+      }
+      
+      // Don't trigger on node/flow/label clicks (they have stopPropagation)
+      // Only trigger on canvas background clicks
+      const target = e.target;
+      if (target.closest('.sankey-node') || 
+          target.closest('.sankey-label') || 
+          target.closest('path[data-source]')) {
+        return;
+      }
+      
+      // Convert screen coordinates to diagram coordinates
+      let diagramCoords = { x: e.offsetX, y: e.offsetY };
+      if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+        diagramCoords = ViewportController.screenToDiagram(e.clientX, e.clientY);
+      }
+      
+      // Handle the click
+      ToolbarController.handleCanvasClick(e, diagramCoords);
+    });
   }
   
   // Note: Label dragging is handled by sankeymatic.js D3 drag behavior

@@ -372,6 +372,7 @@ function formatUserData(numberIn, nStyle) {
 // initializeDiagram: Reset the SVG tag to have the chosen size &
 // background (with a pattern showing through if the user wants it to be
 // transparent):
+// Also creates viewport wrapper structure for pan/zoom support (Requirements 1.1, 1.5)
 function initializeDiagram(cfg) {
   const svgEl = el('sankey_svg');
   svgEl.setAttribute('height', cfg.size_h);
@@ -381,6 +382,45 @@ function initializeDiagram(cfg) {
     `svg_background_${cfg.bg_transparent ? 'transparent' : 'default'}`
   );
   svgEl.textContent = ''; // Someday use replaceChildren() instead
+  
+  // Create viewport wrapper structure for pan/zoom support
+  // The viewport group will contain all diagram content and can be transformed
+  const svg = d3.select(svgEl);
+  
+  // Add defs for grid pattern (fixed background that doesn't transform)
+  const defs = svg.append('defs');
+  
+  // Create dot grid pattern for spatial reference (Requirement 1.5)
+  const gridPattern = defs.append('pattern')
+    .attr('id', 'viewport-grid-pattern')
+    .attr('width', 20)
+    .attr('height', 20)
+    .attr('patternUnits', 'userSpaceOnUse');
+  
+  gridPattern.append('circle')
+    .attr('cx', 10)
+    .attr('cy', 10)
+    .attr('r', 1)
+    .attr('fill', '#ddd')
+    .attr('class', 'grid-dot');
+  
+  // Add fixed grid background (doesn't pan/zoom with content)
+  svg.append('rect')
+    .attr('class', 'viewport-grid-background')
+    .attr('width', '100%')
+    .attr('height', '100%')
+    .attr('fill', 'url(#viewport-grid-pattern)')
+    .attr('pointer-events', 'none')
+    .style('opacity', cfg.bg_transparent ? 0 : 0.5);
+  
+  // Create viewport group that will contain all transformable content
+  svg.append('g')
+    .attr('class', 'viewport');
+  
+  // Initialize ViewportController if available
+  if (typeof ViewportController !== 'undefined' && ViewportController.init) {
+    ViewportController.init(svgEl);
+  }
 }
 
 // fileTimestamp() => 'yyyymmdd_hhmmss' for the current locale's time.
@@ -1429,12 +1469,17 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
 
   // Select the svg canvas:
   const diagramRoot = d3.select('#sankey_svg');
+  
+  // Select the viewport group (created by initializeDiagram)
+  // All diagram content goes inside the viewport for pan/zoom support
+  const viewportGroup = diagramRoot.select('g.viewport');
+  const contentRoot = viewportGroup.empty() ? diagramRoot : viewportGroup;
 
   // If a background color is defined, add a backing rectangle with that color:
   if (!cfg.bg_transparent) {
     // Note: This just adds the rectangle *without* changing the d3
-    // selection stored in diagramRoot:
-    diagramRoot.append('rect')
+    // selection stored in contentRoot:
+    contentRoot.append('rect')
       .attr('height', cfg.size_h)
       .attr('width', cfg.size_w)
       .attr('fill', cfg.bg_color);
@@ -1442,7 +1487,7 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
 
   // Add a [g]roup translating the remaining elements 'inward' by the margins:
   const diagMain
-    = diagramRoot.append('g')
+    = contentRoot.append('g')
       .attr('transform', `translate(${ep(graph.final_margin_l)},${ep(cfg.margin_t)})`);
 
   // MARK Functions for Flow hover effects
@@ -1490,6 +1535,9 @@ function render_sankey(allNodes, allFlows, cfg, numberStyle) {
       .attr('stroke-width', (f) => ep(f.stroke_width[f.renderAs]))
       .attr('stroke', (f) => f.color)
       .attr('opacity', (f) => f.opacity)
+      // Add data attributes for flow identification (Requirements 7.1, 7.2)
+      .attr('data-source', (f) => f.source.name)
+      .attr('data-target', (f) => f.target.name)
       // add emphasis-on-hover behavior:
       .on('mouseover', turnOnFlowHoverEffects)
       .on('mouseout', turnOffFlowHoverEffects)
@@ -1713,13 +1761,17 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
   }
 
   // Set up the <g>roup of Nodes, including drag behavior:
+  // Node groups now use 'sankey-node' class and contain ONLY rect elements (no labels)
+  // Labels are rendered separately in the sankey_labels layer for independent positioning
   const diagNodes = diagMain.append('g')
     .attr('id', 'sankey_nodes')
-    .selectAll('.node')
+    .selectAll('.sankey-node')
     .data(allNodes.filter(shadowFilter))
     .enter()
     .append('g')
-    .attr('class', 'node')
+    .attr('class', 'sankey-node')
+    .attr('data-node-id', (n) => n.name)
+    .style('pointer-events', 'all')
     .call(d3.drag()
       .on('start', dragNodeStarted)
       .on('drag', draggingNode)
@@ -1786,21 +1838,29 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
 
   if (!cfg.labels_hide && (cfg.labelname_appears || cfg.labelvalue_appears)) {
     // Add labels in a distinct layer on the top (so nodes can't block them)
-    // Wrap each label in a group for draggability
-    const labelGroups = diagLabels.selectAll('.label-group')
+    // Labels are rendered as independent <g class="sankey-label"> elements
+    // NOT nested in node groups, allowing independent positioning
+    const labelGroups = diagLabels.selectAll('.sankey-label')
       .data(allNodes.filter(shadowFilter))
       .enter()
       .filter((n) => !n.hideWholeLabel)
       .append('g')
-        .attr('class', 'label-group')
+        .attr('class', 'sankey-label')
         .attr('id', (n) => `${n.label.dom_id}_group`)
-        .attr('transform', (n) => `translate(${ep(n.label.x)}, ${ep(n.label.y)})`);
+        .attr('data-label-for', (n) => n.name)
+        .style('pointer-events', 'all')
+        .attr('transform', (n) => {
+          // Store initial label position as independent coordinates
+          n.label.independentX = n.label.x;
+          n.label.independentY = n.label.y;
+          return `translate(${ep(n.label.x)}, ${ep(n.label.y)})`;
+        });
 
     // Add the text element to each group
     labelGroups.append('text')
         .attr('id', (n) => n.label.dom_id)
-        // Associate this label with its Node using the CSS class:
-        .attr('class', (n) => n.css_class)
+        // Use sankey-label-text class instead of node's css_class for independence
+        .attr('class', 'sankey-label-text')
         .attr('text-anchor', (n) => n.label.anchor)
         .attr('x', 0)  // Relative to group
         .attr('y', 0)  // Relative to group
@@ -1815,6 +1875,7 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
         });
 
     // For any nodes with a label highlight defined, render it:
+    // Background rectangles use 'label-bg' class for consistent styling
     allNodes.filter(shadowFilter)
       .filter((n) => n.label?.bg)
       .forEach((n) => {
@@ -1828,8 +1889,8 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
       // Put the highlight rectangle just before the text in the group:
       labelGroup.insert('rect', `#${n.label.dom_id}`)
         .attr('id', bg.dom_id)
-        // Attach a class to make a drag operation affect a Node's label too:
-        .attr('class', n.css_class)
+        // Use 'label-bg' class for label background rectangles
+        .attr('class', 'label-bg')
         .attr('x', ep(labelBB.x + bg.offset.x))
         .attr('y', ep(labelBB.y + bg.offset.y))
         .attr('width', ep(labelBB.width + bg.offset.w))
@@ -1850,7 +1911,7 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
       
       // Insert drag handle before all other elements
       labelGroup.insert('rect', ':first-child')
-        .attr('class', 'drag-handle')
+        .attr('class', 'label-bg drag-handle')
         .attr('x', ep(labelBB.x))
         .attr('y', ep(labelBB.y))
         .attr('width', ep(labelBB.width))
@@ -1974,6 +2035,45 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
 
   // Update the reset labels button state:
   updateResetLabelsUI();
+  
+  // Initialize or refresh selection handlers after rendering
+  if (typeof SelectionHandlers !== 'undefined') {
+    const svgEl = el('sankey_svg');
+    if (svgEl) {
+      if (SelectionHandlers.isInitialized()) {
+        SelectionHandlers.refresh();
+      } else {
+        SelectionHandlers.init(svgEl);
+      }
+    }
+  }
+  
+  // Initialize or refresh drag behaviors after rendering (Task 16.2)
+  if (typeof DragBehaviors !== 'undefined') {
+    const svgEl = el('sankey_svg');
+    if (svgEl) {
+      if (DragBehaviors.isInitialized()) {
+        DragBehaviors.refresh();
+      } else {
+        DragBehaviors.init(svgEl);
+      }
+    }
+  }
+  
+  // Hook for SankeyIntegration - capture base positions and apply custom layouts
+  // This ensures custom layouts are applied AFTER sankey.js calculations complete
+  // Requirements: 8.2, 8.3
+  if (typeof SankeyIntegration !== 'undefined') {
+    // Capture base positions calculated by sankey.js
+    SankeyIntegration._captureBasePositions();
+    
+    // Apply any custom layout offsets from CustomLayoutStore
+    // This maintains sankey.js as source of truth while allowing user customization
+    SankeyIntegration._applyCustomLayouts();
+    
+    // Execute any registered render callbacks
+    SankeyIntegration._executeRenderCallbacks();
+  }
 } // end of render_sankey
 
 // MARK Serializing the diagram
@@ -3374,6 +3474,13 @@ setTimeout(() => {
   
   // Initialize AI integration components
   initializeAIIntegration();
+  
+  // Initialize Studio modules (Task 16.1)
+  // This wires together StudioUI, ViewportController, SelectionManager,
+  // PropertiesPanelController, ToolbarController, and UndoManager
+  if (typeof StudioInit !== 'undefined') {
+    StudioInit.init();
+  }
 }, 100);
 }(typeof window === 'undefined' ? global : window));
 

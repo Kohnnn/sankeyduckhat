@@ -1,0 +1,1149 @@
+/**
+ * Studio Theme CSS
+ * Professional theming system for Sankey Studio
+ * Supports light and dark themes with CSS custom properties
+ * 
+ * Requirements: 9.1, 9.2
+ */
+
+/* ==========================================================================
+   CSS Custom Properties - Light Theme (Default)
+   ========================================================================== */
+:root,
+[data-theme="light"] {
+  /* Primary Colors */
+  --studio-primary: #1a73e8;
+  --studio-primary-hover: #1557b0;
+  --studio-primary-light: #e8f0fe;
+  --studio-primary-dark: #174ea6;
+  
+  /* Secondary Colors */
+  --studio-secondary: #5f6368;
+  --studio-secondary-hover: #3c4043;
+  --studio-secondary-light: #f1f3f4;
+  
+  /* Background Colors */
+  --studio-bg-primary: #ffffff;
+  --studio-bg-secondary: #f8f9fa;
+  --studio-bg-tertiary: #f1f3f4;
+  --studio-bg-canvas: #ffffff;
+  --studio-bg-hover: #f5f5f5;
+  --studio-bg-active: #e8f0fe;
+  
+  /* Text Colors */
+  --studio-text-primary: #202124;
+  --studio-text-secondary: #5f6368;
+  --studio-text-tertiary: #80868b;
+  --studio-text-disabled: #bdc1c6;
+  --studio-text-inverse: #ffffff;
+  
+  /* Border Colors */
+  --studio-border-light: #e0e0e0;
+  --studio-border-medium: #dadce0;
+  --studio-border-dark: #bdc1c6;
+  --studio-border-focus: #1a73e8;
+  
+  /* Status Colors */
+  --studio-success: #34a853;
+  --studio-success-bg: #e6f4ea;
+  --studio-warning: #fbbc04;
+  --studio-warning-bg: #fef7e0;
+  --studio-error: #ea4335;
+  --studio-error-bg: #fce8e6;
+  --studio-info: #4285f4;
+  --studio-info-bg: #e8f0fe;
+  
+  /* Selection Colors */
+  --studio-selection: #2196f3;
+  --studio-selection-bg: rgba(33, 150, 243, 0.1);
+  --studio-selection-border: rgba(33, 150, 243, 0.5);
+  
+  /* Shadow */
+  --studio-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --studio-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.15);
+  --studio-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --studio-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+  
+  /* Canvas Grid */
+  --studio-grid-color: #e0e0e0;
+  --studio-grid-dot-size: 1px;
+  --studio-grid-spacing: 20px;
+  
+  /* Toolbar */
+  --studio-toolbar-bg: linear-gradient(to bottom, #fafafa, #f0f0f0);
+  --studio-toolbar-border: #e0e0e0;
+  --studio-toolbar-btn-bg: #ffffff;
+  --studio-toolbar-btn-border: #ddd;
+  --studio-toolbar-btn-hover-bg: #f0f0f0;
+  --studio-toolbar-btn-active-bg: var(--studio-primary);
+  --studio-toolbar-btn-active-color: #ffffff;
+  
+  /* Properties Panel */
+  --studio-panel-bg: #ffffff;
+  --studio-panel-header-bg: #f8f9fa;
+  --studio-panel-section-bg: #fafafa;
+  --studio-panel-input-bg: #ffffff;
+  --studio-panel-input-border: #ddd;
+  --studio-panel-input-focus-border: var(--studio-primary);
+  
+  /* Transitions */
+  --studio-transition-fast: 0.15s ease;
+  --studio-transition-normal: 0.2s ease;
+  --studio-transition-slow: 0.3s ease;
+}
+
+/* ==========================================================================
+   CSS Custom Properties - Dark Theme
+   ========================================================================== */
+[data-theme="dark"] {
+  /* Primary Colors */
+  --studio-primary: #8ab4f8;
+  --studio-primary-hover: #aecbfa;
+  --studio-primary-light: #1a3a5c;
+  --studio-primary-dark: #669df6;
+  
+  /* Secondary Colors */
+  --studio-secondary: #9aa0a6;
+  --studio-secondary-hover: #bdc1c6;
+  --studio-secondary-light: #3c4043;
+  
+  /* Background Colors */
+  --studio-bg-primary: #202124;
+  --studio-bg-secondary: #292a2d;
+  --studio-bg-tertiary: #35363a;
+  --studio-bg-canvas: #1e1e1e;
+  --studio-bg-hover: #35363a;
+  --studio-bg-active: #1a3a5c;
+  
+  /* Text Colors */
+  --studio-text-primary: #e8eaed;
+  --studio-text-secondary: #9aa0a6;
+  --studio-text-tertiary: #80868b;
+  --studio-text-disabled: #5f6368;
+  --studio-text-inverse: #202124;
+  
+  /* Border Colors */
+  --studio-border-light: #3c4043;
+  --studio-border-medium: #5f6368;
+  --studio-border-dark: #80868b;
+  --studio-border-focus: #8ab4f8;
+  
+  /* Status Colors */
+  --studio-success: #81c995;
+  --studio-success-bg: #1e3a2f;
+  --studio-warning: #fdd663;
+  --studio-warning-bg: #3d3523;
+  --studio-error: #f28b82;
+  --studio-error-bg: #3d2a2a;
+  --studio-info: #8ab4f8;
+  --studio-info-bg: #1a3a5c;
+  
+  /* Selection Colors */
+  --studio-selection: #8ab4f8;
+  --studio-selection-bg: rgba(138, 180, 248, 0.15);
+  --studio-selection-border: rgba(138, 180, 248, 0.5);
+  
+  /* Shadow */
+  --studio-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --studio-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --studio-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --studio-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.5);
+  
+  /* Canvas Grid */
+  --studio-grid-color: #3c4043;
+  --studio-grid-dot-size: 1px;
+  --studio-grid-spacing: 20px;
+  
+  /* Toolbar */
+  --studio-toolbar-bg: linear-gradient(to bottom, #292a2d, #202124);
+  --studio-toolbar-border: #3c4043;
+  --studio-toolbar-btn-bg: #35363a;
+  --studio-toolbar-btn-border: #5f6368;
+  --studio-toolbar-btn-hover-bg: #3c4043;
+  --studio-toolbar-btn-active-bg: var(--studio-primary);
+  --studio-toolbar-btn-active-color: #202124;
+  
+  /* Properties Panel */
+  --studio-panel-bg: #292a2d;
+  --studio-panel-header-bg: #35363a;
+  --studio-panel-section-bg: #202124;
+  --studio-panel-input-bg: #35363a;
+  --studio-panel-input-border: #5f6368;
+  --studio-panel-input-focus-border: var(--studio-primary);
+}
+
+
+/* ==========================================================================
+   Toolbar Styles
+   Professional appearance with theme support
+   ========================================================================== */
+.studio-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--studio-toolbar-bg);
+  border-bottom: 1px solid var(--studio-toolbar-border);
+  flex-shrink: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--studio-border-medium);
+  margin: 0 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--studio-toolbar-btn-border);
+  background: var(--studio-toolbar-btn-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--studio-text-primary);
+  transition: all var(--studio-transition-fast);
+}
+
+.toolbar-btn:hover {
+  background: var(--studio-toolbar-btn-hover-bg);
+  border-color: var(--studio-border-dark);
+}
+
+.toolbar-btn.active {
+  background: var(--studio-toolbar-btn-active-bg);
+  border-color: var(--studio-toolbar-btn-active-bg);
+  color: var(--studio-toolbar-btn-active-color);
+}
+
+.toolbar-btn.active:hover {
+  background: var(--studio-primary-hover);
+  border-color: var(--studio-primary-hover);
+}
+
+.toolbar-btn:focus {
+  outline: 2px solid var(--studio-border-focus);
+  outline-offset: 1px;
+}
+
+.toolbar-btn:disabled,
+.toolbar-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.toolbar-btn-secondary {
+  background: var(--studio-bg-tertiary);
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.toolbar-btn-secondary:hover {
+  background: var(--studio-bg-hover);
+}
+
+.toolbar-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.zoom-display {
+  font-size: 12px;
+  min-width: 45px;
+  text-align: center;
+  color: var(--studio-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Properties Panel Styles
+   Clean layout with theme support
+   ========================================================================== */
+.properties-panel,
+.right-panel {
+  background: var(--studio-panel-bg);
+  border-left: 1px solid var(--studio-border-light);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--studio-panel-header-bg);
+  border-bottom: 1px solid var(--studio-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--studio-text-primary);
+}
+
+.panel-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.panel-header-actions button {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--studio-border-medium);
+  background: var(--studio-bg-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--studio-text-primary);
+  transition: background var(--studio-transition-fast);
+}
+
+.panel-header-actions button:hover {
+  background: var(--studio-bg-hover);
+}
+
+.panel-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--studio-border-light);
+}
+
+.panel-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--studio-text-secondary);
+  margin-bottom: 12px;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.panel-row:last-child {
+  margin-bottom: 0;
+}
+
+.panel-row label {
+  flex: 0 0 80px;
+  font-size: 12px;
+  color: var(--studio-text-secondary);
+}
+
+.panel-row input[type="text"],
+.panel-row input[type="number"],
+.panel-row select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--studio-panel-input-border);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--studio-panel-input-bg);
+  color: var(--studio-text-primary);
+  transition: border-color var(--studio-transition-fast);
+}
+
+.panel-row input:focus,
+.panel-row select:focus {
+  outline: none;
+  border-color: var(--studio-panel-input-focus-border);
+}
+
+.panel-row input[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--studio-panel-input-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--studio-panel-input-bg);
+}
+
+.panel-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--studio-border-medium);
+  cursor: pointer;
+}
+
+.panel-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--studio-primary);
+  cursor: pointer;
+}
+
+.panel-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Alignment buttons in panel */
+.panel-alignment-group {
+  display: flex;
+  gap: 2px;
+}
+
+.panel-alignment-group button {
+  padding: 6px 10px;
+  border: 1px solid var(--studio-panel-input-border);
+  background: var(--studio-panel-input-bg);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--studio-text-primary);
+  transition: all var(--studio-transition-fast);
+}
+
+.panel-alignment-group button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.panel-alignment-group button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.panel-alignment-group button:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.panel-alignment-group button:hover {
+  background: var(--studio-bg-hover);
+}
+
+.panel-alignment-group button.active {
+  background: var(--studio-primary);
+  border-color: var(--studio-primary);
+  color: var(--studio-text-inverse);
+}
+
+/* Data table styles */
+.data-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  background: var(--studio-bg-primary);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table th {
+  background: var(--studio-panel-header-bg);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--studio-text-secondary);
+  border-bottom: 1px solid var(--studio-border-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 4px;
+  border-bottom: 1px solid var(--studio-border-light);
+}
+
+.data-table input {
+  width: 100%;
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--studio-text-primary);
+}
+
+.data-table input:focus {
+  border-color: var(--studio-primary);
+  outline: none;
+  background: var(--studio-bg-primary);
+}
+
+.data-table tbody tr:hover {
+  background: var(--studio-bg-hover);
+}
+
+/* Status bar */
+.status-bar {
+  padding: 10px 20px;
+  background: var(--studio-success-bg);
+  border-top: 1px solid var(--studio-success);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--studio-success);
+  flex-shrink: 0;
+}
+
+.status-bar.warning {
+  background: var(--studio-warning-bg);
+  border-color: var(--studio-warning);
+  color: var(--studio-warning);
+}
+
+.status-bar.error {
+  background: var(--studio-error-bg);
+  border-color: var(--studio-error);
+  color: var(--studio-error);
+}
+
+.status-bar.info {
+  background: var(--studio-info-bg);
+  border-color: var(--studio-info);
+  color: var(--studio-info);
+}
+
+
+/* ==========================================================================
+   Canvas Grid Background
+   SVG pattern for dot grid that doesn't pan/zoom with content
+   Requirements: 1.5, 9.4
+   ========================================================================== */
+
+/* Canvas container with grid background */
+.diagram-area {
+  position: relative;
+  background-color: var(--studio-bg-canvas);
+}
+
+/* Fixed grid background that doesn't transform with viewport */
+.canvas-grid-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(
+    circle,
+    var(--studio-grid-color) var(--studio-grid-dot-size),
+    transparent var(--studio-grid-dot-size)
+  );
+  background-size: var(--studio-grid-spacing) var(--studio-grid-spacing);
+  background-position: center center;
+}
+
+/* Alternative: SVG pattern grid (for more control) */
+.canvas-grid-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grid pattern definitions */
+.grid-pattern-dot {
+  fill: var(--studio-grid-color);
+}
+
+.grid-pattern-line {
+  stroke: var(--studio-grid-color);
+  stroke-width: 0.5px;
+}
+
+/* Line grid variant */
+.canvas-grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    linear-gradient(to right, var(--studio-grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--studio-grid-color) 1px, transparent 1px);
+  background-size: var(--studio-grid-spacing) var(--studio-grid-spacing);
+  opacity: 0.3;
+}
+
+/* Crosshatch grid variant */
+.canvas-grid-crosshatch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    linear-gradient(to right, var(--studio-grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--studio-grid-color) 1px, transparent 1px);
+  background-size: calc(var(--studio-grid-spacing) * 5) calc(var(--studio-grid-spacing) * 5);
+  opacity: 0.2;
+}
+
+/* Ensure chart content is above grid */
+#chart,
+#chart_container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide grid when printing or exporting */
+@media print {
+  .canvas-grid-background,
+  .canvas-grid-svg,
+  .canvas-grid-lines,
+  .canvas-grid-crosshatch {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   Selection Animation Styles
+   Animated selection feedback for nodes, flows, and labels
+   Requirements: 6.1, 9.5
+   ========================================================================== */
+
+/* Selection animation keyframes */
+@keyframes studio-selection-dash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 20;
+  }
+}
+
+@keyframes studio-selection-pulse {
+  0%, 100% {
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 2px var(--studio-selection));
+  }
+  50% {
+    stroke-opacity: 0.7;
+    filter: drop-shadow(0 0 4px var(--studio-selection));
+  }
+}
+
+@keyframes studio-selection-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--studio-selection);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--studio-selection-border);
+  }
+}
+
+@keyframes studio-flow-highlight {
+  0%, 100% {
+    stroke-opacity: 0.9;
+  }
+  50% {
+    stroke-opacity: 0.6;
+  }
+}
+
+/* Node selection styles (Requirement 6.1) */
+.sankey-node rect.selected,
+.sankey-node.selected rect,
+rect.studio-selected {
+  stroke: var(--studio-selection) !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 8 4;
+  animation: studio-selection-dash 0.8s linear infinite;
+  filter: drop-shadow(0 0 3px var(--studio-selection-border));
+}
+
+/* Flow selection styles (Requirement 6.2) */
+path.selected,
+.sankey-flow.selected path,
+path.studio-selected {
+  stroke-width: 3px !important;
+  stroke-opacity: 1 !important;
+  filter: brightness(1.2) drop-shadow(0 0 2px var(--studio-selection));
+  animation: studio-flow-highlight 1.5s ease-in-out infinite;
+}
+
+/* Label selection styles (Requirement 6.3) */
+.sankey-label.selected rect.label-bg,
+.sankey-label rect.label-bg.selected,
+rect.label-bg.studio-selected {
+  stroke: var(--studio-selection) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 5 3;
+  animation: studio-selection-dash 0.8s linear infinite;
+}
+
+.sankey-label.selected text,
+text.studio-selected {
+  font-weight: 600;
+}
+
+/* Generic selected class */
+.studio-selected {
+  outline: none;
+}
+
+/* ==========================================================================
+   Hover States for Interactive Elements
+   Visual feedback on hover (Requirement 9.5)
+   ========================================================================== */
+
+/* Node hover */
+.sankey-node rect:hover {
+  filter: brightness(1.05);
+  cursor: pointer;
+  transition: filter var(--studio-transition-fast);
+}
+
+.sankey-node rect:not(.selected):hover {
+  stroke: var(--studio-selection-border);
+  stroke-width: 2px;
+}
+
+/* Flow hover */
+path.sankey-flow:hover,
+.sankey-flow path:hover {
+  stroke-opacity: 0.8 !important;
+  filter: brightness(1.1);
+  cursor: pointer;
+  transition: all var(--studio-transition-fast);
+}
+
+/* Label hover */
+.sankey-label:hover rect.label-bg {
+  stroke: var(--studio-border-dark);
+  stroke-width: 1px;
+  cursor: pointer;
+}
+
+.sankey-label:hover text {
+  cursor: pointer;
+}
+
+/* Toolbar button hover effects */
+.toolbar-btn:hover:not(.active):not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--studio-shadow-sm);
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Panel input hover effects */
+.panel-row input:hover:not(:focus),
+.panel-row select:hover:not(:focus) {
+  border-color: var(--studio-border-dark);
+}
+
+/* Data table row hover */
+.data-table tbody tr:hover {
+  background: var(--studio-bg-hover);
+}
+
+.data-table tbody tr:hover td {
+  background: transparent;
+}
+
+/* Button hover transitions */
+button,
+.btn {
+  transition: all var(--studio-transition-fast);
+}
+
+/* Link hover effects */
+a:hover {
+  color: var(--studio-primary-hover);
+}
+
+/* ==========================================================================
+   Focus States for Accessibility
+   ========================================================================== */
+
+/* Focus visible for keyboard navigation */
+.toolbar-btn:focus-visible,
+.panel-row input:focus-visible,
+.panel-row select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--studio-border-focus);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline when using mouse */
+.toolbar-btn:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   Flow Source Selection (Add Flow Tool)
+   ========================================================================== */
+
+.flow-source-selected {
+  stroke: var(--studio-primary) !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 5 3;
+  animation: studio-selection-pulse 1s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Drag State Styles
+   ========================================================================== */
+
+.dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.sankey-node.dragging rect,
+.sankey-label.dragging {
+  opacity: 0.8;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* ==========================================================================
+   Tool Cursor Styles
+   ========================================================================== */
+
+.diagram-area[data-tool="select"] {
+  cursor: default;
+}
+
+.diagram-area[data-tool="pan"] {
+  cursor: grab;
+}
+
+.diagram-area[data-tool="pan"]:active,
+.diagram-area[data-tool="pan"].panning {
+  cursor: grabbing;
+}
+
+.diagram-area[data-tool="addNode"] {
+  cursor: crosshair;
+}
+
+.diagram-area[data-tool="addFlow"] {
+  cursor: crosshair;
+}
+
+
+/* ==========================================================================
+   Theme Toggle Button Styles
+   ========================================================================== */
+
+#theme-toggle-btn {
+  min-width: 70px;
+}
+
+#theme-toggle-btn .toolbar-icon {
+  font-size: 16px;
+}
+
+/* ==========================================================================
+   Global Theme Application
+   ========================================================================== */
+
+/* Apply theme to body */
+body[data-theme="dark"] {
+  background-color: var(--studio-bg-secondary);
+  color: var(--studio-text-primary);
+}
+
+body[data-theme="light"] {
+  background-color: #f5f5f5;
+  color: var(--studio-text-primary);
+}
+
+/* App container theme */
+.app-container {
+  background-color: var(--studio-bg-primary);
+}
+
+/* Menu bar theme */
+.menu-bar {
+  background: var(--studio-bg-primary);
+  border-bottom-color: var(--studio-border-light);
+}
+
+.menu-item {
+  color: var(--studio-text-primary);
+}
+
+.menu-item:hover {
+  background: var(--studio-bg-hover);
+}
+
+.menu-dropdown {
+  background: var(--studio-bg-primary);
+  border-color: var(--studio-border-light);
+  box-shadow: var(--studio-shadow-lg);
+}
+
+.menu-dropdown-item {
+  color: var(--studio-text-primary);
+}
+
+.menu-dropdown-item:hover {
+  background: var(--studio-bg-hover);
+}
+
+.menu-section-title {
+  background: var(--studio-bg-tertiary);
+  color: var(--studio-text-secondary);
+}
+
+.menu-divider {
+  background: var(--studio-border-light);
+}
+
+.menu-btn {
+  background: var(--studio-primary);
+  color: var(--studio-text-inverse);
+}
+
+.menu-btn:hover {
+  background: var(--studio-primary-hover);
+}
+
+.menu-btn.secondary {
+  background: var(--studio-bg-tertiary);
+  color: var(--studio-text-primary);
+}
+
+.menu-btn.secondary:hover {
+  background: var(--studio-bg-hover);
+}
+
+/* Diagram panel theme */
+.diagram-panel {
+  background: var(--studio-bg-primary);
+}
+
+.diagram-title-bar {
+  background: var(--studio-bg-secondary);
+  border-bottom-color: var(--studio-border-light);
+}
+
+.diagram-title-input {
+  background: transparent;
+  color: var(--studio-text-primary);
+}
+
+.diagram-title-input:focus {
+  outline-color: var(--studio-primary);
+}
+
+.diagram-footer {
+  background: var(--studio-bg-secondary);
+  border-top-color: var(--studio-border-light);
+  color: var(--studio-text-tertiary);
+}
+
+/* Modal theme */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal {
+  background: var(--studio-bg-primary);
+  box-shadow: var(--studio-shadow-xl);
+}
+
+.modal-header {
+  background: var(--studio-bg-primary);
+  border-bottom-color: var(--studio-border-light);
+  color: var(--studio-text-primary);
+}
+
+.modal-body {
+  color: var(--studio-text-primary);
+}
+
+.modal-footer {
+  background: var(--studio-bg-primary);
+  border-top-color: var(--studio-border-light);
+}
+
+/* Form elements theme */
+.form-group label {
+  color: var(--studio-text-primary);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--studio-panel-input-focus-border);
+}
+
+.form-group .hint {
+  color: var(--studio-text-tertiary);
+}
+
+/* Button theme */
+.btn {
+  transition: all var(--studio-transition-fast);
+}
+
+.btn-secondary {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-medium);
+  color: var(--studio-text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--studio-bg-hover);
+}
+
+.btn-primary {
+  background: var(--studio-primary);
+  border-color: var(--studio-primary);
+  color: var(--studio-text-inverse);
+}
+
+.btn-primary:hover {
+  background: var(--studio-primary-hover);
+  border-color: var(--studio-primary-hover);
+}
+
+/* AI section theme */
+.ai-section {
+  background: var(--studio-bg-secondary);
+  border-top-color: var(--studio-border-light);
+}
+
+.ai-section-header {
+  background: var(--studio-bg-primary);
+  border-bottom-color: var(--studio-border-light);
+  color: var(--studio-text-primary);
+}
+
+.ai-chat-input {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+.ai-chat-input:focus {
+  border-color: var(--studio-panel-input-focus-border);
+}
+
+.ai-chat-btn {
+  background: var(--studio-primary);
+  color: var(--studio-text-inverse);
+}
+
+.ai-chat-btn:hover {
+  background: var(--studio-primary-hover);
+}
+
+/* Node popup theme */
+.node-popup {
+  background: var(--studio-bg-primary);
+  box-shadow: var(--studio-shadow-xl);
+}
+
+.node-popup-header {
+  background: var(--studio-bg-secondary);
+  border-bottom-color: var(--studio-border-light);
+  color: var(--studio-text-primary);
+}
+
+.node-popup-body {
+  color: var(--studio-text-primary);
+}
+
+.node-popup-section h4 {
+  color: var(--studio-text-primary);
+}
+
+.node-popup-row label {
+  color: var(--studio-text-secondary);
+}
+
+.node-popup-row input {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+.node-popup-row input:focus {
+  border-color: var(--studio-panel-input-focus-border);
+}
+
+.node-popup-footer {
+  background: var(--studio-bg-secondary);
+  border-top-color: var(--studio-border-light);
+}
+
+/* Scrollbar theme for dark mode */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--studio-bg-tertiary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--studio-border-dark);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--studio-text-tertiary);
+}
+
+/* Smooth theme transition */
+body,
+.app-container,
+.menu-bar,
+.studio-toolbar,
+.diagram-panel,
+.right-panel,
+.modal,
+.node-popup {
+  transition: background-color var(--studio-transition-normal),
+              color var(--studio-transition-normal),
+              border-color var(--studio-transition-normal);
+}
