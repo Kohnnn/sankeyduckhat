@@ -2255,6 +2255,24 @@ g[id$="_group"].dragging {
 .drag-handle {
   cursor: move;
   fill: transparent;
+  pointer-events: all;
+}
+
+/* Hover effect for drag handles */
+.sankey-label:hover .drag-handle {
+  fill: rgba(26, 115, 232, 0.05);
+}
+
+/* Dragging state for labels */
+.sankey-label.dragging {
+  opacity: 0.8;
+}
+
+.sankey-label.dragging .drag-handle {
+  fill: rgba(26, 115, 232, 0.1);
+  stroke: #1a73e8;
+  stroke-width: 1;
+  stroke-dasharray: 3,2;
 }
 
 /* Custom label background */

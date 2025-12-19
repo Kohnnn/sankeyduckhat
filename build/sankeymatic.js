@@ -1907,17 +1907,19 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
     labelGroups.each(function(n) {
       const labelGroup = d3.select(this),
         labelText = labelGroup.select(`#${n.label.dom_id}`),
-        labelBB = labelText.node().getBBox();
+        labelBB = labelText.node().getBBox(),
+        padding = 4; // Add padding for easier grabbing
       
       // Insert drag handle before all other elements
       labelGroup.insert('rect', ':first-child')
         .attr('class', 'label-bg drag-handle')
-        .attr('x', ep(labelBB.x))
-        .attr('y', ep(labelBB.y))
-        .attr('width', ep(labelBB.width))
-        .attr('height', ep(labelBB.height))
+        .attr('x', ep(labelBB.x - padding))
+        .attr('y', ep(labelBB.y - padding))
+        .attr('width', ep(labelBB.width + padding * 2))
+        .attr('height', ep(labelBB.height + padding * 2))
         .attr('fill', 'transparent')
-        .attr('cursor', 'move');
+        .attr('cursor', 'move')
+        .style('pointer-events', 'all');
     });
 
     // Drag behavior functions for labels
@@ -1933,29 +1935,30 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
       } else {
         n.labelDragStart = { x: n.label.x, y: n.label.y };
       }
+      // Store the current position for incremental updates
+      n.labelCurrentPos = { ...n.labelDragStart };
+      
+      // Add dragging class for visual feedback
+      d3.select(this).classed('dragging', true);
     }
 
     function draggingLabel(event, n) {
-      // Calculate the new position
-      const newX = n.labelDragStart.x + event.dx;
-      const newY = n.labelDragStart.y + event.dy;
+      // Use incremental dx/dy from the event
+      n.labelCurrentPos.x += event.dx;
+      n.labelCurrentPos.y += event.dy;
       
       // Update the transform
-      d3.select(this).attr('transform', `translate(${ep(newX)}, ${ep(newY)})`);
-      
-      // Store the offset relative to original position
-      const offsetX = newX - n.label.x;
-      const offsetY = newY - n.label.y;
-      glob.rememberedLabelMoves.set(n.name, [offsetX, offsetY]);
+      d3.select(this).attr('transform', `translate(${ep(n.labelCurrentPos.x)}, ${ep(n.labelCurrentPos.y)})`);
     }
 
     function dragLabelEnded(event, n) {
+      // Remove dragging class
+      d3.select(this).classed('dragging', false);
+      
       // Finalize the position
-      const currentTransform = d3.select(this).attr('transform');
-      const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-      if (match) {
-        const finalX = parseFloat(match[1]);
-        const finalY = parseFloat(match[2]);
+      if (n.labelCurrentPos) {
+        const finalX = n.labelCurrentPos.x;
+        const finalY = n.labelCurrentPos.y;
         const offsetX = finalX - n.label.x;
         const offsetY = finalY - n.label.y;
         
@@ -1965,6 +1968,12 @@ M${ep(n.lastPos.x)} 0 v${ep(graph.h)} m${ep(n.dx)} 0 V0`)
           glob.rememberedLabelMoves.delete(n.name);
         } else {
           glob.rememberedLabelMoves.set(n.name, [offsetX, offsetY]);
+        }
+        
+        // Also update nodeCustomizations if it exists (for popup sync)
+        if (typeof nodeCustomizations !== 'undefined' && nodeCustomizations[n.name]) {
+          nodeCustomizations[n.name].labelX = Math.round(offsetX);
+          nodeCustomizations[n.name].labelY = Math.round(offsetY);
         }
         
         // Update the reset button state

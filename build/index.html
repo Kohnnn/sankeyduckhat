@@ -1537,21 +1537,6 @@ function applyLabelCustomization() {
   
   nodeCustomizations[nodeName] = custom;
   
-  // Update customLayout with the new label position
-  if (!customLayout[nodeName]) {
-    customLayout[nodeName] = {};
-  }
-  
-  // If there's an original position, calculate absolute position from offset
-  if (customLayout[nodeName].originalX !== undefined) {
-    customLayout[nodeName].labelX = customLayout[nodeName].originalX + custom.labelX;
-    customLayout[nodeName].labelY = customLayout[nodeName].originalY + custom.labelY;
-  }
-  
-  // Store label dimensions
-  customLayout[nodeName].labelW = custom.labelWidth;
-  customLayout[nodeName].labelH = custom.labelHeight;
-  
   // Update rememberedLabelMoves for sankeymatic.js persistence
   if (window.rememberedLabelMoves) {
     if (custom.labelX !== 0 || custom.labelY !== 0) {
@@ -1565,6 +1550,41 @@ function applyLabelCustomization() {
   applyLabelCustomizationToSVG(nodeName, custom);
   
   closeLabelPopup();
+  saveProgressToLocal();
+}
+
+// Reset label to default position and settings
+function resetLabelPosition(nodeName) {
+  // Clear label customizations but preserve node settings
+  if (nodeCustomizations[nodeName]) {
+    const nodeSettings = {
+      fillColor: nodeCustomizations[nodeName].fillColor,
+      borderColor: nodeCustomizations[nodeName].borderColor,
+      opacity: nodeCustomizations[nodeName].opacity
+    };
+    nodeCustomizations[nodeName] = nodeSettings;
+  }
+  
+  // Clear from rememberedLabelMoves
+  if (window.rememberedLabelMoves) {
+    window.rememberedLabelMoves.delete(nodeName);
+  }
+  
+  // Clear customLayout label position
+  if (customLayout[nodeName]) {
+    delete customLayout[nodeName].originalX;
+    delete customLayout[nodeName].originalY;
+  }
+  
+  // Re-render to apply changes
+  if (typeof renderDiagram === 'function') {
+    renderDiagram();
+  } else if (typeof process_sankey === 'function') {
+    process_sankey();
+  } else if (window.process_sankey) {
+    window.process_sankey();
+  }
+  
   saveProgressToLocal();
 }
 
@@ -1607,7 +1627,9 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
     if (!textEl) return;
     
     // Apply label color
-    textEl.setAttribute('fill', custom.labelColor);
+    if (custom.labelColor) {
+      textEl.setAttribute('fill', custom.labelColor);
+    }
     
     // Apply font size
     if (custom.labelFontSize && custom.labelFontSize > 0) {
@@ -1618,36 +1640,61 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
     }
     
     // Apply alignment
-    const anchor = custom.labelAlign === 'left' ? 'start' : custom.labelAlign === 'right' ? 'end' : 'middle';
-    textEl.setAttribute('text-anchor', anchor);
-    
-    // Apply position offset to the label group
-    if (customLayout[nodeName] && customLayout[nodeName].originalX !== undefined) {
-      const newX = customLayout[nodeName].originalX + custom.labelX;
-      const newY = customLayout[nodeName].originalY + custom.labelY;
-      group.setAttribute('transform', `translate(${newX}, ${newY})`);
-      customLayout[nodeName].labelX = newX;
-      customLayout[nodeName].labelY = newY;
+    if (custom.labelAlign) {
+      const anchor = custom.labelAlign === 'left' ? 'start' : custom.labelAlign === 'right' ? 'end' : 'middle';
+      textEl.setAttribute('text-anchor', anchor);
     }
     
-    // Update label text if changed
-    const textContent = textEl.textContent?.trim();
-    if (custom.labelText && custom.labelText !== nodeName) {
-      const tspan = textEl.querySelector('tspan');
-      if (tspan) {
-        tspan.textContent = custom.labelText;
+    // Get current transform to find base position
+    const currentTransform = group.getAttribute('transform') || '';
+    const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+    let baseX = 0, baseY = 0;
+    
+    if (match) {
+      baseX = parseFloat(match[1]);
+      baseY = parseFloat(match[2]);
+    }
+    
+    // Store original position if not already stored
+    if (!customLayout[nodeName]) {
+      customLayout[nodeName] = {};
+    }
+    if (customLayout[nodeName].originalX === undefined) {
+      // Get the base position from rememberedLabelMoves or current transform
+      if (window.rememberedLabelMoves && window.rememberedLabelMoves.has(nodeName)) {
+        const [offsetX, offsetY] = window.rememberedLabelMoves.get(nodeName);
+        customLayout[nodeName].originalX = baseX - offsetX;
+        customLayout[nodeName].originalY = baseY - offsetY;
       } else {
-        const lines = textContent.split('\n');
-        lines[0] = custom.labelText;
-        textEl.textContent = lines[0];
-        if (lines.length > 1) {
-          for (let i = 1; i < lines.length; i++) {
-            const newTspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-            newTspan.setAttribute('x', '0');
-            newTspan.setAttribute('dy', '1.2em');
-            newTspan.textContent = lines[i];
-            textEl.appendChild(newTspan);
-          }
+        customLayout[nodeName].originalX = baseX;
+        customLayout[nodeName].originalY = baseY;
+      }
+    }
+    
+    // Apply position offset to the label group
+    const offsetX = custom.labelX || 0;
+    const offsetY = custom.labelY || 0;
+    const newX = customLayout[nodeName].originalX + offsetX;
+    const newY = customLayout[nodeName].originalY + offsetY;
+    group.setAttribute('transform', `translate(${newX}, ${newY})`);
+    
+    // Update label text if provided (always apply if different from node name)
+    if (custom.labelText) {
+      // Find the first tspan or use the text element directly
+      const firstTspan = textEl.querySelector('tspan');
+      if (firstTspan) {
+        firstTspan.textContent = custom.labelText;
+      } else {
+        // Get all tspans to preserve value lines
+        const tspans = textEl.querySelectorAll('tspan');
+        if (tspans.length > 0) {
+          tspans[0].textContent = custom.labelText;
+        } else {
+          // No tspans, update text content directly but preserve structure
+          const currentText = textEl.textContent || '';
+          const lines = currentText.split('\n');
+          lines[0] = custom.labelText;
+          textEl.textContent = lines.join('\n');
         }
       }
     }
