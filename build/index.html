@@ -513,8 +513,8 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <div class="panel-header-actions studio-properties-header-actions">
           <button class="studio-properties-header-btn" onclick="exportCSV()">Export CSV</button>
           <button class="studio-properties-header-btn" onclick="document.getElementById('csv_import').click()">Import CSV</button>
-          <button class="studio-properties-header-btn" data-toggle-panel="data" title="Toggle Panel (Ctrl+Shift+\)">
-            <span class="toggle-icon">▶</span>
+          <button class="studio-properties-header-btn" id="toggle-data-panel-btn" onclick="toggleDataPanel()" title="Toggle Panel (Ctrl+Shift+\)">
+            <span class="toggle-icon" id="toggle-panel-icon">◀</span>
           </button>
         </div>
       </div>
@@ -1891,50 +1891,102 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
   const svg = document.getElementById('sankey_svg');
   if (!svg) return;
   
-  // Find the label group and text
-  const labelGroups = svg.querySelectorAll('g.sankey-label');
-  labelGroups.forEach(group => {
+  // Find the label group - try multiple selectors
+  let labelGroup = null;
+  let textEl = null;
+  
+  // Method 1: Look for sankey-label groups with data attribute
+  svg.querySelectorAll('g.sankey-label').forEach(group => {
     const labelFor = group.getAttribute('data-label-for');
-    if (labelFor !== nodeName) return;
-    
-    const textEl = group.querySelector('text');
-    if (!textEl) return;
-    
-    // Apply label color
-    if (custom.labelColor) {
-      textEl.setAttribute('fill', custom.labelColor);
+    if (labelFor === nodeName) {
+      labelGroup = group;
+      textEl = group.querySelector('text');
     }
-    
-    // Apply font size
-    if (custom.labelFontSize && custom.labelFontSize > 0) {
-      textEl.setAttribute('font-size', custom.labelFontSize + 'px');
-      textEl.querySelectorAll('tspan').forEach(tspan => {
-        tspan.setAttribute('font-size', custom.labelFontSize + 'px');
-      });
-    }
-    
-    // Apply bold
-    if (custom.labelBold) {
-      textEl.setAttribute('font-weight', 'bold');
-    } else {
-      textEl.removeAttribute('font-weight');
-    }
-    
-    // Apply italic
-    if (custom.labelItalic) {
-      textEl.setAttribute('font-style', 'italic');
-    } else {
-      textEl.removeAttribute('font-style');
-    }
-    
-    // Apply alignment
-    if (custom.labelAlign) {
-      const anchor = custom.labelAlign === 'left' ? 'start' : custom.labelAlign === 'right' ? 'end' : 'middle';
-      textEl.setAttribute('text-anchor', anchor);
-    }
-    
-    // Get current transform to find base position
-    const currentTransform = group.getAttribute('transform') || '';
+  });
+  
+  // Method 2: Look for groups with ID ending in _group
+  if (!labelGroup) {
+    svg.querySelectorAll('g[id$="_group"]').forEach(group => {
+      const text = group.querySelector('text');
+      if (text) {
+        const textContent = text.textContent?.trim();
+        const firstLine = textContent?.split('\n')[0]?.trim();
+        if (firstLine === nodeName || textContent?.includes(nodeName)) {
+          labelGroup = group;
+          textEl = text;
+        }
+      }
+    });
+  }
+  
+  // Method 3: Look for text elements directly
+  if (!textEl) {
+    svg.querySelectorAll('text').forEach(text => {
+      const textContent = text.textContent?.trim();
+      const firstLine = textContent?.split('\n')[0]?.trim();
+      if (firstLine === nodeName || textContent?.includes(nodeName)) {
+        textEl = text;
+        labelGroup = text.parentElement;
+      }
+    });
+  }
+  
+  if (!textEl) {
+    console.warn('Label not found for node:', nodeName);
+    return;
+  }
+  
+  // Apply label color
+  if (custom.labelColor) {
+    textEl.setAttribute('fill', custom.labelColor);
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.setAttribute('fill', custom.labelColor);
+    });
+  }
+  
+  // Apply font size
+  if (custom.labelFontSize && custom.labelFontSize > 0) {
+    textEl.setAttribute('font-size', custom.labelFontSize + 'px');
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.setAttribute('font-size', custom.labelFontSize + 'px');
+    });
+  }
+  
+  // Apply bold
+  if (custom.labelBold) {
+    textEl.setAttribute('font-weight', 'bold');
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.setAttribute('font-weight', 'bold');
+    });
+  } else {
+    textEl.removeAttribute('font-weight');
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.removeAttribute('font-weight');
+    });
+  }
+  
+  // Apply italic
+  if (custom.labelItalic) {
+    textEl.setAttribute('font-style', 'italic');
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.setAttribute('font-style', 'italic');
+    });
+  } else {
+    textEl.removeAttribute('font-style');
+    textEl.querySelectorAll('tspan').forEach(tspan => {
+      tspan.removeAttribute('font-style');
+    });
+  }
+  
+  // Apply alignment - SVG uses text-anchor
+  if (custom.labelAlign) {
+    const anchor = custom.labelAlign === 'left' ? 'start' : custom.labelAlign === 'right' ? 'end' : 'middle';
+    textEl.setAttribute('text-anchor', anchor);
+  }
+  
+  // Get current transform to find base position
+  if (labelGroup) {
+    const currentTransform = labelGroup.getAttribute('transform') || '';
     const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
     let baseX = 0, baseY = 0;
     
@@ -1959,97 +2011,72 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
       }
     }
     
-    // Apply position offset to the label group (including margins)
-    const marginLeft = custom.labelMarginLeft || 0;
-    const marginTop = custom.labelMarginTop || 0;
-    const offsetX = (custom.labelX || 0) + marginLeft;
-    const offsetY = (custom.labelY || 0) + marginTop;
+    // Apply position offset to the label group
+    const offsetX = custom.labelX || 0;
+    const offsetY = custom.labelY || 0;
     const newX = customLayout[nodeName].originalX + offsetX;
     const newY = customLayout[nodeName].originalY + offsetY;
-    group.setAttribute('transform', `translate(${newX}, ${newY})`);
+    labelGroup.setAttribute('transform', `translate(${newX}, ${newY})`);
+  }
+  
+  // Update label text - handle multi-line
+  if (custom.labelText && custom.labelText !== nodeName) {
+    const lines = custom.labelText.split('\n');
+    const fontSize = custom.labelFontSize || 16;
+    const lineHeight = fontSize * 1.2;
     
-    // Update label text - handle multi-line
-    if (custom.labelText) {
-      const lines = custom.labelText.split('\n');
-      const fontSize = custom.labelFontSize || 16;
-      const lineHeight = fontSize * 1.2;
-      
-      // Clear existing tspans except value tspans
-      const existingTspans = textEl.querySelectorAll('tspan');
-      const valueTspans = [];
-      existingTspans.forEach(tspan => {
-        // Keep tspans that look like value displays (contain numbers with units)
-        if (tspan.textContent && /^\d/.test(tspan.textContent.trim())) {
-          valueTspans.push(tspan.cloneNode(true));
-        }
-      });
-      
-      // Clear text element
-      textEl.textContent = '';
-      
-      // Add new tspans for each line
-      lines.forEach((line, index) => {
-        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-        tspan.textContent = line;
-        tspan.setAttribute('x', '0');
-        tspan.setAttribute('dy', index === 0 ? '0' : lineHeight + 'px');
-        if (custom.labelFontSize) {
-          tspan.setAttribute('font-size', custom.labelFontSize + 'px');
-        }
-        textEl.appendChild(tspan);
-      });
-      
-      // Re-add value tspans
-      valueTspans.forEach(tspan => {
-        tspan.setAttribute('dy', lineHeight + 'px');
-        textEl.appendChild(tspan);
-      });
-    }
+    // Store existing value tspans (numbers with units)
+    const existingTspans = textEl.querySelectorAll('tspan');
+    const valueTspans = [];
+    existingTspans.forEach(tspan => {
+      // Keep tspans that look like value displays (contain numbers)
+      if (tspan.textContent && /^\d/.test(tspan.textContent.trim())) {
+        valueTspans.push(tspan.cloneNode(true));
+      }
+    });
     
-    // Handle label background box with margins
-    const existingBg = group.querySelector('.custom-label-bg');
+    // Clear text element
+    textEl.textContent = '';
+    
+    // Add new tspans for each line
+    lines.forEach((line, index) => {
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.textContent = line;
+      tspan.setAttribute('x', '0');
+      tspan.setAttribute('dy', index === 0 ? '0' : lineHeight + 'px');
+      if (custom.labelFontSize) {
+        tspan.setAttribute('font-size', custom.labelFontSize + 'px');
+      }
+      if (custom.labelColor) {
+        tspan.setAttribute('fill', custom.labelColor);
+      }
+      if (custom.labelBold) {
+        tspan.setAttribute('font-weight', 'bold');
+      }
+      if (custom.labelItalic) {
+        tspan.setAttribute('font-style', 'italic');
+      }
+      textEl.appendChild(tspan);
+    });
+    
+    // Re-add value tspans
+    valueTspans.forEach(tspan => {
+      tspan.setAttribute('dy', lineHeight + 'px');
+      textEl.appendChild(tspan);
+    });
+  }
+  
+  // Handle label background box with margins
+  if (labelGroup) {
+    const existingBg = labelGroup.querySelector('.custom-label-bg');
     if (existingBg) existingBg.remove();
     
     if (custom.labelBgEnabled) {
       applyLabelBackground(textEl, custom);
     }
-  });
+  }
 }
-
-function applyLabelBackground(textEl, custom) {
-  const group = textEl.parentElement;
-  if (!group || group.tagName !== 'g') return;
-  
-  // Remove existing custom background
-  const existingBg = group.querySelector('.custom-label-bg');
-  if (existingBg) existingBg.remove();
-  
-  // Get text bounding box
-  const bbox = textEl.getBBox();
-  
-  // Use margins for padding
-  const marginTop = custom.labelMarginTop || 6;
-  const marginRight = custom.labelMarginRight || 6;
-  const marginBottom = custom.labelMarginBottom || 6;
-  const marginLeft = custom.labelMarginLeft || 6;
-  
-  // Create background rect
-  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  bgRect.setAttribute('class', 'custom-label-bg');
-  bgRect.setAttribute('x', bbox.x - marginLeft);
-  bgRect.setAttribute('y', bbox.y - marginTop);
-  bgRect.setAttribute('width', bbox.width + marginLeft + marginRight);
-  bgRect.setAttribute('height', bbox.height + marginTop + marginBottom);
-  bgRect.setAttribute('fill', custom.labelBg || '#ffffff');
-  bgRect.setAttribute('stroke', '#cccccc');
-  bgRect.setAttribute('stroke-width', '1');
-  bgRect.setAttribute('rx', '4');
-  bgRect.setAttribute('opacity', '0.95');
-  
-  // Insert before text so text appears on top
-  group.insertBefore(bgRect, textEl);
-}
-
+      
 function resetNodeToDefault() {
   if (!currentEditingNodeName) return;
   
@@ -2113,7 +2140,17 @@ function applyLabelPositions() {
   
   // Apply stored customizations to all labels and nodes
   Object.keys(nodeCustomizations).forEach(nodeName => {
-    applyCustomizationToSVG(nodeName, nodeCustomizations[nodeName]);
+    const custom = nodeCustomizations[nodeName];
+    // Apply node customizations
+    if (custom.fillColor || custom.borderColor || custom.opacity !== undefined) {
+      applyNodeCustomizationToSVG(nodeName, custom);
+    }
+    // Apply label customizations
+    if (custom.labelText || custom.labelColor || custom.labelFontSize || 
+        custom.labelBold || custom.labelItalic || custom.labelAlign ||
+        custom.labelBgEnabled || custom.labelX || custom.labelY) {
+      applyLabelCustomizationToSVG(nodeName, custom);
+    }
   });
   
   // Setup independent label dragging
@@ -3352,7 +3389,11 @@ function undoLastAction() {
     return;
   }
   
-  undoStack.pop();
+  // Move current state to redo stack
+  const currentState = undoStack.pop();
+  if (!window.redoStack) window.redoStack = [];
+  window.redoStack.push(currentState);
+  
   const state = undoStack[undoStack.length - 1];
   
   const flowsEl = document.getElementById('flows_in');
@@ -3386,6 +3427,48 @@ function undoLastAction() {
   lastSavedState = state;
   renderDiagram();
   updateAIStatus('↩️ Undone', 'success');
+}
+
+function redoLastAction() {
+  if (!window.redoStack || window.redoStack.length === 0) {
+    updateAIStatus('Nothing to redo', 'warning');
+    return;
+  }
+  
+  const state = window.redoStack.pop();
+  undoStack.push(state);
+  
+  const flowsEl = document.getElementById('flows_in');
+  const tbodyEl = document.getElementById('data-table-body');
+  if (flowsEl) flowsEl.value = state.flows;
+  if (tbodyEl) tbodyEl.innerHTML = state.tableHtml;
+  
+  // Restore canvas state (node and label positions)
+  if (window.rememberedMoves) {
+    window.rememberedMoves.clear();
+    if (state.nodeMoves) {
+      Object.entries(state.nodeMoves).forEach(([key, val]) => {
+        window.rememberedMoves.set(key, val);
+      });
+    }
+  }
+  if (window.rememberedLabelMoves) {
+    window.rememberedLabelMoves.clear();
+    if (state.labelMoves) {
+      Object.entries(state.labelMoves).forEach(([key, val]) => {
+        window.rememberedLabelMoves.set(key, val);
+      });
+    }
+  }
+  
+  // Restore customizations
+  if (state.nodeCustomizations) nodeCustomizations = JSON.parse(JSON.stringify(state.nodeCustomizations));
+  if (state.nodeColors) nodeColors = JSON.parse(JSON.stringify(state.nodeColors));
+  if (state.customLayout) customLayout = JSON.parse(JSON.stringify(state.customLayout));
+  
+  lastSavedState = state;
+  renderDiagram();
+  updateAIStatus('↪️ Redone', 'success');
 }
 
 // ============ STATUS ============
@@ -3561,8 +3644,60 @@ function setupAutoSave() {
 <script>
 // ============ INITIALIZATION ============
 
+// Toggle data panel expand/collapse
+let dataPanelCollapsed = false;
+
+function toggleDataPanel() {
+  const rightPanel = document.querySelector('.right-panel');
+  const toggleIcon = document.getElementById('toggle-panel-icon');
+  
+  if (!rightPanel) return;
+  
+  dataPanelCollapsed = !dataPanelCollapsed;
+  
+  if (dataPanelCollapsed) {
+    rightPanel.style.width = '50px';
+    rightPanel.style.minWidth = '50px';
+    rightPanel.classList.add('collapsed');
+    if (toggleIcon) toggleIcon.textContent = '▶';
+  } else {
+    rightPanel.style.width = '480px';
+    rightPanel.style.minWidth = '480px';
+    rightPanel.classList.remove('collapsed');
+    if (toggleIcon) toggleIcon.textContent = '◀';
+  }
+}
+
+// Tab switching for data panel
+function initDataPanelTabs() {
+  const tabs = document.querySelectorAll('.studio-data-tab');
+  const contents = document.querySelectorAll('.studio-data-tab-content');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const targetTab = this.getAttribute('data-tab');
+      
+      // Update tab active states
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Update content visibility
+      contents.forEach(content => {
+        if (content.getAttribute('data-tab-content') === targetTab) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   loadSettings();
+  
+  // Initialize data panel tabs
+  initDataPanelTabs();
   
   const hasProgress = loadProgressFromLocal();
   if (!hasProgress) {

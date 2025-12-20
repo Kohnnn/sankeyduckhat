@@ -55,6 +55,12 @@ const ToolbarController = {
    * @param {HTMLElement} canvasElement - The canvas/diagram area element
    */
   init(toolbarElement, canvasElement) {
+    // Prevent double initialization
+    if (this._initialized) {
+      console.log('ToolbarController: Already initialized, skipping');
+      return;
+    }
+    
     this._toolbarElement = toolbarElement;
     this._canvasElement = canvasElement || document.getElementById('diagram-area');
     this._initialized = true;
@@ -72,6 +78,8 @@ const ToolbarController = {
 
     // Set initial tool state
     this._updateToolbarState('select');
+    
+    console.log('ToolbarController: Initialized successfully');
   },
 
   /**
@@ -675,6 +683,14 @@ const ToolbarController = {
   reset() {
     this._resetAddFlowState();
     this.setTool('select');
+    // Note: Don't reset _initialized here to prevent re-initialization issues
+  },
+
+  /**
+   * Force re-initialization (for testing or recovery)
+   */
+  forceReinit() {
+    this._initialized = false;
   },
 
   /**

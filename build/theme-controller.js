@@ -246,10 +246,18 @@ if (document.readyState === 'loading') {
   ThemeController.init();
 }
 
-// Export for module usage
+// Export for module usage (testing)
 if (typeof window !== 'undefined') {
   window.ThemeController = ThemeController;
   window.toggleTheme = toggleTheme;
+}
+
+// ES Module export for testing environments
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { ThemeController, toggleTheme };
+} else if (typeof exports !== 'undefined') {
+  exports.ThemeController = ThemeController;
+  exports.toggleTheme = toggleTheme;
 }
 
 export { ThemeController, toggleTheme };

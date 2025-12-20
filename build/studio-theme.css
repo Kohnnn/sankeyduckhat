@@ -1147,3 +1147,204 @@ body,
               color var(--studio-transition-normal),
               border-color var(--studio-transition-normal);
 }
+
+
+/* ==========================================================================
+   Dark Mode Popup and Modal Styles
+   ========================================================================== */
+[data-theme="dark"] .node-popup,
+[data-theme="dark"] .modal {
+  background: var(--studio-bg-secondary);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .node-popup-header,
+[data-theme="dark"] .modal-header {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .node-popup-header h3,
+[data-theme="dark"] .modal-header h3 {
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .node-popup-body,
+[data-theme="dark"] .modal-body {
+  background: var(--studio-bg-secondary);
+}
+
+[data-theme="dark"] .node-popup-section h4 {
+  color: var(--studio-text-secondary);
+}
+
+[data-theme="dark"] .node-popup-row label {
+  color: var(--studio-text-secondary);
+}
+
+[data-theme="dark"] .node-popup-row input[type="text"],
+[data-theme="dark"] .node-popup-row input[type="number"],
+[data-theme="dark"] .node-popup-row textarea,
+[data-theme="dark"] .modal-body input,
+[data-theme="dark"] .modal-body textarea,
+[data-theme="dark"] .modal-body select {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .node-popup-row input:focus,
+[data-theme="dark"] .modal-body input:focus,
+[data-theme="dark"] .modal-body textarea:focus {
+  border-color: var(--studio-primary);
+}
+
+[data-theme="dark"] .node-popup-footer,
+[data-theme="dark"] .modal-footer {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-medium);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--studio-bg-hover);
+}
+
+[data-theme="dark"] .node-popup-alignment button {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .node-popup-alignment button:hover {
+  background: var(--studio-bg-hover);
+}
+
+[data-theme="dark"] .node-popup-alignment button.active {
+  background: var(--studio-primary);
+  border-color: var(--studio-primary);
+  color: var(--studio-text-inverse);
+}
+
+[data-theme="dark"] .form-group label {
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .form-group .hint {
+  color: var(--studio-text-tertiary);
+}
+
+[data-theme="dark"] .json-editor-textarea {
+  background: var(--studio-bg-tertiary);
+  color: var(--studio-text-primary);
+  border-color: var(--studio-border-medium);
+}
+
+/* Dark mode for AI chat area */
+[data-theme="dark"] .ai-chat-input {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .ai-chat-input:focus {
+  border-color: var(--studio-primary);
+}
+
+[data-theme="dark"] #ai-chat-history {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .image-upload-area {
+  border-color: var(--studio-border-medium);
+  background: var(--studio-bg-tertiary);
+  color: var(--studio-text-secondary);
+}
+
+[data-theme="dark"] .image-upload-area:hover {
+  border-color: var(--studio-primary);
+  background: var(--studio-bg-hover);
+}
+
+/* Dark mode for menu bar */
+[data-theme="dark"] .menu-bar {
+  background: var(--studio-bg-secondary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .menu-item {
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .menu-item:hover {
+  background: var(--studio-bg-hover);
+}
+
+[data-theme="dark"] .menu-dropdown {
+  background: var(--studio-bg-secondary);
+  border-color: var(--studio-border-light);
+  box-shadow: var(--studio-shadow-lg);
+}
+
+[data-theme="dark"] .menu-dropdown-item {
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .menu-dropdown-item:hover {
+  background: var(--studio-bg-hover);
+}
+
+[data-theme="dark"] .menu-section-title {
+  background: var(--studio-bg-tertiary);
+  color: var(--studio-text-secondary);
+}
+
+[data-theme="dark"] .menu-dropdown-item input,
+[data-theme="dark"] .menu-dropdown-item select {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+/* Dark mode for diagram area */
+[data-theme="dark"] .diagram-panel {
+  background: var(--studio-bg-canvas);
+}
+
+[data-theme="dark"] .diagram-title-bar {
+  background: var(--studio-bg-secondary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .diagram-title-input {
+  color: var(--studio-text-primary);
+  background: transparent;
+}
+
+[data-theme="dark"] .diagram-footer {
+  background: var(--studio-bg-secondary);
+  border-color: var(--studio-border-light);
+  color: var(--studio-text-tertiary);
+}
+
+/* Dark mode for add row section */
+[data-theme="dark"] .add-row-section {
+  background: var(--studio-bg-tertiary);
+  border-color: var(--studio-border-light);
+}
+
+[data-theme="dark"] .add-row-btn {
+  background: var(--studio-panel-input-bg);
+  border-color: var(--studio-panel-input-border);
+  color: var(--studio-text-primary);
+}
+
+[data-theme="dark"] .add-row-btn:hover {
+  background: var(--studio-bg-hover);
+}
