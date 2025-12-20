@@ -111,6 +111,24 @@ const ToolbarController = {
       exportBtn.addEventListener('click', () => this._handleExport());
     }
     
+    // Reset Session button
+    const resetSessionBtn = this._toolbarElement?.querySelector('[data-action="reset-session"]');
+    if (resetSessionBtn) {
+      resetSessionBtn.addEventListener('click', () => this._handleResetSession());
+    }
+    
+    // Reset Nodes button
+    const resetNodesBtn = this._toolbarElement?.querySelector('[data-action="reset-nodes"]');
+    if (resetNodesBtn) {
+      resetNodesBtn.addEventListener('click', () => this._handleResetNodes());
+    }
+    
+    // Reset Labels button
+    const resetLabelsBtn = this._toolbarElement?.querySelector('[data-action="reset-labels"]');
+    if (resetLabelsBtn) {
+      resetLabelsBtn.addEventListener('click', () => this._handleResetLabels());
+    }
+    
     // Wire UndoManager stack change events to update button states
     if (typeof UndoManager !== 'undefined') {
       UndoManager.on('stackChange', (data) => {
@@ -505,11 +523,124 @@ const ToolbarController = {
 
   /**
    * Handle Export action
+   * Requirements: 2.3
    */
   _handleExport() {
-    // Show export options or trigger default export
-    if (typeof saveDiagramAsPNG === 'function') {
+    // Show export options modal
+    if (typeof openExportModal === 'function') {
+      openExportModal();
+    } else if (typeof saveDiagramAsPNG === 'function') {
+      // Fallback to direct PNG export
       saveDiagramAsPNG(2);
+    }
+  },
+
+  /**
+   * Handle Reset Session action
+   * Requirements: 1.1
+   */
+  _handleResetSession() {
+    if (typeof SessionManager !== 'undefined') {
+      SessionManager.resetSession();
+    } else if (typeof newDiagram === 'function') {
+      // Fallback to existing newDiagram function
+      newDiagram();
+    }
+  },
+
+  /**
+   * Handle Reset Nodes action
+   * Requirements: 2.6
+   */
+  _handleResetNodes() {
+    // Clear rememberedMoves
+    if (typeof window !== 'undefined' && window.rememberedMoves instanceof Map) {
+      window.rememberedMoves.clear();
+    }
+    
+    // Clear node positions from customLayout
+    if (typeof customLayout !== 'undefined') {
+      Object.keys(customLayout).forEach(key => {
+        if (customLayout[key]) {
+          delete customLayout[key].dx;
+          delete customLayout[key].dy;
+        }
+      });
+    }
+    
+    // Clear from CustomLayoutStore
+    if (typeof CustomLayoutStore !== 'undefined') {
+      CustomLayoutStore.clearAllNodePositions();
+    }
+    
+    // Trigger re-render
+    if (typeof process_sankey === 'function') {
+      process_sankey();
+    } else if (typeof renderDiagram === 'function') {
+      renderDiagram();
+    }
+    
+    if (typeof updateAIStatus === 'function') {
+      updateAIStatus('Node positions reset', 'success');
+    }
+  },
+
+  /**
+   * Handle Reset Labels action
+   * Requirements: 2.7
+   */
+  _handleResetLabels() {
+    // Clear rememberedLabelMoves
+    if (typeof window !== 'undefined' && window.rememberedLabelMoves instanceof Map) {
+      window.rememberedLabelMoves.clear();
+    }
+    
+    // Clear label customizations from nodeCustomizations
+    if (typeof nodeCustomizations !== 'undefined') {
+      Object.keys(nodeCustomizations).forEach(key => {
+        if (nodeCustomizations[key]) {
+          delete nodeCustomizations[key].labelX;
+          delete nodeCustomizations[key].labelY;
+          delete nodeCustomizations[key].labelText;
+          delete nodeCustomizations[key].labelColor;
+          delete nodeCustomizations[key].labelFontSize;
+          delete nodeCustomizations[key].labelAlign;
+          delete nodeCustomizations[key].labelBold;
+          delete nodeCustomizations[key].labelItalic;
+          delete nodeCustomizations[key].labelBgEnabled;
+          delete nodeCustomizations[key].labelBg;
+          delete nodeCustomizations[key].labelMarginTop;
+          delete nodeCustomizations[key].labelMarginRight;
+          delete nodeCustomizations[key].labelMarginBottom;
+          delete nodeCustomizations[key].labelMarginLeft;
+        }
+      });
+    }
+    
+    // Clear label positions from customLayout
+    if (typeof customLayout !== 'undefined') {
+      Object.keys(customLayout).forEach(key => {
+        if (customLayout[key]) {
+          delete customLayout[key].originalX;
+          delete customLayout[key].originalY;
+        }
+      });
+    }
+    
+    // Clear from CustomLayoutStore
+    if (typeof CustomLayoutStore !== 'undefined') {
+      CustomLayoutStore.clearAllLabelPositions();
+    }
+    
+    // Trigger re-render
+    if (typeof process_sankey === 'function') {
+      process_sankey();
+    } else if (typeof renderDiagram === 'function') {
+      renderDiagram();
+    }
+    
+    if (typeof updateAIStatus === 'function') {
+      updateAIStatus('Label positions reset', 'success');
     }
   },
 

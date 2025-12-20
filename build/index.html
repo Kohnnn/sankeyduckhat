@@ -32,6 +32,10 @@
 <script defer src="studio-layout.js?v=5"></script>
 <script defer src="data-sync.js?v=5"></script>
 <script defer src="undo-manager.js?v=5"></script>
+<script defer src="session-manager.js?v=5"></script>
+<script defer src="recent-colors-manager.js?v=5"></script>
+<script defer src="ai-controller.js?v=5"></script>
+<script defer src="validation-utils.js?v=5"></script>
 <script defer src="drag-handler.js?v=5"></script>
 <script defer src="drag-behaviors.js?v=5"></script>
 <script defer src="flow-utils.js?v=5"></script>
@@ -455,16 +459,20 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
             <span class="toolbar-icon">💾</span>
             <span class="toolbar-label">Export</span>
           </button>
+          <button class="toolbar-btn" data-action="reset-session" title="Reset Session - Start Fresh">
+            <span class="toolbar-icon">🗑️</span>
+            <span class="toolbar-label">New</span>
+          </button>
         </div>
 
         <div class="toolbar-spacer"></div>
 
         <!-- Reset Controls -->
         <div class="toolbar-group toolbar-reset">
-          <button class="toolbar-btn toolbar-btn-secondary" onclick="resetAllNodes()" title="Reset Node Positions">
+          <button class="toolbar-btn toolbar-btn-secondary" data-action="reset-nodes" title="Reset Node Positions">
             Reset Nodes
           </button>
-          <button class="toolbar-btn toolbar-btn-secondary" onclick="resetAllLabels()" title="Reset Label Positions">
+          <button class="toolbar-btn toolbar-btn-secondary" data-action="reset-labels" title="Reset Label Positions">
             Reset Labels
           </button>
         </div>
@@ -609,15 +617,32 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <h4>Appearance</h4>
         <div class="node-popup-row">
           <label>Fill Color</label>
-          <input type="color" id="popup-node-fill" value="#888888">
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="color" id="popup-node-fill" value="#888888" onchange="syncNodeColorToHex('fill')">
+            <input type="text" id="popup-node-fill-hex" placeholder="#RRGGBB" maxlength="7" style="width:80px;" oninput="syncNodeHexToColor('fill')">
+          </div>
+        </div>
+        <div class="node-popup-row">
+          <label>Recent Colors</label>
+          <div id="recent-colors-container" style="display:flex;flex-wrap:wrap;gap:4px;flex:1;"></div>
         </div>
         <div class="node-popup-row">
           <label>Border Color</label>
-          <input type="color" id="popup-node-border" value="#666666">
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="color" id="popup-node-border" value="#666666" onchange="syncNodeColorToHex('border')">
+            <input type="text" id="popup-node-border-hex" placeholder="#RRGGBB" maxlength="7" style="width:80px;" oninput="syncNodeHexToColor('border')">
+          </div>
         </div>
         <div class="node-popup-row">
-          <label>Opacity %</label>
+          <label>Fill Opacity %</label>
           <input type="number" id="popup-node-opacity" value="100" min="0" max="100" style="width:80px">
+        </div>
+        <div class="node-popup-row">
+          <label>Border Opacity %</label>
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="range" id="popup-node-border-opacity" min="0" max="100" value="100" style="flex:1;" oninput="updateBorderOpacityDisplay()">
+            <span id="popup-node-border-opacity-value" style="min-width:40px;text-align:right;">100%</span>
+          </div>
         </div>
       </div>
       
@@ -648,7 +673,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <h4>Label Text</h4>
         <div class="node-popup-row">
           <label>Display Text</label>
-          <input type="text" id="popup-label-text" placeholder="Custom label">
+          <textarea id="popup-label-text" placeholder="Custom label (use Enter for multi-line)" rows="3" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
         </div>
         <div class="node-popup-row">
           <label>For Node</label>
@@ -666,6 +691,13 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <div class="node-popup-row">
           <label>Text Color</label>
           <input type="color" id="popup-label-color" value="#000000">
+        </div>
+        <div class="node-popup-row">
+          <label>Style</label>
+          <div class="node-popup-alignment">
+            <button type="button" onclick="toggleLabelBold()" id="label-bold" title="Bold">B</button>
+            <button type="button" onclick="toggleLabelItalic()" id="label-italic" title="Italic" style="font-style:italic;">I</button>
+          </div>
         </div>
         <div class="node-popup-row">
           <label>Alignment</label>
@@ -690,15 +722,24 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
           <label>BG Color</label>
           <input type="color" id="popup-label-bg" value="#ffffff">
         </div>
+      </div>
+      
+      <div class="node-popup-section">
+        <h4>Text Margins (Padding)</h4>
         <div class="node-popup-row">
-          <label>Box Width</label>
-          <input type="number" id="popup-label-width" value="0" min="0" max="500" style="width:80px" placeholder="Auto">
-          <span style="font-size:11px;color:#666;">0 = auto</span>
+          <label>Top</label>
+          <input type="number" id="popup-label-margin-top" value="0" min="0" max="100" style="width:60px">
+          <label style="margin-left:10px;">Right</label>
+          <input type="number" id="popup-label-margin-right" value="0" min="0" max="100" style="width:60px">
         </div>
         <div class="node-popup-row">
-          <label>Box Height</label>
-          <input type="number" id="popup-label-height" value="0" min="0" max="200" style="width:80px" placeholder="Auto">
-          <span style="font-size:11px;color:#666;">0 = auto</span>
+          <label>Bottom</label>
+          <input type="number" id="popup-label-margin-bottom" value="0" min="0" max="100" style="width:60px">
+          <label style="margin-left:10px;">Left</label>
+          <input type="number" id="popup-label-margin-left" value="0" min="0" max="100" style="width:60px">
+        </div>
+        <div class="node-popup-row">
+          <span style="font-size:11px;color:#888;">💡 Margins add padding around the label text</span>
         </div>
       </div>
       
@@ -749,6 +790,32 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeJSONEditor()">Cancel</button>
       <button class="btn btn-primary" onclick="applyJSONData()">Apply Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Options Modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal" style="width: 400px;">
+    <div class="modal-header">
+      <h3>💾 Export Diagram</h3>
+      <button class="modal-close" onclick="closeExportModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn btn-primary" onclick="exportAsPNG(2); closeExportModal();" style="padding: 16px; font-size: 14px;">
+          🖼️ Export as PNG (Standard)
+        </button>
+        <button class="btn btn-secondary" onclick="exportAsPNG(4); closeExportModal();" style="padding: 16px; font-size: 14px;">
+          🖼️ Export as PNG (Large 4x)
+        </button>
+        <button class="btn btn-secondary" onclick="exportAsSVG(); closeExportModal();" style="padding: 16px; font-size: 14px;">
+          📐 Export as SVG (Vector)
+        </button>
+      </div>
+      <div class="hint" style="margin-top: 16px; text-align: center;">
+        PNG is best for sharing. SVG is best for editing in design tools.
+      </div>
     </div>
   </div>
 </div>
@@ -1365,6 +1432,57 @@ function resetAllLabelsCustom() {
 // Track which node/label is being edited
 let currentEditingLabelName = null;
 
+// Sync color picker to hex input
+function syncNodeColorToHex(type) {
+  const colorInput = document.getElementById('popup-node-' + type);
+  const hexInput = document.getElementById('popup-node-' + type + '-hex');
+  if (colorInput && hexInput) {
+    hexInput.value = colorInput.value;
+  }
+}
+
+// Sync hex input to color picker with validation
+function syncNodeHexToColor(type) {
+  const colorInput = document.getElementById('popup-node-' + type);
+  const hexInput = document.getElementById('popup-node-' + type + '-hex');
+  if (colorInput && hexInput) {
+    const hex = hexInput.value;
+    
+    // Use ValidationUtils if available
+    if (typeof ValidationUtils !== 'undefined') {
+      const result = ValidationUtils.validateHexColor(hex);
+      if (result.isValid) {
+        colorInput.value = result.normalized;
+        ValidationUtils.clearError(hexInput);
+      } else {
+        ValidationUtils.showError(hexInput, result.error);
+      }
+    } else {
+      // Fallback to basic validation
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        colorInput.value = hex;
+      }
+    }
+  }
+}
+
+// Update border opacity display
+function updateBorderOpacityDisplay() {
+  const slider = document.getElementById('popup-node-border-opacity');
+  const display = document.getElementById('popup-node-border-opacity-value');
+  if (slider && display) {
+    display.textContent = slider.value + '%';
+  }
+}
+
+// Apply recent color to fill
+function applyRecentColorToFill(color) {
+  const colorInput = document.getElementById('popup-node-fill');
+  const hexInput = document.getElementById('popup-node-fill-hex');
+  if (colorInput) colorInput.value = color;
+  if (hexInput) hexInput.value = color;
+}
+
 function openNodePopup(nodeName, element) {
   currentEditingNodeName = nodeName;
   const popup = document.getElementById('node-popup-overlay');
@@ -1386,8 +1504,18 @@ function openNodePopup(nodeName, element) {
   
   document.getElementById('popup-node-name').value = nodeName;
   document.getElementById('popup-node-fill').value = currentFillColor;
+  document.getElementById('popup-node-fill-hex').value = currentFillColor;
   document.getElementById('popup-node-border').value = custom.borderColor || '#666666';
+  document.getElementById('popup-node-border-hex').value = custom.borderColor || '#666666';
   document.getElementById('popup-node-opacity').value = custom.opacity || 100;
+  document.getElementById('popup-node-border-opacity').value = custom.borderOpacity || 100;
+  updateBorderOpacityDisplay();
+  
+  // Render recent colors
+  const recentContainer = document.getElementById('recent-colors-container');
+  if (typeof RecentColorsManager !== 'undefined' && recentContainer) {
+    RecentColorsManager.renderRecentColors(recentContainer, applyRecentColorToFill);
+  }
   
   popup.classList.add('active');
 }
@@ -1431,12 +1559,21 @@ function openLabelPopup(nodeName, element) {
   document.getElementById('popup-label-bg').value = custom.labelBg || '#ffffff';
   document.getElementById('popup-label-bg-enabled').checked = custom.labelBgEnabled || false;
   document.getElementById('popup-label-color').value = custom.labelColor || '#000000';
-  document.getElementById('popup-label-width').value = custom.labelWidth || 0;
-  document.getElementById('popup-label-height').value = custom.labelHeight || 0;
+  
+  // Load text margins
+  document.getElementById('popup-label-margin-top').value = custom.labelMarginTop || 0;
+  document.getElementById('popup-label-margin-right').value = custom.labelMarginRight || 0;
+  document.getElementById('popup-label-margin-bottom').value = custom.labelMarginBottom || 0;
+  document.getElementById('popup-label-margin-left').value = custom.labelMarginLeft || 0;
+  
   document.getElementById('popup-label-x').value = Math.round(currentLabelX);
   document.getElementById('popup-label-y').value = Math.round(currentLabelY);
   
   setLabelAlignment(custom.labelAlign || 'center');
+  
+  // Load bold/italic state
+  setLabelBold(custom.labelBold || false);
+  setLabelItalic(custom.labelItalic || false);
   
   popup.classList.add('active');
 }
@@ -1444,6 +1581,35 @@ function openLabelPopup(nodeName, element) {
 function closeLabelPopup() {
   document.getElementById('label-popup-overlay').classList.remove('active');
   currentEditingLabelName = null;
+}
+
+// Bold/Italic toggle functions
+function toggleLabelBold() {
+  const btn = document.getElementById('label-bold');
+  btn.classList.toggle('active');
+}
+
+function toggleLabelItalic() {
+  const btn = document.getElementById('label-italic');
+  btn.classList.toggle('active');
+}
+
+function setLabelBold(isBold) {
+  const btn = document.getElementById('label-bold');
+  if (btn) btn.classList.toggle('active', isBold);
+}
+
+function setLabelItalic(isItalic) {
+  const btn = document.getElementById('label-italic');
+  if (btn) btn.classList.toggle('active', isItalic);
+}
+
+function getLabelBold() {
+  return document.getElementById('label-bold')?.classList.contains('active') || false;
+}
+
+function getLabelItalic() {
+  return document.getElementById('label-italic')?.classList.contains('active') || false;
 }
 
 function setLabelAlignment(align) {
@@ -1464,19 +1630,62 @@ function applyNodeCustomization() {
   const nodeName = currentEditingNodeName;
   const newName = document.getElementById('popup-node-name').value.trim();
   
+  // Get input elements for validation error display
+  const fillHexInput = document.getElementById('popup-node-fill-hex');
+  const borderHexInput = document.getElementById('popup-node-border-hex');
+  const opacityInput = document.getElementById('popup-node-opacity');
+  const borderOpacityInput = document.getElementById('popup-node-border-opacity');
+  
+  // Clear previous errors
+  if (typeof ValidationUtils !== 'undefined') {
+    ValidationUtils.clearError(fillHexInput);
+    ValidationUtils.clearError(borderHexInput);
+    ValidationUtils.clearError(opacityInput);
+  }
+  
   // Get existing customizations to preserve label settings
   const existingCustom = nodeCustomizations[nodeName] || {};
+  
+  // Collect raw values
+  const rawSettings = {
+    fillColor: document.getElementById('popup-node-fill').value,
+    borderColor: document.getElementById('popup-node-border').value,
+    opacity: document.getElementById('popup-node-opacity').value,
+    borderOpacity: document.getElementById('popup-node-border-opacity').value
+  };
+  
+  // Validate and clamp values using ValidationUtils
+  let validatedSettings = rawSettings;
+  if (typeof ValidationUtils !== 'undefined') {
+    const result = ValidationUtils.validateNodeSettings(rawSettings);
+    validatedSettings = result.validated;
+    
+    // Show errors if any values were adjusted
+    if (result.errors.length > 0) {
+      result.errors.forEach(error => {
+        if (error.includes('Fill color')) ValidationUtils.showError(fillHexInput, error);
+        if (error.includes('Border color')) ValidationUtils.showError(borderHexInput, error);
+        if (error.includes('Opacity')) ValidationUtils.showError(opacityInput, error);
+      });
+    }
+  }
   
   // Store node-only customizations (preserve existing label settings)
   const custom = {
     ...existingCustom,
-    fillColor: document.getElementById('popup-node-fill').value,
-    borderColor: document.getElementById('popup-node-border').value,
-    opacity: parseInt(document.getElementById('popup-node-opacity').value)
+    fillColor: validatedSettings.fillColor || rawSettings.fillColor,
+    borderColor: validatedSettings.borderColor || rawSettings.borderColor,
+    opacity: validatedSettings.opacity !== undefined ? validatedSettings.opacity : parseInt(rawSettings.opacity),
+    borderOpacity: validatedSettings.borderOpacity !== undefined ? validatedSettings.borderOpacity : parseInt(rawSettings.borderOpacity)
   };
   
   nodeCustomizations[nodeName] = custom;
   nodeColors[nodeName] = custom.fillColor;
+  
+  // Add fill color to recent colors
+  if (typeof RecentColorsManager !== 'undefined') {
+    RecentColorsManager.addColor(custom.fillColor);
+  }
   
   // Apply changes directly to SVG elements
   applyNodeCustomizationToSVG(nodeName, custom);
@@ -1517,22 +1726,84 @@ function applyLabelCustomization() {
   
   const nodeName = currentEditingLabelName;
   
+  // Get input elements for validation error display
+  const fontSizeInput = document.getElementById('popup-label-fontsize');
+  const marginTopInput = document.getElementById('popup-label-margin-top');
+  const marginRightInput = document.getElementById('popup-label-margin-right');
+  const marginBottomInput = document.getElementById('popup-label-margin-bottom');
+  const marginLeftInput = document.getElementById('popup-label-margin-left');
+  const labelXInput = document.getElementById('popup-label-x');
+  const labelYInput = document.getElementById('popup-label-y');
+  
+  // Clear previous errors
+  if (typeof ValidationUtils !== 'undefined') {
+    ValidationUtils.clearError(fontSizeInput);
+    ValidationUtils.clearError(marginTopInput);
+    ValidationUtils.clearError(marginRightInput);
+    ValidationUtils.clearError(marginBottomInput);
+    ValidationUtils.clearError(marginLeftInput);
+    ValidationUtils.clearError(labelXInput);
+    ValidationUtils.clearError(labelYInput);
+  }
+  
   // Get existing customizations to preserve node settings
   const existingCustom = nodeCustomizations[nodeName] || {};
   
-  // Store label-only customizations (preserve existing node settings)
-  const custom = {
-    ...existingCustom,
+  // Collect raw values
+  const rawSettings = {
     labelText: document.getElementById('popup-label-text').value,
     labelBg: document.getElementById('popup-label-bg').value,
     labelBgEnabled: document.getElementById('popup-label-bg-enabled').checked,
     labelColor: document.getElementById('popup-label-color').value,
     labelAlign: getLabelAlignment(),
-    labelWidth: parseInt(document.getElementById('popup-label-width').value) || 0,
-    labelHeight: parseInt(document.getElementById('popup-label-height').value) || 0,
-    labelX: parseInt(document.getElementById('popup-label-x').value) || 0,
-    labelY: parseInt(document.getElementById('popup-label-y').value) || 0,
-    labelFontSize: parseInt(document.getElementById('popup-label-fontsize')?.value) || 16
+    labelBold: getLabelBold(),
+    labelItalic: getLabelItalic(),
+    labelMarginTop: document.getElementById('popup-label-margin-top').value,
+    labelMarginRight: document.getElementById('popup-label-margin-right').value,
+    labelMarginBottom: document.getElementById('popup-label-margin-bottom').value,
+    labelMarginLeft: document.getElementById('popup-label-margin-left').value,
+    labelX: document.getElementById('popup-label-x').value,
+    labelY: document.getElementById('popup-label-y').value,
+    labelFontSize: document.getElementById('popup-label-fontsize')?.value
+  };
+  
+  // Validate and clamp values using ValidationUtils
+  let validatedSettings = rawSettings;
+  if (typeof ValidationUtils !== 'undefined') {
+    const result = ValidationUtils.validateLabelSettings(rawSettings);
+    validatedSettings = result.validated;
+    
+    // Show errors if any values were adjusted
+    if (result.errors.length > 0) {
+      result.errors.forEach(error => {
+        if (error.includes('Font size')) ValidationUtils.showError(fontSizeInput, error);
+        if (error.includes('labelMarginTop')) ValidationUtils.showError(marginTopInput, error);
+        if (error.includes('labelMarginRight')) ValidationUtils.showError(marginRightInput, error);
+        if (error.includes('labelMarginBottom')) ValidationUtils.showError(marginBottomInput, error);
+        if (error.includes('labelMarginLeft')) ValidationUtils.showError(marginLeftInput, error);
+        if (error.includes('X offset')) ValidationUtils.showError(labelXInput, error);
+        if (error.includes('Y offset')) ValidationUtils.showError(labelYInput, error);
+      });
+    }
+  }
+  
+  // Store label-only customizations (preserve existing node settings)
+  const custom = {
+    ...existingCustom,
+    labelText: validatedSettings.labelText || rawSettings.labelText || nodeName,
+    labelBg: rawSettings.labelBg,
+    labelBgEnabled: rawSettings.labelBgEnabled,
+    labelColor: validatedSettings.labelColor || rawSettings.labelColor,
+    labelAlign: rawSettings.labelAlign,
+    labelBold: rawSettings.labelBold,
+    labelItalic: rawSettings.labelItalic,
+    labelMarginTop: validatedSettings.labelMarginTop !== undefined ? validatedSettings.labelMarginTop : (parseInt(rawSettings.labelMarginTop) || 0),
+    labelMarginRight: validatedSettings.labelMarginRight !== undefined ? validatedSettings.labelMarginRight : (parseInt(rawSettings.labelMarginRight) || 0),
+    labelMarginBottom: validatedSettings.labelMarginBottom !== undefined ? validatedSettings.labelMarginBottom : (parseInt(rawSettings.labelMarginBottom) || 0),
+    labelMarginLeft: validatedSettings.labelMarginLeft !== undefined ? validatedSettings.labelMarginLeft : (parseInt(rawSettings.labelMarginLeft) || 0),
+    labelX: validatedSettings.labelX !== undefined ? validatedSettings.labelX : (parseInt(rawSettings.labelX) || 0),
+    labelY: validatedSettings.labelY !== undefined ? validatedSettings.labelY : (parseInt(rawSettings.labelY) || 0),
+    labelFontSize: validatedSettings.labelFontSize !== undefined ? validatedSettings.labelFontSize : (parseInt(rawSettings.labelFontSize) || 16)
   };
   
   nodeCustomizations[nodeName] = custom;
@@ -1608,6 +1879,9 @@ function applyNodeCustomizationToSVG(nodeName, custom) {
       rect.setAttribute('stroke', custom.borderColor);
       rect.setAttribute('stroke-width', '1');
       rect.setAttribute('opacity', custom.opacity / 100);
+      // Apply border opacity
+      const borderOpacity = custom.borderOpacity !== undefined ? custom.borderOpacity / 100 : 1;
+      rect.setAttribute('stroke-opacity', borderOpacity);
     }
   });
 }
@@ -1637,6 +1911,20 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
       textEl.querySelectorAll('tspan').forEach(tspan => {
         tspan.setAttribute('font-size', custom.labelFontSize + 'px');
       });
+    }
+    
+    // Apply bold
+    if (custom.labelBold) {
+      textEl.setAttribute('font-weight', 'bold');
+    } else {
+      textEl.removeAttribute('font-weight');
+    }
+    
+    // Apply italic
+    if (custom.labelItalic) {
+      textEl.setAttribute('font-style', 'italic');
+    } else {
+      textEl.removeAttribute('font-style');
     }
     
     // Apply alignment
@@ -1671,85 +1959,61 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
       }
     }
     
-    // Apply position offset to the label group
-    const offsetX = custom.labelX || 0;
-    const offsetY = custom.labelY || 0;
+    // Apply position offset to the label group (including margins)
+    const marginLeft = custom.labelMarginLeft || 0;
+    const marginTop = custom.labelMarginTop || 0;
+    const offsetX = (custom.labelX || 0) + marginLeft;
+    const offsetY = (custom.labelY || 0) + marginTop;
     const newX = customLayout[nodeName].originalX + offsetX;
     const newY = customLayout[nodeName].originalY + offsetY;
     group.setAttribute('transform', `translate(${newX}, ${newY})`);
     
-    // Update label text if provided (always apply if different from node name)
+    // Update label text - handle multi-line
     if (custom.labelText) {
-      // Find the first tspan or use the text element directly
-      const firstTspan = textEl.querySelector('tspan');
-      if (firstTspan) {
-        firstTspan.textContent = custom.labelText;
-      } else {
-        // Get all tspans to preserve value lines
-        const tspans = textEl.querySelectorAll('tspan');
-        if (tspans.length > 0) {
-          tspans[0].textContent = custom.labelText;
-        } else {
-          // No tspans, update text content directly but preserve structure
-          const currentText = textEl.textContent || '';
-          const lines = currentText.split('\n');
-          lines[0] = custom.labelText;
-          textEl.textContent = lines.join('\n');
+      const lines = custom.labelText.split('\n');
+      const fontSize = custom.labelFontSize || 16;
+      const lineHeight = fontSize * 1.2;
+      
+      // Clear existing tspans except value tspans
+      const existingTspans = textEl.querySelectorAll('tspan');
+      const valueTspans = [];
+      existingTspans.forEach(tspan => {
+        // Keep tspans that look like value displays (contain numbers with units)
+        if (tspan.textContent && /^\d/.test(tspan.textContent.trim())) {
+          valueTspans.push(tspan.cloneNode(true));
         }
-      }
+      });
+      
+      // Clear text element
+      textEl.textContent = '';
+      
+      // Add new tspans for each line
+      lines.forEach((line, index) => {
+        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        tspan.textContent = line;
+        tspan.setAttribute('x', '0');
+        tspan.setAttribute('dy', index === 0 ? '0' : lineHeight + 'px');
+        if (custom.labelFontSize) {
+          tspan.setAttribute('font-size', custom.labelFontSize + 'px');
+        }
+        textEl.appendChild(tspan);
+      });
+      
+      // Re-add value tspans
+      valueTspans.forEach(tspan => {
+        tspan.setAttribute('dy', lineHeight + 'px');
+        textEl.appendChild(tspan);
+      });
     }
     
-    // Handle label background box
+    // Handle label background box with margins
     const existingBg = group.querySelector('.custom-label-bg');
     if (existingBg) existingBg.remove();
     
     if (custom.labelBgEnabled) {
       applyLabelBackground(textEl, custom);
     }
-    
-    // Handle custom label box dimensions
-    if (custom.labelWidth > 0 || custom.labelHeight > 0) {
-      applyLabelBoxDimensions(textEl, custom);
-    }
   });
-}
-
-// Apply custom box dimensions to label
-function applyLabelBoxDimensions(textEl, custom) {
-  const group = textEl.parentElement;
-  if (!group || group.tagName !== 'g') return;
-  
-  const bbox = textEl.getBBox();
-  const padding = 4;
-  
-  // Create or update the label box
-  let labelBox = group.querySelector('.label-box');
-  if (!labelBox) {
-    labelBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    labelBox.setAttribute('class', 'label-box');
-    group.insertBefore(labelBox, textEl);
-  }
-  
-  const boxWidth = custom.labelWidth > 0 ? custom.labelWidth : bbox.width + padding * 2;
-  const boxHeight = custom.labelHeight > 0 ? custom.labelHeight : bbox.height + padding * 2;
-  
-  labelBox.setAttribute('x', bbox.x - padding);
-  labelBox.setAttribute('y', bbox.y - padding);
-  labelBox.setAttribute('width', boxWidth);
-  labelBox.setAttribute('height', boxHeight);
-  labelBox.setAttribute('fill', custom.labelBgEnabled ? custom.labelBg : 'transparent');
-  labelBox.setAttribute('stroke', custom.labelBgEnabled ? '#ccc' : 'none');
-  labelBox.setAttribute('stroke-width', '1');
-  labelBox.setAttribute('rx', '3');
-  labelBox.setAttribute('opacity', custom.labelBgEnabled ? '0.9' : '0');
-  
-  // Adjust text position based on alignment within the box
-  if (custom.labelWidth > 0) {
-    const textX = custom.labelAlign === 'left' ? bbox.x - padding + 4 :
-                  custom.labelAlign === 'right' ? bbox.x - padding + boxWidth - 4 :
-                  bbox.x - padding + boxWidth / 2;
-    textEl.setAttribute('x', textX - bbox.x);
-  }
 }
 
 function applyLabelBackground(textEl, custom) {
@@ -1762,15 +2026,20 @@ function applyLabelBackground(textEl, custom) {
   
   // Get text bounding box
   const bbox = textEl.getBBox();
-  const padding = 6;
+  
+  // Use margins for padding
+  const marginTop = custom.labelMarginTop || 6;
+  const marginRight = custom.labelMarginRight || 6;
+  const marginBottom = custom.labelMarginBottom || 6;
+  const marginLeft = custom.labelMarginLeft || 6;
   
   // Create background rect
   const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   bgRect.setAttribute('class', 'custom-label-bg');
-  bgRect.setAttribute('x', bbox.x - padding);
-  bgRect.setAttribute('y', bbox.y - padding);
-  bgRect.setAttribute('width', custom.labelWidth > 0 ? custom.labelWidth : bbox.width + padding * 2);
-  bgRect.setAttribute('height', custom.labelHeight > 0 ? custom.labelHeight : bbox.height + padding * 2);
+  bgRect.setAttribute('x', bbox.x - marginLeft);
+  bgRect.setAttribute('y', bbox.y - marginTop);
+  bgRect.setAttribute('width', bbox.width + marginLeft + marginRight);
+  bgRect.setAttribute('height', bbox.height + marginTop + marginBottom);
   bgRect.setAttribute('fill', custom.labelBg || '#ffffff');
   bgRect.setAttribute('stroke', '#cccccc');
   bgRect.setAttribute('stroke-width', '1');
@@ -2205,6 +2474,142 @@ function cleanJSON(str) {
 
 <script>
 // ============ AI CHAT PROCESSING ============
+// Enhanced AI chat integration with AIController
+// Requirements: 5.1, 5.3 - AI reads/modifies diagram data with preview
+
+/**
+ * Get comprehensive diagram context for AI
+ * Passes all diagram data to AI context (Requirement 5.1, 5.7)
+ */
+function getAIDiagramContext() {
+  if (typeof AIController === 'undefined') {
+    return { context: '', data: null };
+  }
+  
+  const data = AIController.getDiagramData();
+  const balance = AIController.analyzeFlowBalance();
+  
+  let context = `\n\n=== CURRENT DIAGRAM DATA ===`;
+  context += `\nNodes (${data.nodes.length}): ${data.nodes.join(', ')}`;
+  context += `\nFlows (${data.flows.length}): Total flow = ${data.totalFlow.toFixed(2)}`;
+  
+  if (data.flows.length > 0) {
+    context += '\n\nFlow Details:';
+    data.flows.forEach((f, i) => {
+      context += `\n${i + 1}. ${f.source} → ${f.target}: ${f.amount}`;
+    });
+  }
+  
+  if (balance.imbalanced.length > 0) {
+    context += '\n\nImbalanced Nodes:';
+    balance.imbalanced.forEach(ib => {
+      context += `\n- ${ib.node}: inflow=${ib.inflow.toFixed(2)}, outflow=${ib.outflow.toFixed(2)}, diff=${ib.difference.toFixed(2)}`;
+    });
+  }
+  
+  // Include node customizations summary
+  if (Object.keys(data.nodeCustomizations).length > 0) {
+    context += '\n\nCustomized Nodes: ' + Object.keys(data.nodeCustomizations).join(', ');
+  }
+  
+  context += '\n=== END DIAGRAM DATA ===\n';
+  
+  return { context, data };
+}
+
+/**
+ * Handle AI modification response using AIController
+ * Validates and applies changes with undo support (Requirement 5.2, 5.6)
+ */
+async function handleAIModification(result, previewTitle) {
+  if (!result.flows || result.flows.length === 0) {
+    return { success: false, message: 'No flows to apply' };
+  }
+  
+  // Normalize flow format
+  const normalizedFlows = result.flows.map(f => ({
+    source: f.from || f.source,
+    target: f.to || f.target,
+    amount: parseFloat(f.amount || f.value || 0)
+  }));
+  
+  // Validate using AIController
+  if (typeof AIController !== 'undefined') {
+    const validation = AIController.validateDiagramData({ flows: normalizedFlows });
+    if (!validation.isValid) {
+      return { 
+        success: false, 
+        message: 'Invalid data: ' + validation.errors.join(', ')
+      };
+    }
+  }
+  
+  // Generate preview diff
+  const currentData = typeof AIController !== 'undefined' ? AIController.getDiagramData() : { flows: [] };
+  const previewContent = generateAIDiff(currentData.flows, normalizedFlows);
+  
+  // Show preview and get user confirmation (Requirement 5.3)
+  const userApproved = await showAIPreviewWithDiff(previewTitle, previewContent, normalizedFlows);
+  
+  if (!userApproved) {
+    return { success: false, message: 'Cancelled by user' };
+  }
+  
+  // Apply using AIController for proper undo support (Requirement 5.6, 5.8)
+  if (typeof AIController !== 'undefined') {
+    const applyResult = AIController.applyDiagramData({ flows: normalizedFlows }, true);
+    return {
+      success: applyResult.success,
+      message: applyResult.success 
+        ? `Applied ${normalizedFlows.length} flows` 
+        : 'Failed: ' + (applyResult.errors || []).join(', '),
+      flowCount: normalizedFlows.length
+    };
+  }
+  
+  // Fallback if AIController not available
+  saveStateForUndo();
+  normalizedFlows.forEach(f => {
+    addDataRowWithValues(f.source, f.target, String(f.amount), '');
+  });
+  updateDiagramFromTableNoUndo();
+  
+  return { success: true, message: `Added ${normalizedFlows.length} flows`, flowCount: normalizedFlows.length };
+}
+
+/**
+ * Generate a diff between current and new flows
+ */
+function generateAIDiff(currentFlows, newFlows) {
+  const lines = [];
+  
+  // Find removed flows
+  currentFlows.forEach(cf => {
+    const exists = newFlows.some(nf => 
+      nf.source === cf.source && nf.target === cf.target
+    );
+    if (!exists) {
+      lines.push(`- REMOVED: ${cf.source} → ${cf.target}: ${cf.amount}`);
+    }
+  });
+  
+  // Find added or modified flows
+  newFlows.forEach(nf => {
+    const existing = currentFlows.find(cf => 
+      cf.source === nf.source && cf.target === nf.target
+    );
+    if (!existing) {
+      lines.push(`+ ADDED: ${nf.source} → ${nf.target}: ${nf.amount}`);
+    } else if (existing.amount !== nf.amount) {
+      lines.push(`~ MODIFIED: ${nf.source} → ${nf.target}: ${existing.amount} → ${nf.amount}`);
+    } else {
+      lines.push(`  UNCHANGED: ${nf.source} → ${nf.target}: ${nf.amount}`);
+    }
+  });
+  
+  return lines.join('\n');
+}
+
 async function processAIChat() {
   const input = document.getElementById('ai-chat-input');
   const btn = document.getElementById('ai-send-btn');
@@ -2241,11 +2646,106 @@ async function processAIChat() {
     progressText.textContent = 'Processing...';
     
     // Check if user wants to parse/modify data
-    const parseKeywords = ['parse', 'extract', 'convert', 'add', 'create', 'generate', 'modify', 'change', 'update', 'rebalance'];
+    const parseKeywords = ['parse', 'extract', 'convert', 'add', 'create', 'generate', 'modify', 'change', 'update', 'rebalance', 'balance', 'analyze', 'summary', 'scale', 'multiply', 'divide'];
     const shouldParse = parseKeywords.some(kw => text.toLowerCase().includes(kw)) || uploadedImages.length > 0;
     
+    // Check for AIController-specific commands
+    if (typeof AIController !== 'undefined') {
+      const lowerText = text.toLowerCase();
+      
+      // Handle analyze/summary commands
+      if (lowerText.includes('analyze') || lowerText.includes('summary') || (lowerText.includes('balance') && !lowerText.includes('rebalance'))) {
+        const summary = AIController.getSummary();
+        const balance = AIController.analyzeFlowBalance();
+        
+        let response = summary;
+        if (balance.imbalanced.length > 0) {
+          response += '\n\nSuggested fixes:\n';
+          balance.imbalanced.forEach(ib => {
+            response += `• ${ib.suggestion}\n`;
+          });
+        }
+        
+        addToChatHistory('ai', response);
+        updateAIStatus('✓ Analysis complete', 'success');
+        input.value = '';
+        btn.disabled = false;
+        progressEl.style.display = 'none';
+        return;
+      }
+      
+      // Handle unit conversion commands (Requirement 5.4)
+      const convertMatch = text.match(/(?:convert|scale|multiply)\s+(?:units?\s+)?(?:by\s+)?(\d+(?:\.\d+)?)/i);
+      const divideMatch = text.match(/divide\s+(?:by\s+)?(\d+(?:\.\d+)?)/i);
+      
+      if (convertMatch || divideMatch) {
+        let factor = convertMatch ? parseFloat(convertMatch[1]) : 1 / parseFloat(divideMatch[1]);
+        
+        // Show preview before conversion
+        const currentData = AIController.getDiagramData();
+        const previewFlows = currentData.flows.map(f => ({
+          source: f.source,
+          target: f.target,
+          oldAmount: f.amount,
+          newAmount: f.amount * factor
+        }));
+        
+        const previewContent = previewFlows.map(f => 
+          `${f.source} → ${f.target}: ${f.oldAmount} → ${f.newAmount.toFixed(2)}`
+        ).join('\n');
+        
+        if (await showAIPreviewWithDiff('Unit Conversion', previewContent, null)) {
+          const result = AIController.convertUnits(factor);
+          if (result.success) {
+            addToChatHistory('ai', `✅ Converted all flow amounts by factor ${factor.toFixed(4)}`);
+            updateAIStatus(`✓ Converted by ${factor}x`, 'success');
+          } else {
+            addToChatHistory('ai', `❌ Conversion failed: ${result.error}`);
+            updateAIStatus('Conversion failed', 'error');
+          }
+        } else {
+          addToChatHistory('ai', '❌ Conversion cancelled by user');
+          updateAIStatus('Cancelled', 'warning');
+        }
+        input.value = '';
+        btn.disabled = false;
+        progressEl.style.display = 'none';
+        return;
+      }
+      
+      // Handle add flow command directly
+      const addFlowMatch = text.match(/add\s+(?:flow\s+)?(?:from\s+)?["']?([^"']+?)["']?\s+(?:to\s+)?["']?([^"']+?)["']?\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+      if (addFlowMatch) {
+        const source = addFlowMatch[1].trim();
+        const target = addFlowMatch[2].trim();
+        const amount = parseFloat(addFlowMatch[3]);
+        
+        const previewContent = `+ ADDED: ${source} → ${target}: ${amount}`;
+        if (await showAIPreviewWithDiff('Add Flow', previewContent, null)) {
+          const result = AIController.addFlow(source, target, amount);
+          if (result.success) {
+            addToChatHistory('ai', `✅ Added flow: ${source} → ${target}: ${amount}`);
+            updateAIStatus('✓ Flow added', 'success');
+          } else {
+            addToChatHistory('ai', `❌ Failed to add flow: ${(result.errors || []).join(', ')}`);
+            updateAIStatus('Failed', 'error');
+          }
+        } else {
+          addToChatHistory('ai', '❌ Flow addition cancelled by user');
+          updateAIStatus('Cancelled', 'warning');
+        }
+        input.value = '';
+        btn.disabled = false;
+        progressEl.style.display = 'none';
+        return;
+      }
+    }
+    
     if (shouldParse) {
-      const result = await callGeminiAPI(apiKey, model, text, customPrompt, uploadedImages);
+      // Include comprehensive diagram context for AI (Requirement 5.1, 5.7)
+      const { context: diagramContext } = getAIDiagramContext();
+      
+      const result = await callGeminiAPI(apiKey, model, text + diagramContext, customPrompt, uploadedImages);
       
       progressBar.style.width = '90%';
       progressText.textContent = 'Applying changes...';
@@ -2255,31 +2755,52 @@ async function processAIChat() {
         addToChatHistory('ai', result.chatResponse.substring(0, 500));
         updateAIStatus('💬 AI responded - try being more specific about the data format', 'warning');
       } else if (result.action === 'modify' && result.modifications) {
-        // Handle modifications to existing data
-        applyModifications(result.modifications);
-        addToChatHistory('ai', `✅ Applied ${result.modifications.length} modifications`);
-        updateAIStatus(`✓ Modified ${result.modifications.length} items`, 'success');
+        // Show preview before applying modifications
+        const preview = result.modifications.map(m => 
+          m.from && m.to ? `~ ${m.from} → ${m.to}: ${m.newAmount}` : `~ ${m.node}: ${m.newAmount}`
+        ).join('\n');
+        
+        if (await showAIPreviewWithDiff('Modifications', preview, null)) {
+          applyModifications(result.modifications);
+          addToChatHistory('ai', `✅ Applied ${result.modifications.length} modifications`);
+          updateAIStatus(`✓ Modified ${result.modifications.length} items`, 'success');
+        } else {
+          addToChatHistory('ai', '❌ Modifications cancelled by user');
+          updateAIStatus('Cancelled', 'warning');
+        }
       } else if (result.action === 'rebalance' && result.targetNode) {
-        // Handle rebalancing
-        rebalanceNode(result.targetNode, result.newTotal);
-        addToChatHistory('ai', `✅ Rebalanced ${result.targetNode}`);
-        updateAIStatus(`✓ Rebalanced node`, 'success');
+        // Handle rebalancing with preview
+        const previewContent = `Rebalance ${result.targetNode} to total: ${result.newTotal}`;
+        if (await showAIPreviewWithDiff('Rebalance Node', previewContent, null)) {
+          rebalanceNode(result.targetNode, result.newTotal);
+          addToChatHistory('ai', `✅ Rebalanced ${result.targetNode}`);
+          updateAIStatus(`✓ Rebalanced node`, 'success');
+        } else {
+          addToChatHistory('ai', '❌ Rebalance cancelled by user');
+          updateAIStatus('Cancelled', 'warning');
+        }
       } else if (result.flows && result.flows.length > 0) {
-        // Add new flows
-        saveStateForUndo();
-        result.flows.forEach(f => {
-          addDataRowWithValues(f.from || f.source, f.to || f.target, String(f.amount || f.value || 0), '');
-        });
-        updateDiagramFromTableNoUndo();
-        addToChatHistory('ai', `✅ Added ${result.flows.length} flows to the diagram!`);
-        updateAIStatus(`✓ Added ${result.flows.length} flows`, 'success');
+        // Handle new flows using enhanced handler
+        const modResult = await handleAIModification(result, 'AI Suggested Flows');
+        
+        if (modResult.success) {
+          addToChatHistory('ai', `✅ ${modResult.message}`);
+          updateAIStatus(`✓ ${modResult.message}`, 'success');
+        } else {
+          addToChatHistory('ai', `❌ ${modResult.message}`);
+          updateAIStatus(modResult.message, modResult.message === 'Cancelled by user' ? 'warning' : 'error');
+        }
       } else {
         addToChatHistory('ai', 'No flows found. Try: "parse: Revenue 100 to Expenses 50" or upload an image.');
         updateAIStatus('No flows found', 'warning');
       }
     } else {
-      // Chat mode
-      const chatResponse = await callGeminiChatAPI(apiKey, model, text);
+      // Chat mode - include diagram context
+      let contextText = text;
+      if (typeof AIController !== 'undefined') {
+        contextText += '\n\n[Context: ' + AIController.getSummary() + ']';
+      }
+      const chatResponse = await callGeminiChatAPI(apiKey, model, contextText);
       addToChatHistory('ai', chatResponse);
       updateAIStatus('', '');
     }
@@ -2297,8 +2818,120 @@ async function processAIChat() {
   }
 }
 
+// Show enhanced preview modal for AI modifications with diff display
+// Requirement 5.3 - Show preview before applying changes
+async function showAIPreviewWithDiff(title, content, flowsData) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay ai-preview-modal';
+    modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;';
+    
+    // Color-code the diff lines
+    const coloredContent = content.split('\n').map(line => {
+      if (line.startsWith('+') || line.startsWith('+ ')) {
+        return `<span style="color:#22c55e;font-weight:500;">${escapeHtml(line)}</span>`;
+      } else if (line.startsWith('-') || line.startsWith('- ')) {
+        return `<span style="color:#ef4444;font-weight:500;">${escapeHtml(line)}</span>`;
+      } else if (line.startsWith('~') || line.startsWith('~ ')) {
+        return `<span style="color:#f59e0b;font-weight:500;">${escapeHtml(line)}</span>`;
+      }
+      return `<span style="color:#666;">${escapeHtml(line)}</span>`;
+    }).join('\n');
+    
+    modal.innerHTML = `
+      <div style="background:var(--studio-bg-primary, white);border-radius:12px;padding:0;max-width:550px;width:90%;max-height:80vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--studio-border-light, #e0e0e0);background:var(--studio-bg-secondary, #f8f9fa);">
+          <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px;">
+            <span>🤖</span> AI Preview: ${escapeHtml(title)}
+          </h3>
+        </div>
+        <div style="padding:20px;max-height:400px;overflow-y:auto;">
+          <div style="margin-bottom:12px;font-size:12px;color:var(--studio-text-secondary, #666);">
+            <span style="display:inline-block;margin-right:12px;"><span style="color:#22c55e;">+</span> Added</span>
+            <span style="display:inline-block;margin-right:12px;"><span style="color:#ef4444;">-</span> Removed</span>
+            <span style="display:inline-block;"><span style="color:#f59e0b;">~</span> Modified</span>
+          </div>
+          <pre style="background:var(--studio-bg-tertiary, #f5f5f5);padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap;max-height:300px;overflow:auto;margin:0;font-family:'Monaco','Menlo','Ubuntu Mono',monospace;line-height:1.5;">${coloredContent}</pre>
+        </div>
+        <div style="padding:16px 20px;border-top:1px solid var(--studio-border-light, #e0e0e0);display:flex;gap:10px;justify-content:flex-end;background:var(--studio-bg-secondary, #f8f9fa);">
+          <button id="ai-preview-cancel" style="padding:10px 20px;border:1px solid var(--studio-border-medium, #ccc);border-radius:6px;background:var(--studio-bg-primary, white);cursor:pointer;font-size:13px;font-weight:500;">Cancel</button>
+          <button id="ai-preview-apply" style="padding:10px 20px;border:none;border-radius:6px;background:#1a73e8;color:white;cursor:pointer;font-size:13px;font-weight:500;">Apply Changes</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focus the apply button for keyboard accessibility
+    setTimeout(() => modal.querySelector('#ai-preview-apply').focus(), 100);
+    
+    modal.querySelector('#ai-preview-cancel').onclick = () => {
+      modal.remove();
+      resolve(false);
+    };
+    
+    modal.querySelector('#ai-preview-apply').onclick = () => {
+      modal.remove();
+      resolve(true);
+    };
+    
+    // Handle keyboard events
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        resolve(false);
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        modal.remove();
+        resolve(true);
+      }
+    });
+    
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        modal.remove();
+        resolve(false);
+      }
+    };
+  });
+}
+
+// Helper to escape HTML for safe display
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Legacy function for backward compatibility
+async function showAIPreview(title, content) {
+  return showAIPreviewWithDiff(title, content, null);
+}
+
 function applyModifications(modifications) {
   const tbody = document.getElementById('data-table-body');
+  
+  // Use AIController if available for better handling
+  if (typeof AIController !== 'undefined') {
+    AIController.modifyFlows(
+      (flow) => modifications.some(mod => 
+        (mod.from && mod.to && flow.source === mod.from && flow.target === mod.to) ||
+        (mod.node && (flow.source === mod.node || flow.target === mod.node))
+      ),
+      (flow) => {
+        const mod = modifications.find(m => 
+          (m.from && m.to && flow.source === m.from && flow.target === m.to) ||
+          (m.node && (flow.source === m.node || flow.target === m.node))
+        );
+        if (mod && mod.newAmount !== undefined) {
+          flow.amount = mod.newAmount;
+        }
+        return flow;
+      }
+    );
+    return;
+  }
+  
+  // Fallback to direct DOM manipulation
   modifications.forEach(mod => {
     tbody.querySelectorAll('tr').forEach(row => {
       const inputs = row.querySelectorAll('input');
@@ -2338,10 +2971,21 @@ function rebalanceNode(nodeName, newTotal) {
 }
 
 async function callGeminiChatAPI(apiKey, model, text) {
+  // Get diagram context from AIController if available
+  let diagramData = 'No data yet';
+  if (typeof AIController !== 'undefined') {
+    const data = AIController.getDiagramData();
+    if (data.flows.length > 0) {
+      diagramData = data.flows.map(f => `${f.source} [${f.amount}] ${f.target}`).join('\n');
+    }
+  } else {
+    diagramData = document.getElementById('flows_in')?.value || 'No data yet';
+  }
+  
   const chatPrompt = `You are a helpful assistant for creating Sankey diagrams. Help users understand their data.
 
 Current diagram data:
-${document.getElementById('flows_in').value || 'No data yet'}
+${diagramData}
 
 User question: ${text}
 
@@ -2381,6 +3025,27 @@ function openJSONEditor() {
 
 function closeJSONEditor() {
   document.getElementById('json-editor-modal').classList.remove('active');
+}
+
+// ============ EXPORT MODAL ============
+function openExportModal() {
+  document.getElementById('export-modal').classList.add('active');
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('active');
+}
+
+function exportAsPNG(scale) {
+  if (typeof saveDiagramAsPNG === 'function') {
+    saveDiagramAsPNG(scale);
+  }
+}
+
+function exportAsSVG() {
+  if (typeof saveDiagramAsSVG === 'function') {
+    saveDiagramAsSVG();
+  }
 }
 
 function getCurrentDataAsJSON() {
