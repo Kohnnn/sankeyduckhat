@@ -52,6 +52,133 @@ const AIController = {
   },
 
   /**
+   * Get diagram state formatted for AI context injection
+   * Returns a comprehensive string summary for the AI system prompt
+   * @returns {string} Formatted diagram state for AI
+   */
+  getDiagramStateForAI() {
+    const data = this.getDiagramData();
+    const balance = this.analyzeFlowBalance();
+    
+    let context = '\n\n=== CURRENT DIAGRAM DATA ===\n';
+    context += `Total Nodes: ${data.nodes.length}\n`;
+    context += `Total Flows: ${data.flows.length}\n`;
+    context += `Total Flow Value: ${data.totalFlow.toFixed(2)}\n\n`;
+    
+    context += 'NODES:\n';
+    data.nodes.forEach(node => {
+      const nb = balance.nodeBalance[node];
+      if (nb) {
+        context += `- ${node}: inflow=${nb.inflow.toFixed(2)}, outflow=${nb.outflow.toFixed(2)}\n`;
+      } else {
+        context += `- ${node}\n`;
+      }
+    });
+    
+    context += '\nFLOWS (source → target: amount):\n';
+    data.flows.forEach(flow => {
+      context += `- ${flow.source} → ${flow.target}: ${flow.amount}\n`;
+    });
+    
+    if (balance.imbalanced.length > 0) {
+      context += '\nIMBALANCED NODES:\n';
+      balance.imbalanced.forEach(ib => {
+        context += `- ${ib.node}: ${ib.suggestion}\n`;
+      });
+    }
+    
+    context += '\nJSON FORMAT:\n';
+    context += JSON.stringify({ flows: data.flows }, null, 2);
+    context += '\n=== END DIAGRAM DATA ===\n';
+    
+    return context;
+  },
+
+  /**
+   * Rebalance flows for a specific node
+   * @param {string} nodeName - Node to rebalance
+   * @param {Object} options - Rebalancing options
+   * @returns {Object} Result with success status
+   */
+  rebalanceNode(nodeName, options = {}) {
+    const data = this.getDiagramData();
+    const balance = this.analyzeFlowBalance();
+    const nodeBalance = balance.nodeBalance[nodeName];
+    
+    if (!nodeBalance) {
+      return { success: false, error: `Node "${nodeName}" not found` };
+    }
+    
+    // Find flows involving this node
+    const inflows = data.flows.filter(f => f.target === nodeName);
+    const outflows = data.flows.filter(f => f.source === nodeName);
+    
+    if (options.matchInflow && outflows.length > 0) {
+      // Scale outflows to match total inflow
+      const totalInflow = nodeBalance.inflow;
+      const totalOutflow = nodeBalance.outflow;
+      if (totalOutflow > 0) {
+        const scale = totalInflow / totalOutflow;
+        outflows.forEach(flow => {
+          flow.amount = flow.amount * scale;
+        });
+      }
+    } else if (options.matchOutflow && inflows.length > 0) {
+      // Scale inflows to match total outflow
+      const totalInflow = nodeBalance.inflow;
+      const totalOutflow = nodeBalance.outflow;
+      if (totalInflow > 0) {
+        const scale = totalOutflow / totalInflow;
+        inflows.forEach(flow => {
+          flow.amount = flow.amount * scale;
+        });
+      }
+    } else if (options.targetTotal !== undefined) {
+      // Scale all flows to achieve target total
+      const currentTotal = nodeBalance.inflow + nodeBalance.outflow;
+      if (currentTotal > 0) {
+        const scale = options.targetTotal / currentTotal;
+        inflows.forEach(flow => { flow.amount = flow.amount * scale; });
+        outflows.forEach(flow => { flow.amount = flow.amount * scale; });
+      }
+    }
+    
+    return this.applyDiagramData(data);
+  },
+
+  /**
+   * Modify flow links (change source or target)
+   * @param {string} oldSource - Current source node
+   * @param {string} oldTarget - Current target node
+   * @param {Object} newLink - New link configuration { source?, target?, amount? }
+   * @returns {Object} Result with success status
+   */
+  modifyFlowLink(oldSource, oldTarget, newLink) {
+    const data = this.getDiagramData();
+    
+    const flowIndex = data.flows.findIndex(f => 
+      f.source === oldSource && f.target === oldTarget
+    );
+    
+    if (flowIndex === -1) {
+      return { success: false, error: `Flow from "${oldSource}" to "${oldTarget}" not found` };
+    }
+    
+    // Update the flow
+    if (newLink.source !== undefined) {
+      data.flows[flowIndex].source = newLink.source;
+    }
+    if (newLink.target !== undefined) {
+      data.flows[flowIndex].target = newLink.target;
+    }
+    if (newLink.amount !== undefined) {
+      data.flows[flowIndex].amount = newLink.amount;
+    }
+    
+    return this.applyDiagramData(data);
+  },
+
+  /**
    * Validate diagram data before applying
    * @param {Object} data - Data to validate
    * @returns {Object} Validation result with isValid and errors

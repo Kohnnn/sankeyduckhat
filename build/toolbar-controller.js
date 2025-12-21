@@ -137,6 +137,12 @@ const ToolbarController = {
       resetLabelsBtn.addEventListener('click', () => this._handleResetLabels());
     }
     
+    // Factory Reset button
+    const factoryResetBtn = this._toolbarElement?.querySelector('[data-action="factory-reset"]');
+    if (factoryResetBtn) {
+      factoryResetBtn.addEventListener('click', () => this._handleFactoryReset());
+    }
+    
     // Wire UndoManager stack change events to update button states
     if (typeof UndoManager !== 'undefined') {
       UndoManager.on('stackChange', (data) => {
@@ -559,6 +565,7 @@ const ToolbarController = {
   /**
    * Handle Reset Nodes action
    * Requirements: 2.6
+   * Clears customLayout and triggers full D3 Sankey recalculation
    */
   _handleResetNodes() {
     // Clear rememberedMoves
@@ -566,13 +573,10 @@ const ToolbarController = {
       window.rememberedMoves.clear();
     }
     
-    // Clear node positions from customLayout
+    // Clear ALL node positions from customLayout (complete reset)
     if (typeof customLayout !== 'undefined') {
       Object.keys(customLayout).forEach(key => {
-        if (customLayout[key]) {
-          delete customLayout[key].dx;
-          delete customLayout[key].dy;
-        }
+        delete customLayout[key];
       });
     }
     
@@ -581,15 +585,39 @@ const ToolbarController = {
       CustomLayoutStore.clearAllNodePositions();
     }
     
-    // Trigger re-render
+    // Clear node customizations (colors, etc.) but preserve label settings
+    if (typeof nodeCustomizations !== 'undefined') {
+      Object.keys(nodeCustomizations).forEach(key => {
+        if (nodeCustomizations[key]) {
+          delete nodeCustomizations[key].fillColor;
+          delete nodeCustomizations[key].borderColor;
+          delete nodeCustomizations[key].opacity;
+          delete nodeCustomizations[key].borderOpacity;
+        }
+      });
+    }
+    
+    // Clear nodeColors
+    if (typeof nodeColors !== 'undefined') {
+      Object.keys(nodeColors).forEach(key => {
+        delete nodeColors[key];
+      });
+    }
+    
+    // Trigger FULL re-render through sankey.js to recalculate D3 layout
     if (typeof process_sankey === 'function') {
       process_sankey();
     } else if (typeof renderDiagram === 'function') {
       renderDiagram();
     }
     
+    // Save progress
+    if (typeof saveProgressToLocal === 'function') {
+      saveProgressToLocal();
+    }
+    
     if (typeof updateAIStatus === 'function') {
-      updateAIStatus('Node positions reset', 'success');
+      updateAIStatus('Node positions reset to D3 layout', 'success');
     }
   },
 
@@ -650,6 +678,194 @@ const ToolbarController = {
     if (typeof updateAIStatus === 'function') {
       updateAIStatus('Label positions reset', 'success');
     }
+  },
+
+  /**
+   * Handle Factory Reset action
+   * Wipes EVERYTHING and returns app to initial state
+   */
+  _handleFactoryReset() {
+    // Confirm with user
+    const confirmed = confirm(
+      '⚠️ FACTORY RESET\n\n' +
+      'This will:\n' +
+      '• Clear ALL custom colors and styles\n' +
+      '• Reset ALL node and label positions\n' +
+      '• Clear ALL saved data from localStorage\n' +
+      '• Reload the default sample dataset\n' +
+      '• Reset zoom and pan to default\n\n' +
+      'This action cannot be undone!\n\n' +
+      'Are you sure you want to continue?'
+    );
+    
+    if (!confirmed) {
+      if (typeof updateAIStatus === 'function') {
+        updateAIStatus('Factory reset cancelled', 'warning');
+      }
+      return;
+    }
+    
+    // === STEP 1: Clear all in-memory state ===
+    
+    // Clear rememberedMoves (node positions)
+    if (typeof window !== 'undefined' && window.rememberedMoves instanceof Map) {
+      window.rememberedMoves.clear();
+    }
+    
+    // Clear rememberedLabelMoves (label positions)
+    if (typeof window !== 'undefined' && window.rememberedLabelMoves instanceof Map) {
+      window.rememberedLabelMoves.clear();
+    }
+    
+    // Clear nodeCustomizations
+    if (typeof nodeCustomizations !== 'undefined') {
+      Object.keys(nodeCustomizations).forEach(key => {
+        delete nodeCustomizations[key];
+      });
+    }
+    
+    // Clear nodeColors
+    if (typeof nodeColors !== 'undefined') {
+      Object.keys(nodeColors).forEach(key => {
+        delete nodeColors[key];
+      });
+    }
+    
+    // Clear customLayout
+    if (typeof customLayout !== 'undefined') {
+      Object.keys(customLayout).forEach(key => {
+        delete customLayout[key];
+      });
+    }
+    
+    // Clear labelPositions
+    if (typeof labelPositions !== 'undefined') {
+      Object.keys(labelPositions).forEach(key => {
+        delete labelPositions[key];
+      });
+    }
+    
+    // Clear undo/redo stacks
+    if (typeof undoStack !== 'undefined') {
+      undoStack.length = 0;
+    }
+    if (typeof window !== 'undefined' && window.redoStack) {
+      window.redoStack.length = 0;
+    }
+    
+    // Clear CustomLayoutStore
+    if (typeof CustomLayoutStore !== 'undefined') {
+      CustomLayoutStore.clearAllNodePositions();
+      CustomLayoutStore.clearAllLabelPositions();
+    }
+    
+    // === STEP 2: Clear ALL localStorage ===
+    if (typeof localStorage !== 'undefined') {
+      // Clear all sankeymatic-related keys
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('sankeymatic') ||
+          key.startsWith('sankey') ||
+          key === 'gemini_api_key' ||
+          key === 'ai_model' ||
+          key === 'ai_system_prompt' ||
+          key === 'diagram_title'
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Also clear recent colors
+      if (typeof RecentColorsManager !== 'undefined') {
+        RecentColorsManager.clear();
+      }
+    }
+    
+    // === STEP 3: Reset ViewportController (zoom/pan) ===
+    if (typeof ViewportController !== 'undefined' && ViewportController.isInitialized()) {
+      ViewportController.reset();
+    } else {
+      // Fallback CSS reset
+      const chart = document.getElementById('chart');
+      if (chart) {
+        chart.style.transform = 'scale(1)';
+      }
+      const zoomLevel = document.getElementById('zoom-level');
+      if (zoomLevel) {
+        zoomLevel.textContent = '100%';
+      }
+    }
+    
+    // === STEP 4: Reset diagram title ===
+    const titleInput = document.getElementById('diagram-title-input');
+    if (titleInput) {
+      titleInput.value = 'My Sankey Diagram';
+    }
+    
+    // === STEP 5: Reset theme to light ===
+    if (typeof ThemeController !== 'undefined') {
+      ThemeController.setTheme('light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    
+    // === STEP 6: Load default dataset ===
+    const defaultData = `// Sample Budget Flow
+Salary [1500] Budget
+Budget [450] Taxes
+Budget [420] Housing
+Budget [400] Food
+Budget [255] Transportation
+Budget [160] Other Necessities
+Budget [65] Savings
+Other [250] Savings`;
+    
+    // Set the flows input
+    const flowsInput = document.getElementById('flows_in');
+    if (flowsInput) {
+      flowsInput.value = defaultData;
+    }
+    
+    // Clear and rebuild data table
+    const tbody = document.getElementById('data-table-body');
+    if (tbody) {
+      tbody.innerHTML = '';
+      
+      // Parse default data and add rows
+      const lines = defaultData.split('\n').filter(line => line.trim() && !line.trim().startsWith('//'));
+      lines.forEach(line => {
+        const match = line.match(/^(.+?)\s*\[(\d+(?:\.\d+)?)\]\s*(.+)$/);
+        if (match) {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><input type="text" value="${match[1].trim()}" placeholder="Source"></td>
+            <td><input type="text" value="${match[3].trim()}" placeholder="Target"></td>
+            <td><input type="number" value="${match[2]}" placeholder="Amount" min="0" step="any"></td>
+            <td><button class="delete-btn" onclick="this.closest('tr').remove(); updateDiagramFromTable();">×</button></td>
+          `;
+          tbody.appendChild(row);
+        }
+      });
+    }
+    
+    // === STEP 7: Re-render diagram ===
+    if (typeof process_sankey === 'function') {
+      process_sankey();
+    } else if (typeof renderDiagram === 'function') {
+      renderDiagram();
+    }
+    
+    // === STEP 8: Reset tool to Select ===
+    this.setTool('select');
+    
+    if (typeof updateAIStatus === 'function') {
+      updateAIStatus('✓ Factory reset complete - app restored to initial state', 'success');
+    }
+    
+    console.log('Factory Reset: App restored to initial state');
   },
 
   /**

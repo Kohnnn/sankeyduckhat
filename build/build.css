@@ -2683,14 +2683,22 @@ path[data-source][data-target] {
    Panel Toggle and Collapse Styles
    ========================================================================== */
 .right-panel.collapsed {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
   overflow: hidden;
+  transition: width 0.3s ease, min-width 0.3s ease;
 }
 
 .right-panel.collapsed .studio-data-tabs,
 .right-panel.collapsed .studio-data-content,
+.right-panel.collapsed .data-table-wrapper,
+.right-panel.collapsed .add-row-section,
+.right-panel.collapsed .ai-section,
 .right-panel.collapsed .panel-header-actions button:not(#toggle-data-panel-btn),
-.right-panel.collapsed .studio-properties-header-title {
-  display: none;
+.right-panel.collapsed .studio-properties-header-title,
+.right-panel.collapsed .studio-data-tab-content {
+  display: none !important;
 }
 
 .right-panel.collapsed .panel-header {
@@ -2698,10 +2706,17 @@ path[data-source][data-target] {
   text-orientation: mixed;
   padding: 16px 8px;
   justify-content: center;
+  height: 100%;
 }
 
 .right-panel.collapsed #toggle-data-panel-btn {
   transform: rotate(90deg);
+  margin: 0;
+}
+
+/* Smooth transition for panel expansion */
+.right-panel {
+  transition: width 0.3s ease, min-width 0.3s ease;
 }
 
 /* ==========================================================================

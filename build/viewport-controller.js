@@ -219,39 +219,108 @@ const ViewportController = {
   /**
    * Fit diagram to screen
    * Calculates optimal zoom and pan to show entire diagram
+   * Uses SVG bounding box for accurate content measurement
    */
   fitToScreen() {
-    if (!this._initialized || !this._svg || !this._viewport) return;
+    if (!this._initialized || !this._svg) return;
     
     const svgNode = this._svg.node();
     const svgRect = svgNode.getBoundingClientRect();
     
-    // Get the bounding box of the viewport content
-    const viewportNode = this._viewport.node();
-    const bbox = viewportNode.getBBox();
+    // Get the bounding box of ALL content in the SVG
+    // First, reset transform to get accurate bbox
+    const currentTransform = d3.zoomTransform(svgNode);
     
-    if (bbox.width === 0 || bbox.height === 0) {
+    // Temporarily reset to identity to measure true content bounds
+    this._svg.call(this._zoom.transform, d3.zoomIdentity);
+    
+    // Get all content elements (nodes, flows, labels)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    // Measure all rects (nodes)
+    svgNode.querySelectorAll('rect').forEach(rect => {
+      const x = parseFloat(rect.getAttribute('x')) || 0;
+      const y = parseFloat(rect.getAttribute('y')) || 0;
+      const width = parseFloat(rect.getAttribute('width')) || 0;
+      const height = parseFloat(rect.getAttribute('height')) || 0;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+    
+    // Measure all paths (flows)
+    svgNode.querySelectorAll('path').forEach(path => {
+      try {
+        const bbox = path.getBBox();
+        minX = Math.min(minX, bbox.x);
+        minY = Math.min(minY, bbox.y);
+        maxX = Math.max(maxX, bbox.x + bbox.width);
+        maxY = Math.max(maxY, bbox.y + bbox.height);
+      } catch (e) { /* ignore paths without bbox */ }
+    });
+    
+    // Measure all text elements (labels)
+    svgNode.querySelectorAll('text').forEach(text => {
+      try {
+        const bbox = text.getBBox();
+        // Account for text transform if in a group
+        const parent = text.parentElement;
+        let offsetX = 0, offsetY = 0;
+        if (parent && parent.tagName === 'g') {
+          const transform = parent.getAttribute('transform');
+          if (transform) {
+            const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+            if (match) {
+              offsetX = parseFloat(match[1]) || 0;
+              offsetY = parseFloat(match[2]) || 0;
+            }
+          }
+        }
+        minX = Math.min(minX, bbox.x + offsetX);
+        minY = Math.min(minY, bbox.y + offsetY);
+        maxX = Math.max(maxX, bbox.x + bbox.width + offsetX);
+        maxY = Math.max(maxY, bbox.y + bbox.height + offsetY);
+      } catch (e) { /* ignore text without bbox */ }
+    });
+    
+    // If no content found, reset to default
+    if (!isFinite(minX) || !isFinite(minY)) {
+      this.reset();
+      return;
+    }
+    
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    if (contentWidth === 0 || contentHeight === 0) {
       this.reset();
       return;
     }
     
     // Calculate scale to fit content with padding
-    const padding = 40;
-    const scaleX = (svgRect.width - padding * 2) / bbox.width;
-    const scaleY = (svgRect.height - padding * 2) / bbox.height;
+    const padding = 50;
+    const availableWidth = svgRect.width - padding * 2;
+    const availableHeight = svgRect.height - padding * 2;
+    
+    const scaleX = availableWidth / contentWidth;
+    const scaleY = availableHeight / contentHeight;
     const scale = Math.min(scaleX, scaleY, this.config.maxZoom);
     
+    // Clamp scale to reasonable bounds
+    const clampedScale = Math.max(this.config.minZoom, Math.min(scale, 2.0));
+    
     // Calculate translation to center content
-    const centerX = svgRect.width / 2;
-    const centerY = svgRect.height / 2;
-    const contentCenterX = bbox.x + bbox.width / 2;
-    const contentCenterY = bbox.y + bbox.height / 2;
+    const contentCenterX = minX + contentWidth / 2;
+    const contentCenterY = minY + contentHeight / 2;
+    const viewCenterX = svgRect.width / 2;
+    const viewCenterY = svgRect.height / 2;
     
-    const tx = centerX - contentCenterX * scale;
-    const ty = centerY - contentCenterY * scale;
+    const tx = viewCenterX - contentCenterX * clampedScale;
+    const ty = viewCenterY - contentCenterY * clampedScale;
     
-    // Apply transform
-    const newTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+    // Apply transform with animation
+    const newTransform = d3.zoomIdentity.translate(tx, ty).scale(clampedScale);
     this._svg.transition().duration(300).call(this._zoom.transform, newTransform);
   },
 

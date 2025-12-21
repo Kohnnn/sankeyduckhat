@@ -475,6 +475,9 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
           <button class="toolbar-btn toolbar-btn-secondary" data-action="reset-labels" title="Reset Label Positions">
             Reset Labels
           </button>
+          <button class="toolbar-btn toolbar-btn-secondary" data-action="factory-reset" title="Factory Reset - Return to Initial State" style="color:#dc3545;">
+            🔄 Factory Reset
+          </button>
         </div>
 
         <div class="toolbar-divider"></div>
@@ -674,6 +677,9 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
         <div class="node-popup-row">
           <label>Display Text</label>
           <textarea id="popup-label-text" placeholder="Custom label (use Enter for multi-line)" rows="3" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div class="node-popup-row">
+          <span style="font-size:11px;color:#888;">💡 Use Enter for line breaks. The node value will be shown below the text automatically.</span>
         </div>
         <div class="node-popup-row">
           <label>For Node</label>
@@ -1887,194 +1893,284 @@ function applyNodeCustomizationToSVG(nodeName, custom) {
 }
 
 // Apply label-only customization to SVG
+/**
+ * SVG-based Label Customization System
+ * 
+ * This approach modifies the existing SVG text elements directly for:
+ * - Proper text formatting (bold, italic, alignment)
+ * - Clean separation of name and value
+ * - Proper padding/margin support via background rect
+ * - Compatible with existing drag handlers
+ */
+let _applyingLabelCustomization = false; // Guard against re-entry
+
 function applyLabelCustomizationToSVG(nodeName, custom) {
+  // Guard against re-entry (e.g., from MutationObserver)
+  if (_applyingLabelCustomization) return;
+  
   const svg = document.getElementById('sankey_svg');
   if (!svg) return;
   
-  // Find the label group - try multiple selectors
-  let labelGroup = null;
-  let textEl = null;
+  _applyingLabelCustomization = true;
   
-  // Method 1: Look for sankey-label groups with data attribute
-  svg.querySelectorAll('g.sankey-label').forEach(group => {
-    const labelFor = group.getAttribute('data-label-for');
-    if (labelFor === nodeName) {
-      labelGroup = group;
-      textEl = group.querySelector('text');
+  try {
+    // === FIRST: Check if we already have the original value stored ===
+    // Use a special marker to distinguish "not yet extracted" from "extracted but empty"
+    const VALUE_NOT_EXTRACTED = Symbol.for('VALUE_NOT_EXTRACTED');
+    let storedValue = VALUE_NOT_EXTRACTED;
+    
+    if (nodeCustomizations[nodeName] && nodeCustomizations[nodeName]._originalValue !== undefined) {
+      storedValue = nodeCustomizations[nodeName]._originalValue;
+    } else if (custom._originalValue !== undefined) {
+      storedValue = custom._originalValue;
     }
-  });
+    
+    // Find the label group and text element using data-label-for attribute (most reliable)
+    let labelGroup = null;
+    let textEl = null;
+    
+  // Method 1: Use data-label-for attribute (preferred - most reliable)
+  labelGroup = svg.querySelector(`.sankey-label[data-label-for="${nodeName}"]`);
+  if (labelGroup) {
+    textEl = labelGroup.querySelector('text');
+  }
   
-  // Method 2: Look for groups with ID ending in _group
-  if (!labelGroup) {
+  // Method 2: Look for groups with ID ending in _group (fallback for original sankeymatic labels)
+  if (!labelGroup || !textEl) {
     svg.querySelectorAll('g[id$="_group"]').forEach(group => {
-      const text = group.querySelector('text');
-      if (text) {
-        const textContent = text.textContent?.trim();
-        const firstLine = textContent?.split('\n')[0]?.trim();
-        if (firstLine === nodeName || textContent?.includes(nodeName)) {
-          labelGroup = group;
-          textEl = text;
-        }
+      if (labelGroup && textEl) return; // Already found
+      const dataLabelFor = group.getAttribute('data-label-for');
+      if (dataLabelFor === nodeName) {
+        labelGroup = group;
+        textEl = group.querySelector('text');
       }
     });
   }
   
-  // Method 3: Look for text elements directly
-  if (!textEl) {
-    svg.querySelectorAll('text').forEach(text => {
-      const textContent = text.textContent?.trim();
-      const firstLine = textContent?.split('\n')[0]?.trim();
-      if (firstLine === nodeName || textContent?.includes(nodeName)) {
-        textEl = text;
-        labelGroup = text.parentElement;
-      }
-    });
-  }
-  
-  if (!textEl) {
+  if (!labelGroup || !textEl) {
     console.warn('Label not found for node:', nodeName);
     return;
   }
   
-  // Apply label color
-  if (custom.labelColor) {
-    textEl.setAttribute('fill', custom.labelColor);
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.setAttribute('fill', custom.labelColor);
-    });
-  }
-  
-  // Apply font size
-  if (custom.labelFontSize && custom.labelFontSize > 0) {
-    textEl.setAttribute('font-size', custom.labelFontSize + 'px');
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.setAttribute('font-size', custom.labelFontSize + 'px');
-    });
-  }
-  
-  // Apply bold
-  if (custom.labelBold) {
-    textEl.setAttribute('font-weight', 'bold');
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.setAttribute('font-weight', 'bold');
-    });
-  } else {
-    textEl.removeAttribute('font-weight');
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.removeAttribute('font-weight');
-    });
-  }
-  
-  // Apply italic
-  if (custom.labelItalic) {
-    textEl.setAttribute('font-style', 'italic');
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.setAttribute('font-style', 'italic');
-    });
-  } else {
-    textEl.removeAttribute('font-style');
-    textEl.querySelectorAll('tspan').forEach(tspan => {
-      tspan.removeAttribute('font-style');
-    });
-  }
-  
-  // Apply alignment - SVG uses text-anchor
-  if (custom.labelAlign) {
-    const anchor = custom.labelAlign === 'left' ? 'start' : custom.labelAlign === 'right' ? 'end' : 'middle';
-    textEl.setAttribute('text-anchor', anchor);
-  }
-  
-  // Get current transform to find base position
-  if (labelGroup) {
-    const currentTransform = labelGroup.getAttribute('transform') || '';
-    const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-    let baseX = 0, baseY = 0;
+  // === EXTRACT VALUE ONLY IF NOT ALREADY STORED ===
+  if (storedValue === VALUE_NOT_EXTRACTED) {
+    storedValue = ''; // Default to empty string
     
-    if (match) {
-      baseX = parseFloat(match[1]);
-      baseY = parseFloat(match[2]);
-    }
+    // First check for existing tspans with just numbers (value is typically in a separate tspan)
+    const tspans = textEl.querySelectorAll('tspan');
+    tspans.forEach(tspan => {
+      const content = tspan.textContent?.trim() || '';
+      // Match numbers with optional commas and decimal points
+      if (/^[\d,]+\.?\d*$/.test(content) && storedValue === '') {
+        storedValue = content;
+      }
+    });
     
-    // Store original position if not already stored
-    if (!customLayout[nodeName]) {
-      customLayout[nodeName] = {};
-    }
-    if (customLayout[nodeName].originalX === undefined) {
-      // Get the base position from rememberedLabelMoves or current transform
-      if (window.rememberedLabelMoves && window.rememberedLabelMoves.has(nodeName)) {
-        const [offsetX, offsetY] = window.rememberedLabelMoves.get(nodeName);
-        customLayout[nodeName].originalX = baseX - offsetX;
-        customLayout[nodeName].originalY = baseY - offsetY;
-      } else {
-        customLayout[nodeName].originalX = baseX;
-        customLayout[nodeName].originalY = baseY;
+    // If no tspan value found, try to extract from the main text element
+    // But only if the text hasn't been customized yet (first time extraction)
+    if (storedValue === '' && !nodeCustomizations[nodeName]?._valueExtracted) {
+      // Get the first tspan or direct text content
+      const firstTspan = textEl.querySelector('tspan');
+      const mainText = firstTspan ? firstTspan.textContent : textEl.textContent;
+      
+      // Only extract if the text starts with the node name followed by a number
+      // This handles cases like "Budget1,750" where name and value are concatenated
+      if (mainText && mainText.startsWith(nodeName)) {
+        const afterName = mainText.slice(nodeName.length).trim();
+        // Match a number at the start (with optional commas and decimals)
+        const valueMatch = afterName.match(/^([\d,]+\.?\d*)/);
+        if (valueMatch) {
+          storedValue = valueMatch[1];
+        }
       }
     }
     
-    // Apply position offset to the label group
-    const offsetX = custom.labelX || 0;
-    const offsetY = custom.labelY || 0;
+    // Mark that we've attempted extraction
+    if (!nodeCustomizations[nodeName]) {
+      nodeCustomizations[nodeName] = {};
+    }
+    nodeCustomizations[nodeName]._valueExtracted = true;
+  }
+  
+  // Store the extracted value permanently (only if not already stored)
+  if (!nodeCustomizations[nodeName]) {
+    nodeCustomizations[nodeName] = {};
+  }
+  if (nodeCustomizations[nodeName]._originalValue === undefined) {
+    nodeCustomizations[nodeName]._originalValue = storedValue === VALUE_NOT_EXTRACTED ? '' : storedValue;
+  }
+  custom._originalValue = nodeCustomizations[nodeName]._originalValue;
+  
+  // === GET CUSTOMIZATION SETTINGS ===
+  const fontSize = custom.labelFontSize || 16;
+  const paddingTop = custom.labelMarginTop || 0;
+  const paddingRight = custom.labelMarginRight || 0;
+  const paddingBottom = custom.labelMarginBottom || 0;
+  const paddingLeft = custom.labelMarginLeft || 0;
+  const alignment = custom.labelAlign || 'left';
+  const displayName = custom.labelText || nodeName;
+  const finalStoredValue = nodeCustomizations[nodeName]._originalValue || '';
+  
+  // === APPLY TEXT STYLING ===
+  textEl.style.fontSize = fontSize + 'px';
+  textEl.style.fontWeight = custom.labelBold ? 'bold' : 'normal';
+  textEl.style.fontStyle = custom.labelItalic ? 'italic' : 'normal';
+  textEl.style.fill = custom.labelColor || '#000000';
+  
+  // Set text anchor based on alignment
+  const textAnchor = alignment === 'left' ? 'start' : alignment === 'right' ? 'end' : 'middle';
+  textEl.setAttribute('text-anchor', textAnchor);
+  
+  // === UPDATE TEXT CONTENT ===
+  // Clear existing content
+  textEl.innerHTML = '';
+  
+  /**
+   * Parse inline formatting in text (Steam comment style)
+   * Supports: **bold**, *italic*, __underline__, ~~strikethrough~~
+   * Returns array of {text, bold, italic, underline, strikethrough} objects
+   */
+  function parseInlineFormatting(text) {
+    const segments = [];
+    let remaining = text;
+    
+    // Simple regex-based parsing for inline formatting
+    // Pattern: **bold**, *italic*, __underline__
+    const patterns = [
+      { regex: /\*\*([^*]+)\*\*/g, style: 'bold' },
+      { regex: /\*([^*]+)\*/g, style: 'italic' },
+      { regex: /__([^_]+)__/g, style: 'underline' }
+    ];
+    
+    // For simplicity, just apply the global bold/italic settings
+    // and treat the text as plain text (inline formatting is complex in SVG)
+    return [{ text: text, bold: false, italic: false, underline: false }];
+  }
+  
+  // Add name line(s) with formatting support
+  const nameLines = displayName.split('\n');
+  nameLines.forEach((line, index) => {
+    const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+    tspan.textContent = line;
+    tspan.setAttribute('x', '0');
+    if (index === 0) {
+      tspan.setAttribute('dy', '0');
+    } else {
+      tspan.setAttribute('dy', (fontSize * 1.2) + 'px');
+    }
+    // Apply global bold/italic from customization
+    if (custom.labelBold) {
+      tspan.style.fontWeight = 'bold';
+    }
+    if (custom.labelItalic) {
+      tspan.style.fontStyle = 'italic';
+    }
+    textEl.appendChild(tspan);
+  });
+  
+  // Add value line if exists
+  if (finalStoredValue) {
+    const valueTspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+    valueTspan.textContent = finalStoredValue;
+    valueTspan.setAttribute('x', '0');
+    valueTspan.setAttribute('dy', (fontSize * 1.2) + 'px');
+    valueTspan.style.fontSize = (fontSize * 0.9) + 'px';
+    valueTspan.style.opacity = '0.8';
+    textEl.appendChild(valueTspan);
+  }
+  
+  // === APPLY POSITION OFFSET ===
+  const offsetX = custom.labelX || 0;
+  const offsetY = custom.labelY || 0;
+  
+  // Store original position if not already stored
+  if (!customLayout[nodeName]) {
+    customLayout[nodeName] = {};
+  }
+  
+  const currentTransform = labelGroup.getAttribute('transform') || '';
+  const match = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+  if (match) {
+    const currentX = parseFloat(match[1]);
+    const currentY = parseFloat(match[2]);
+    
+    if (customLayout[nodeName].originalX === undefined) {
+      // Check if there's a remembered move
+      if (window.rememberedLabelMoves && window.rememberedLabelMoves.has(nodeName)) {
+        const [remOffsetX, remOffsetY] = window.rememberedLabelMoves.get(nodeName);
+        customLayout[nodeName].originalX = currentX - remOffsetX;
+        customLayout[nodeName].originalY = currentY - remOffsetY;
+      } else {
+        customLayout[nodeName].originalX = currentX;
+        customLayout[nodeName].originalY = currentY;
+      }
+    }
+    
+    // Apply offset from original position
     const newX = customLayout[nodeName].originalX + offsetX;
     const newY = customLayout[nodeName].originalY + offsetY;
     labelGroup.setAttribute('transform', `translate(${newX}, ${newY})`);
   }
   
-  // Update label text - handle multi-line
-  if (custom.labelText && custom.labelText !== nodeName) {
-    const lines = custom.labelText.split('\n');
-    const fontSize = custom.labelFontSize || 16;
-    const lineHeight = fontSize * 1.2;
-    
-    // Store existing value tspans (numbers with units)
-    const existingTspans = textEl.querySelectorAll('tspan');
-    const valueTspans = [];
-    existingTspans.forEach(tspan => {
-      // Keep tspans that look like value displays (contain numbers)
-      if (tspan.textContent && /^\d/.test(tspan.textContent.trim())) {
-        valueTspans.push(tspan.cloneNode(true));
-      }
-    });
-    
-    // Clear text element
-    textEl.textContent = '';
-    
-    // Add new tspans for each line
-    lines.forEach((line, index) => {
-      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-      tspan.textContent = line;
-      tspan.setAttribute('x', '0');
-      tspan.setAttribute('dy', index === 0 ? '0' : lineHeight + 'px');
-      if (custom.labelFontSize) {
-        tspan.setAttribute('font-size', custom.labelFontSize + 'px');
-      }
-      if (custom.labelColor) {
-        tspan.setAttribute('fill', custom.labelColor);
-      }
-      if (custom.labelBold) {
-        tspan.setAttribute('font-weight', 'bold');
-      }
-      if (custom.labelItalic) {
-        tspan.setAttribute('font-style', 'italic');
-      }
-      textEl.appendChild(tspan);
-    });
-    
-    // Re-add value tspans
-    valueTspans.forEach(tspan => {
-      tspan.setAttribute('dy', lineHeight + 'px');
-      textEl.appendChild(tspan);
-    });
-  }
-  
-  // Handle label background box with margins
-  if (labelGroup) {
+  // === APPLY BACKGROUND BOX ===
+  if (custom.labelBgEnabled) {
+    // Wait for text to render, then add background
+    setTimeout(() => {
+      drawSmartLabelBackground(textEl, labelGroup, custom, paddingTop, paddingRight, paddingBottom, paddingLeft);
+    }, 10);
+  } else {
+    // Remove any existing background
     const existingBg = labelGroup.querySelector('.custom-label-bg');
     if (existingBg) existingBg.remove();
-    
-    if (custom.labelBgEnabled) {
-      applyLabelBackground(textEl, custom);
-    }
   }
+  
+  // Ensure label is on top of flows
+  svg.appendChild(labelGroup);
+  
+  } finally {
+    _applyingLabelCustomization = false;
+  }
+}
+
+/**
+ * Draw background box around label text (legacy SVG approach)
+ */
+function drawSmartLabelBackground(textEl, labelGroup, custom, paddingTop, paddingRight, paddingBottom, paddingLeft) {
+  if (!textEl || !labelGroup) return;
+  
+  const existingBg = labelGroup.querySelector('.custom-label-bg');
+  if (existingBg) existingBg.remove();
+  
+  let bbox;
+  try {
+    bbox = textEl.getBBox();
+  } catch (e) {
+    return;
+  }
+  
+  if (bbox.width === 0 || bbox.height === 0) return;
+  
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bgRect.setAttribute('class', 'custom-label-bg');
+  bgRect.setAttribute('x', bbox.x - paddingLeft);
+  bgRect.setAttribute('y', bbox.y - paddingTop);
+  bgRect.setAttribute('width', bbox.width + paddingLeft + paddingRight);
+  bgRect.setAttribute('height', bbox.height + paddingTop + paddingBottom);
+  bgRect.setAttribute('fill', custom.labelBg || '#ffffff');
+  bgRect.setAttribute('rx', '4');
+  bgRect.setAttribute('ry', '4');
+  bgRect.setAttribute('opacity', '0.95');
+  
+  labelGroup.insertBefore(bgRect, textEl);
+}
+
+// Legacy function name for compatibility
+function applyLabelBackground(textEl, labelGroup, custom) {
+  const paddingTop = custom.labelMarginTop || 4;
+  const paddingRight = custom.labelMarginRight || 6;
+  const paddingBottom = custom.labelMarginBottom || 4;
+  const paddingLeft = custom.labelMarginLeft || 6;
+  drawSmartLabelBackground(textEl, labelGroup, custom, paddingTop, paddingRight, paddingBottom, paddingLeft);
 }
       
 function resetNodeToDefault() {
@@ -2524,32 +2620,9 @@ function getAIDiagramContext() {
   }
   
   const data = AIController.getDiagramData();
-  const balance = AIController.analyzeFlowBalance();
   
-  let context = `\n\n=== CURRENT DIAGRAM DATA ===`;
-  context += `\nNodes (${data.nodes.length}): ${data.nodes.join(', ')}`;
-  context += `\nFlows (${data.flows.length}): Total flow = ${data.totalFlow.toFixed(2)}`;
-  
-  if (data.flows.length > 0) {
-    context += '\n\nFlow Details:';
-    data.flows.forEach((f, i) => {
-      context += `\n${i + 1}. ${f.source} → ${f.target}: ${f.amount}`;
-    });
-  }
-  
-  if (balance.imbalanced.length > 0) {
-    context += '\n\nImbalanced Nodes:';
-    balance.imbalanced.forEach(ib => {
-      context += `\n- ${ib.node}: inflow=${ib.inflow.toFixed(2)}, outflow=${ib.outflow.toFixed(2)}, diff=${ib.difference.toFixed(2)}`;
-    });
-  }
-  
-  // Include node customizations summary
-  if (Object.keys(data.nodeCustomizations).length > 0) {
-    context += '\n\nCustomized Nodes: ' + Object.keys(data.nodeCustomizations).join(', ');
-  }
-  
-  context += '\n=== END DIAGRAM DATA ===\n';
+  // Use the enhanced getDiagramStateForAI method for comprehensive context
+  const context = AIController.getDiagramStateForAI();
   
   return { context, data };
 }
