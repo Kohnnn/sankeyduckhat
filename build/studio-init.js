@@ -289,6 +289,12 @@ const StudioInit = {
             ToolbarController.setTool('addFlow');
           }
           break;
+          
+        case 'KeyL':
+          if (!event.ctrlKey && !event.metaKey && typeof ToolbarController !== 'undefined') {
+            ToolbarController.setTool('addLabel');
+          }
+          break;
       }
     });
     
@@ -309,6 +315,58 @@ const StudioInit = {
                        document.querySelector('.diagram-area');
     
     if (diagramArea) {
+      // Handle clicks on diagram area for Add Node and Add Label tools
+      diagramArea.addEventListener('click', (event) => {
+        // Only handle clicks directly on the diagram area or chart container
+        const target = event.target;
+        const isBackgroundClick = target === diagramArea || 
+                                  target.id === 'chart_container' ||
+                                  target.id === 'chart' ||
+                                  target.classList.contains('diagram-area');
+        
+        if (!isBackgroundClick) return;
+        
+        const currentTool = typeof ToolbarController !== 'undefined' 
+          ? ToolbarController.getCurrentTool() 
+          : 'select';
+        
+        // Handle Add Node tool
+        if (currentTool === 'addNode') {
+          // Get SVG element for coordinate transformation
+          const svg = document.getElementById('sankey_svg');
+          if (svg) {
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            const svgCoords = pt.matrixTransform(svg.getScreenCTM().inverse());
+            
+            if (typeof ToolbarController !== 'undefined') {
+              ToolbarController.handleCanvasClick(event, { x: svgCoords.x, y: svgCoords.y });
+            }
+          }
+          return;
+        }
+        
+        // Handle Add Label - add independent label at click position
+        if (currentTool === 'addLabel') {
+          const svg = document.getElementById('sankey_svg');
+          if (svg) {
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX;
+            pt.y = event.clientY;
+            const svgCoords = pt.matrixTransform(svg.getScreenCTM().inverse());
+            
+            if (typeof IndependentLabelsManager !== 'undefined') {
+              IndependentLabelsManager.addLabel({
+                x: svgCoords.x,
+                y: svgCoords.y
+              });
+            }
+          }
+          return;
+        }
+      });
+      
       diagramArea.addEventListener('wheel', (event) => {
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault();

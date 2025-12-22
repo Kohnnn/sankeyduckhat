@@ -33,29 +33,77 @@ const SelectionHandlers = {
   },
   
   /**
-   * Set up click handler on canvas background for deselection
+   * Set up click handler on canvas background for deselection and tool actions
    * Requirement: 2.5 - clicking empty canvas deselects
+   * Also handles Add Node and Add Label tool clicks
    */
   _setupCanvasClickHandler() {
     if (!this._svg || typeof d3 === 'undefined') return;
     
     const svg = d3.select(this._svg);
+    const self = this;
     
     // Add click handler to SVG background
-    svg.on('click.selection', (event) => {
-      // Only deselect if clicking directly on SVG or viewport background
+    svg.on('click.selection', function(event) {
+      // Only handle if clicking directly on SVG or viewport background
       const target = event.target;
       
       // Check if click was on the SVG itself or a background element
-      if (target === this._svg || 
+      const isCanvasClick = target === self._svg || 
           target.classList.contains('canvas-click-area') ||
           target.classList.contains('viewport') ||
-          target.tagName === 'svg') {
+          target.tagName === 'svg' ||
+          target.id === 'sankey_svg';
+      
+      if (!isCanvasClick) return;
+      
+      // Get current tool
+      const currentTool = typeof ToolbarController !== 'undefined' 
+        ? ToolbarController.getCurrentTool() 
+        : 'select';
+      
+      // Handle Add Node tool - click on canvas to add node
+      if (currentTool === 'addNode') {
+        // Get click coordinates relative to SVG
+        const svgElement = self._svg;
+        const pt = svgElement.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
         
-        // Check if SelectionManager is available
-        if (typeof SelectionManager !== 'undefined') {
-          SelectionManager.deselect();
+        // Transform to SVG coordinates
+        const svgCoords = pt.matrixTransform(svgElement.getScreenCTM().inverse());
+        
+        // Call ToolbarController to handle the add node
+        if (typeof ToolbarController !== 'undefined') {
+          ToolbarController.handleCanvasClick(event, { x: svgCoords.x, y: svgCoords.y });
         }
+        return;
+      }
+      
+      // Handle Add Label tool - click on canvas to add independent label
+      if (currentTool === 'addLabel') {
+        // Get click coordinates relative to SVG
+        const svgElement = self._svg;
+        const pt = svgElement.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+        
+        // Transform to SVG coordinates
+        const svgCoords = pt.matrixTransform(svgElement.getScreenCTM().inverse());
+        
+        // Add independent label at click position
+        if (typeof IndependentLabelsManager !== 'undefined') {
+          IndependentLabelsManager.addLabel({
+            x: svgCoords.x,
+            y: svgCoords.y
+          });
+        }
+        return;
+      }
+      
+      // Default: deselect on canvas click (Select tool)
+      if (typeof SelectionManager !== 'undefined') {
+        SelectionManager.deselect();
       }
     });
   },

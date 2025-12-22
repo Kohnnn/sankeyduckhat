@@ -181,6 +181,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
 .diagram-area[data-tool="pan"]:active { cursor: grabbing; }
 .diagram-area[data-tool="addNode"] { cursor: crosshair; }
 .diagram-area[data-tool="addFlow"] { cursor: crosshair; }
+.diagram-area[data-tool="addLabel"] { cursor: crosshair; }
 
 /* Flow source selection highlight */
 .flow-source-selected {
@@ -216,13 +217,13 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
 .add-row-btn:hover { background: #f5f5f5; }
 
 /* AI Section */
-.ai-section { border-top: 1px solid #e0e0e0; background: #f8f9fa; }
+.ai-section { border-top: 1px solid #e0e0e0; background: #f8f9fa; flex: 1; display: flex; flex-direction: column; min-height: 300px; }
 .ai-section-header { padding: 12px 16px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e0e0e0; background: #fff; }
 .ai-settings-btn { padding: 4px 8px; background: none; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .ai-settings-btn:hover { background: #f5f5f5; }
-.ai-chat-area { padding: 12px 16px; }
-.ai-chat-input-wrapper { display: flex; gap: 8px; margin-bottom: 8px; }
-.ai-chat-input { flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; resize: none; min-height: 60px; }
+.ai-chat-area { padding: 12px 16px; flex: 1; display: flex; flex-direction: column; }
+.ai-chat-input-wrapper { display: flex; gap: 8px; margin-bottom: 8px; flex-direction: column; }
+.ai-chat-input { flex: 1; padding: 12px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; min-height: 120px; max-height: 300px; }
 .ai-chat-input:focus { outline: none; border-color: #1a73e8; }
 .ai-chat-btn { padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; align-self: flex-end; }
 .ai-chat-btn:hover { background: #1557b0; }
@@ -422,7 +423,7 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
             <span class="toolbar-icon">↗️</span>
             <span class="toolbar-label">Add Flow</span>
           </button>
-          <button class="toolbar-btn" data-action="add-label" title="Add Independent Label">
+          <button class="toolbar-btn" data-tool="addLabel" title="Add Label Tool - Click on canvas to add label" aria-pressed="false">
             <span class="toolbar-icon">🏷️</span>
             <span class="toolbar-label">Add Label</span>
           </button>

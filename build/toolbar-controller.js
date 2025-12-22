@@ -35,6 +35,13 @@ const ToolbarController = {
       icon: '↗️',
       cursor: 'crosshair',
       description: 'Click two nodes to create a flow'
+    },
+    addLabel: {
+      id: 'addLabel',
+      name: 'Add Label',
+      icon: '🏷️',
+      cursor: 'crosshair',
+      description: 'Click to add an independent label'
     }
   },
 
