@@ -1295,24 +1295,18 @@ function setupIndependentLabelDragging() {
     const textEl = group.select('text');
     if (!textEl.node()) return;
     
-    // Extract node name from data-label-for attribute (most reliable)
-    // Fall back to group ID parsing if attribute not set
+    // Extract node name from data-label-for attribute (ALWAYS use this - it's the node identity)
+    // This is set by sankeymatic.js and represents the actual node name in the data
+    // The group ID format is "label0_group", "label1_group" etc. - NOT the node name!
     let nodeName = group.attr('data-label-for');
     
+    // IMPORTANT: Do NOT fall back to group ID or text content
+    // The data-label-for attribute is the ONLY reliable source of node identity
+    // If it's not set, skip this label
     if (!nodeName) {
-      // Try to extract from group ID (format: "nodename_group")
-      if (groupId && groupId.endsWith('_group')) {
-        nodeName = groupId.slice(0, -6); // Remove "_group" suffix
-      }
+      console.warn('Could not determine node name for label group (missing data-label-for):', groupId);
+      return;
     }
-    
-    // Last resort: use text content (but only the first line, and be careful)
-    if (!nodeName) {
-      const textContent = textEl.text();
-      nodeName = textContent.split('\n')[0].trim();
-    }
-    
-    if (!nodeName) return;
     
     // Store original position if not already stored
     if (!customLayout[nodeName]) {
@@ -1988,22 +1982,8 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
       });
     }
     
-    // Method 3: Search by text content (last resort fallback)
-    if (!labelGroup || !textEl) {
-      svg.querySelectorAll('.sankey-label, g[id$="_group"]').forEach(group => {
-        if (labelGroup && textEl) return;
-        const text = group.querySelector('text');
-        if (text) {
-          const textContent = text.textContent || '';
-          // Check if text starts with the node name
-          if (textContent.startsWith(nodeName) || textContent.includes(nodeName)) {
-            labelGroup = group;
-            textEl = text;
-          }
-        }
-      });
-    }
-    
+    // Method 3: Skip text content search - it's unreliable when display text differs from node name
+    // If we can't find the label by data-label-for, log a warning
     if (!labelGroup || !textEl) {
       console.warn('Label not found for node:', nodeName);
       return;
@@ -2282,15 +2262,12 @@ function applyLabelPositions() {
       const textEl = group.querySelector('text');
       if (!textEl) return;
       
-    // Get node name from data-label-for attribute (most reliable)
+    // Get node name from data-label-for attribute (ALWAYS use this - it's the node identity)
+    // The group ID format is "label0_group", "label1_group" etc. - NOT the node name!
     let nodeName = group.getAttribute('data-label-for');
     
-    // Fallback to text content if data-label-for is not set
-    if (!nodeName) {
-      const textContent = textEl.textContent?.trim();
-      nodeName = textContent?.split('\n')[0]?.trim();
-    }
-    
+    // IMPORTANT: Do NOT fall back to group ID or text content
+    // The data-label-for attribute is the ONLY reliable source of node identity
     if (!nodeName) return;
     
     // Store original position if not already stored
