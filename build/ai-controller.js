@@ -52,31 +52,100 @@ const AIController = {
   },
 
   /**
+   * Get complete diagram state including all customizations
+   * Includes node identities, custom labels, flow values, and all customizations
+   * @returns {Object} Full diagram state for AI
+   * Requirements: 5.1
+   */
+  getFullDiagramState() {
+    const data = this.getDiagramData();
+    
+    // Build detailed node information with all customizations
+    const nodeDetails = {};
+    data.nodes.forEach(nodeName => {
+      const custom = (typeof nodeCustomizations !== 'undefined' && nodeCustomizations[nodeName]) || {};
+      nodeDetails[nodeName] = {
+        identity: nodeName,
+        label: custom.labelText !== undefined ? custom.labelText : nodeName,
+        fillColor: custom.fillColor || null,
+        borderColor: custom.borderColor || null,
+        opacity: custom.opacity !== undefined ? custom.opacity : 100,
+        borderOpacity: custom.borderOpacity !== undefined ? custom.borderOpacity : 100,
+        labelFontSize: custom.labelFontSize || 16,
+        labelColor: custom.labelColor || '#000000',
+        labelBold: custom.labelBold || false,
+        labelItalic: custom.labelItalic || false,
+        labelAlign: custom.labelAlign || 'center',
+        labelBgEnabled: custom.labelBgEnabled || false,
+        labelBg: custom.labelBg || '#ffffff',
+        labelBgOpacity: custom.labelBgOpacity !== undefined ? custom.labelBgOpacity : 100,
+        labelFontFamily: custom.labelFontFamily || null,
+        labelX: custom.labelX || 0,
+        labelY: custom.labelY || 0,
+        labelMarginTop: custom.labelMarginTop || 0,
+        labelMarginRight: custom.labelMarginRight || 0,
+        labelMarginBottom: custom.labelMarginBottom || 0,
+        labelMarginLeft: custom.labelMarginLeft || 0
+      };
+    });
+    
+    // Get independent labels if available
+    const independentLabels = (typeof IndependentLabelsManager !== 'undefined' && 
+                               typeof IndependentLabelsManager.getLabels === 'function')
+      ? IndependentLabelsManager.getLabels()
+      : [];
+    
+    return {
+      flows: data.flows,
+      nodes: nodeDetails,
+      independentLabels,
+      totalFlow: data.totalFlow,
+      nodeCount: data.nodes.length,
+      flowCount: data.flows.length
+    };
+  },
+
+  /**
    * Get diagram state formatted for AI context injection
    * Returns a comprehensive string summary for the AI system prompt
+   * Includes all node customizations, labels, and independent labels
    * @returns {string} Formatted diagram state for AI
+   * Requirements: 5.1
    */
   getDiagramStateForAI() {
-    const data = this.getDiagramData();
+    const state = this.getFullDiagramState();
     const balance = this.analyzeFlowBalance();
     
-    let context = '\n\n=== CURRENT DIAGRAM DATA ===\n';
-    context += `Total Nodes: ${data.nodes.length}\n`;
-    context += `Total Flows: ${data.flows.length}\n`;
-    context += `Total Flow Value: ${data.totalFlow.toFixed(2)}\n\n`;
+    let context = '\n\n=== CURRENT DIAGRAM STATE ===\n';
+    context += `Total Nodes: ${state.nodeCount}\n`;
+    context += `Total Flows: ${state.flowCount}\n`;
+    context += `Total Flow Value: ${state.totalFlow.toFixed(2)}\n\n`;
     
-    context += 'NODES:\n';
-    data.nodes.forEach(node => {
-      const nb = balance.nodeBalance[node];
+    context += 'NODES (with customizations):\n';
+    Object.entries(state.nodes).forEach(([nodeName, props]) => {
+      const nb = balance.nodeBalance[nodeName];
+      context += `- ${nodeName}:\n`;
+      context += `    label: "${props.label}"\n`;
       if (nb) {
-        context += `- ${node}: inflow=${nb.inflow.toFixed(2)}, outflow=${nb.outflow.toFixed(2)}\n`;
-      } else {
-        context += `- ${node}\n`;
+        context += `    inflow: ${nb.inflow.toFixed(2)}, outflow: ${nb.outflow.toFixed(2)}\n`;
+      }
+      if (props.fillColor) context += `    fillColor: ${props.fillColor}\n`;
+      if (props.borderColor) context += `    borderColor: ${props.borderColor}\n`;
+      if (props.opacity !== 100) context += `    opacity: ${props.opacity}\n`;
+      if (props.labelFontSize !== 16) context += `    labelFontSize: ${props.labelFontSize}\n`;
+      if (props.labelColor !== '#000000') context += `    labelColor: ${props.labelColor}\n`;
+      if (props.labelBold) context += `    labelBold: true\n`;
+      if (props.labelItalic) context += `    labelItalic: true\n`;
+      if (props.labelAlign !== 'center') context += `    labelAlign: ${props.labelAlign}\n`;
+      if (props.labelBgEnabled) context += `    labelBgEnabled: true, labelBg: ${props.labelBg}\n`;
+      if (props.labelFontFamily) context += `    labelFontFamily: ${props.labelFontFamily}\n`;
+      if (props.labelX !== 0 || props.labelY !== 0) {
+        context += `    labelOffset: (${props.labelX}, ${props.labelY})\n`;
       }
     });
     
     context += '\nFLOWS (source → target: amount):\n';
-    data.flows.forEach(flow => {
+    state.flows.forEach(flow => {
       context += `- ${flow.source} → ${flow.target}: ${flow.amount}\n`;
     });
     
@@ -87,9 +156,21 @@ const AIController = {
       });
     }
     
-    context += '\nJSON FORMAT:\n';
-    context += JSON.stringify({ flows: data.flows }, null, 2);
-    context += '\n=== END DIAGRAM DATA ===\n';
+    if (state.independentLabels.length > 0) {
+      context += '\nINDEPENDENT LABELS:\n';
+      state.independentLabels.forEach(label => {
+        context += `- "${label.text}" at (${Math.round(label.x)}, ${Math.round(label.y)})`;
+        if (label.fontSize !== 16) context += `, fontSize: ${label.fontSize}`;
+        if (label.color !== '#000000') context += `, color: ${label.color}`;
+        if (label.bold) context += `, bold`;
+        if (label.italic) context += `, italic`;
+        context += '\n';
+      });
+    }
+    
+    context += '\nJSON FORMAT (for structured access):\n';
+    context += JSON.stringify(state, null, 2);
+    context += '\n=== END DIAGRAM STATE ===\n';
     
     return context;
   },
@@ -472,6 +553,207 @@ const AIController = {
     const result = this.applyDiagramData(currentData);
     result.modifiedCount = modifiedCount;
     return result;
+  },
+
+  /**
+   * Apply comprehensive AI changes to diagram
+   * Handles flow value changes, node label text changes, node color changes,
+   * label styling changes, and independent label changes
+   * @param {Object} changes - Changes to apply
+   * @param {Array} changes.flows - Optional array of flow changes
+   * @param {Object} changes.nodes - Optional object of node customization changes
+   * @param {Array} changes.independentLabels - Optional array of independent label changes
+   * @returns {Object} Result with success status
+   * Requirements: 5.2, 5.3, 5.4, 5.5, 5.6
+   */
+  applyAIChanges(changes) {
+    if (!changes || typeof changes !== 'object') {
+      return { success: false, error: 'Invalid changes object' };
+    }
+    
+    // Get current state for undo support
+    const currentState = this.getFullDiagramState();
+    
+    // Record for undo (handled in subtask 8.3)
+    if (typeof UndoManager !== 'undefined' && UndoManager.recordAction) {
+      UndoManager.recordAction({
+        type: 'AI_COMPREHENSIVE_CHANGE',
+        data: changes,
+        inverseData: currentState,
+        description: 'AI diagram modification'
+      });
+    }
+    
+    let flowsChanged = false;
+    let nodesChanged = false;
+    let labelsChanged = false;
+    
+    // Apply flow changes
+    if (changes.flows && Array.isArray(changes.flows)) {
+      const result = this.applyDiagramData({ flows: changes.flows }, true);
+      if (!result.success) {
+        return { success: false, error: 'Failed to apply flow changes', details: result.errors };
+      }
+      flowsChanged = true;
+    }
+    
+    // Apply node customization changes
+    if (changes.nodes && typeof changes.nodes === 'object') {
+      if (typeof nodeCustomizations === 'undefined') {
+        // Initialize if not exists (for testing)
+        if (typeof window !== 'undefined') {
+          window.nodeCustomizations = {};
+        }
+      }
+      
+      Object.entries(changes.nodes).forEach(([nodeName, props]) => {
+        if (!props || typeof props !== 'object') return;
+        
+        // Initialize node customizations if not exists
+        if (typeof nodeCustomizations !== 'undefined') {
+          if (!nodeCustomizations[nodeName]) {
+            nodeCustomizations[nodeName] = {};
+          }
+          
+          // Apply label text changes (Requirement 5.2)
+          if (props.label !== undefined) {
+            nodeCustomizations[nodeName].labelText = props.label;
+          }
+          
+          // Apply node color changes (Requirement 5.3)
+          if (props.fillColor !== undefined) {
+            nodeCustomizations[nodeName].fillColor = props.fillColor;
+            // Also update nodeColors if it exists
+            if (typeof nodeColors !== 'undefined') {
+              nodeColors[nodeName] = props.fillColor;
+            }
+          }
+          
+          if (props.borderColor !== undefined) {
+            nodeCustomizations[nodeName].borderColor = props.borderColor;
+          }
+          
+          if (props.opacity !== undefined) {
+            nodeCustomizations[nodeName].opacity = props.opacity;
+          }
+          
+          if (props.borderOpacity !== undefined) {
+            nodeCustomizations[nodeName].borderOpacity = props.borderOpacity;
+          }
+          
+          // Apply label styling changes (Requirement 5.5)
+          if (props.labelFontSize !== undefined) {
+            nodeCustomizations[nodeName].labelFontSize = props.labelFontSize;
+          }
+          
+          if (props.labelColor !== undefined) {
+            nodeCustomizations[nodeName].labelColor = props.labelColor;
+          }
+          
+          if (props.labelBold !== undefined) {
+            nodeCustomizations[nodeName].labelBold = props.labelBold;
+          }
+          
+          if (props.labelItalic !== undefined) {
+            nodeCustomizations[nodeName].labelItalic = props.labelItalic;
+          }
+          
+          if (props.labelAlign !== undefined) {
+            nodeCustomizations[nodeName].labelAlign = props.labelAlign;
+          }
+          
+          if (props.labelBgEnabled !== undefined) {
+            nodeCustomizations[nodeName].labelBgEnabled = props.labelBgEnabled;
+          }
+          
+          if (props.labelBg !== undefined) {
+            nodeCustomizations[nodeName].labelBg = props.labelBg;
+          }
+          
+          if (props.labelBgOpacity !== undefined) {
+            nodeCustomizations[nodeName].labelBgOpacity = props.labelBgOpacity;
+          }
+          
+          if (props.labelFontFamily !== undefined) {
+            nodeCustomizations[nodeName].labelFontFamily = props.labelFontFamily;
+          }
+          
+          // Apply label position changes
+          if (props.labelX !== undefined) {
+            nodeCustomizations[nodeName].labelX = props.labelX;
+          }
+          
+          if (props.labelY !== undefined) {
+            nodeCustomizations[nodeName].labelY = props.labelY;
+          }
+          
+          // Apply label margin changes
+          if (props.labelMarginTop !== undefined) {
+            nodeCustomizations[nodeName].labelMarginTop = props.labelMarginTop;
+          }
+          
+          if (props.labelMarginRight !== undefined) {
+            nodeCustomizations[nodeName].labelMarginRight = props.labelMarginRight;
+          }
+          
+          if (props.labelMarginBottom !== undefined) {
+            nodeCustomizations[nodeName].labelMarginBottom = props.labelMarginBottom;
+          }
+          
+          if (props.labelMarginLeft !== undefined) {
+            nodeCustomizations[nodeName].labelMarginLeft = props.labelMarginLeft;
+          }
+          
+          nodesChanged = true;
+        }
+      });
+    }
+    
+    // Apply independent label changes
+    if (changes.independentLabels && Array.isArray(changes.independentLabels)) {
+      if (typeof IndependentLabelsManager !== 'undefined') {
+        changes.independentLabels.forEach(labelChange => {
+          if (!labelChange || typeof labelChange !== 'object') return;
+          
+          if (labelChange._delete && labelChange.id) {
+            // Delete label
+            IndependentLabelsManager.deleteLabel(labelChange.id);
+            labelsChanged = true;
+          } else if (labelChange._new) {
+            // Add new label
+            const { _new, ...labelProps } = labelChange;
+            IndependentLabelsManager.addLabel(labelProps);
+            labelsChanged = true;
+          } else if (labelChange.id) {
+            // Update existing label
+            const { id, ...updates } = labelChange;
+            IndependentLabelsManager.updateLabel(id, updates);
+            labelsChanged = true;
+          }
+        });
+      }
+    }
+    
+    // Re-render diagram if changes were made
+    if (flowsChanged || nodesChanged) {
+      if (typeof process_sankey === 'function') {
+        process_sankey();
+      } else if (typeof renderDiagram === 'function') {
+        renderDiagram();
+      }
+    }
+    
+    // Save progress
+    if (typeof saveProgressToLocal === 'function') {
+      saveProgressToLocal();
+    }
+    
+    return {
+      success: true,
+      flowsChanged,
+      nodesChanged,
+      labelsChanged
+    };
   },
 
   /**

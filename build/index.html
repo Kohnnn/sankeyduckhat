@@ -39,6 +39,7 @@
 <script defer src="drag-handler.js?v=5"></script>
 <script defer src="drag-behaviors.js?v=5"></script>
 <script defer src="flow-utils.js?v=5"></script>
+<script defer src="independent-labels-manager.js?v=5"></script>
 <script defer src="studio-init.js?v=5"></script>
 <script defer src="sankeymatic.js?v=5"></script>
 <style>
@@ -420,6 +421,10 @@ body { margin: 0; font-family: 'Inter', 'Manrope', sans-serif; font-size: 13px; 
           <button class="toolbar-btn" data-tool="addFlow" title="Add Flow Tool (F)" aria-pressed="false">
             <span class="toolbar-icon">↗️</span>
             <span class="toolbar-label">Add Flow</span>
+          </button>
+          <button class="toolbar-btn" data-action="add-label" title="Add Independent Label">
+            <span class="toolbar-icon">🏷️</span>
+            <span class="toolbar-label">Add Label</span>
           </button>
         </div>
 
@@ -1815,9 +1820,15 @@ function applyLabelCustomization() {
   }
   
   // Store label-only customizations (preserve existing node settings)
+  // IMPORTANT: Use explicit undefined check for labelText to preserve empty strings
+  // An empty string is a valid custom label (user intentionally cleared it)
+  const labelTextValue = validatedSettings.labelText !== undefined 
+    ? validatedSettings.labelText 
+    : (rawSettings.labelText !== undefined ? rawSettings.labelText : nodeName);
+  
   const custom = {
     ...existingCustom,
-    labelText: validatedSettings.labelText || rawSettings.labelText || nodeName,
+    labelText: labelTextValue,
     labelBg: rawSettings.labelBg,
     labelBgEnabled: rawSettings.labelBgEnabled,
     labelBgOpacity: rawSettings.labelBgOpacity,
@@ -2024,6 +2035,29 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
     const offsetX = parseInt(custom.labelX) || 0;
     const offsetY = parseInt(custom.labelY) || 0;
     
+    // === GET FONT FAMILY SETTINGS ===
+    // Priority: per-node custom font > Google Font > global font face > fallback
+    let fontFamily = 'sans-serif';
+    
+    // Check for per-node custom font family first
+    if (custom.labelFontFamily) {
+      fontFamily = custom.labelFontFamily;
+    } else {
+      // Fall back to global settings
+      const googleFontEl = document.getElementById('opt_labels_googlefont');
+      const fontFaceEl = document.getElementById('opt_labels_fontface');
+      const googleFont = googleFontEl?.value || '';
+      const globalFontFace = fontFaceEl?.value || 'sans-serif';
+      
+      // Google Font takes priority over standard font face
+      fontFamily = googleFont || globalFontFace;
+    }
+    
+    // Ensure Google Font is loaded if using one
+    if (fontFamily && fontFamily !== 'sans-serif' && fontFamily !== 'serif' && fontFamily !== 'monospace') {
+      loadGoogleFont(fontFamily);
+    }
+    
     // Calculate final position
     const finalX = customLayout[nodeName].originalX + offsetX;
     const finalY = customLayout[nodeName].originalY + offsetY;
@@ -2041,6 +2075,7 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
     const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     textEl.setAttribute('class', 'custom-label-text');
     textEl.setAttribute('font-size', fontSize + 'px');
+    textEl.setAttribute('font-family', fontFamily);
     textEl.setAttribute('fill', textColor);
     
     const textAnchor = alignment === 'left' ? 'start' : alignment === 'right' ? 'end' : 'middle';
@@ -2057,6 +2092,7 @@ function applyLabelCustomizationToSVG(nodeName, custom) {
       tspan.textContent = line || ' ';
       tspan.setAttribute('x', xPos.toString());
       tspan.setAttribute('dy', index === 0 ? '0' : (fontSize * 1.2).toString());
+      tspan.setAttribute('font-family', fontFamily);
       if (isBold) tspan.setAttribute('font-weight', 'bold');
       if (isItalic) tspan.setAttribute('font-style', 'italic');
       tspan.setAttribute('fill', textColor);
@@ -2249,6 +2285,7 @@ function applyLabelPositions() {
       custom.labelText !== undefined ||
       custom.labelColor !== undefined ||
       custom.labelFontSize !== undefined ||
+      custom.labelFontFamily !== undefined ||
       custom.labelBold !== undefined ||
       custom.labelItalic !== undefined ||
       custom.labelAlign !== undefined ||

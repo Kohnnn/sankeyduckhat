@@ -143,6 +143,12 @@ const ToolbarController = {
       factoryResetBtn.addEventListener('click', () => this._handleFactoryReset());
     }
     
+    // Add Label button
+    const addLabelBtn = this._toolbarElement?.querySelector('[data-action="add-label"]');
+    if (addLabelBtn) {
+      addLabelBtn.addEventListener('click', () => this._handleAddLabel());
+    }
+    
     // Wire UndoManager stack change events to update button states
     if (typeof UndoManager !== 'undefined') {
       UndoManager.on('stackChange', (data) => {
@@ -866,6 +872,25 @@ Other [250] Savings`;
     }
     
     console.log('Factory Reset: App restored to initial state');
+  },
+
+  /**
+   * Handle Add Label action
+   * Requirements: 4.1
+   */
+  _handleAddLabel() {
+    if (typeof IndependentLabelsManager !== 'undefined') {
+      // Initialize if not already
+      if (!IndependentLabelsManager.isInitialized()) {
+        IndependentLabelsManager.init();
+      }
+      IndependentLabelsManager.addLabel();
+    } else {
+      console.warn('ToolbarController: IndependentLabelsManager not available');
+      if (typeof updateAIStatus === 'function') {
+        updateAIStatus('Independent labels feature not available', 'warning');
+      }
+    }
   },
 
   /**

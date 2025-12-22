@@ -266,11 +266,17 @@ const ValidationUtils = {
     const errors = [];
     const validated = {};
     
-    // Validate label text
-    if (settings.labelText) {
-      const result = this.validateText(settings.labelText);
-      validated.labelText = result.sanitized;
-      if (result.error) errors.push('Label text: ' + result.error);
+    // Validate label text - handle empty strings explicitly
+    // Empty string is a valid label text (user intentionally cleared it)
+    if (settings.labelText !== undefined) {
+      if (settings.labelText === '') {
+        // Empty string is valid - preserve it
+        validated.labelText = '';
+      } else {
+        const result = this.validateText(settings.labelText);
+        validated.labelText = result.sanitized;
+        if (result.error) errors.push('Label text: ' + result.error);
+      }
     }
     
     // Validate font size

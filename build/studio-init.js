@@ -41,6 +41,7 @@ const StudioInit = {
     this._initDragBehaviors();
     this._initSelectionHandlers();
     this._initKeyboardShortcuts();
+    this._initIndependentLabelsManager();
     
     // Wire up inter-module communication
     this._wireModuleCommunication();
@@ -360,6 +361,20 @@ const StudioInit = {
   },
   
   /**
+   * Initialize IndependentLabelsManager for free-floating labels
+   * Requirement: 4.1, 4.5, 4.6
+   */
+  _initIndependentLabelsManager() {
+    if (typeof IndependentLabelsManager === 'undefined') {
+      console.warn('StudioInit: IndependentLabelsManager not available');
+      return;
+    }
+    
+    IndependentLabelsManager.init();
+    console.log('StudioInit: IndependentLabelsManager initialized');
+  },
+  
+  /**
    * Wire up inter-module communication
    */
   _wireModuleCommunication() {
@@ -489,6 +504,11 @@ const StudioInit = {
     // Refresh drag behaviors
     if (typeof DragBehaviors !== 'undefined') {
       DragBehaviors.refresh();
+    }
+    
+    // Re-render independent labels
+    if (typeof IndependentLabelsManager !== 'undefined' && IndependentLabelsManager.isInitialized()) {
+      IndependentLabelsManager.renderAll();
     }
   },
   
