@@ -779,6 +779,171 @@ const AIController = {
     }
     
     return summary;
+  },
+
+  /**
+   * Read the current JSON editor content
+   * Returns the raw JSON string from the JSON editor textarea
+   * @returns {Object} Result with json string or error
+   */
+  readJSONEditor() {
+    const textarea = document.getElementById('json-editor-textarea');
+    if (!textarea) {
+      return { success: false, error: 'JSON editor not found', json: null };
+    }
+    
+    const jsonStr = textarea.value.trim();
+    
+    // Try to parse to validate
+    try {
+      const parsed = JSON.parse(jsonStr);
+      return { 
+        success: true, 
+        json: jsonStr, 
+        parsed,
+        isEmpty: !jsonStr
+      };
+    } catch (e) {
+      return { 
+        success: false, 
+        error: `Invalid JSON: ${e.message}`, 
+        json: jsonStr,
+        parsed: null
+      };
+    }
+  },
+
+  /**
+   * Write JSON data to the JSON editor
+   * @param {Object|string} data - JSON object or string to write
+   * @param {boolean} apply - Whether to also apply the data to the diagram (default: false)
+   * @returns {Object} Result with success status
+   */
+  writeJSONEditor(data, apply = false) {
+    const textarea = document.getElementById('json-editor-textarea');
+    if (!textarea) {
+      return { success: false, error: 'JSON editor not found' };
+    }
+    
+    let jsonStr;
+    
+    // Convert to string if object
+    if (typeof data === 'object') {
+      try {
+        jsonStr = JSON.stringify(data, null, 2);
+      } catch (e) {
+        return { success: false, error: `Failed to stringify: ${e.message}` };
+      }
+    } else if (typeof data === 'string') {
+      // Validate JSON string
+      try {
+        JSON.parse(data);
+        jsonStr = data;
+      } catch (e) {
+        return { success: false, error: `Invalid JSON string: ${e.message}` };
+      }
+    } else {
+      return { success: false, error: 'Data must be an object or JSON string' };
+    }
+    
+    // Write to textarea
+    textarea.value = jsonStr;
+    
+    // Optionally apply to diagram
+    if (apply) {
+      if (typeof applyJSONData === 'function') {
+        applyJSONData();
+        return { success: true, applied: true };
+      } else {
+        return { success: true, applied: false, warning: 'applyJSONData function not available' };
+      }
+    }
+    
+    return { success: true, applied: false };
+  },
+
+  /**
+   * Open the JSON editor modal and optionally populate it with data
+   * @param {Object|string} data - Optional JSON data to populate
+   * @returns {Object} Result with success status
+   */
+  openJSONEditorWithData(data = null) {
+    // Open the modal
+    if (typeof openJSONEditor === 'function') {
+      openJSONEditor();
+    } else {
+      const modal = document.getElementById('json-editor-modal');
+      if (modal) {
+        modal.classList.add('active');
+      } else {
+        return { success: false, error: 'JSON editor modal not found' };
+      }
+    }
+    
+    // If data provided, write it
+    if (data !== null) {
+      return this.writeJSONEditor(data, false);
+    }
+    
+    return { success: true };
+  },
+
+  /**
+   * Get the current diagram data formatted for the JSON editor
+   * @returns {Object} Diagram data in JSON editor format
+   */
+  getJSONEditorData() {
+    // Use the existing getCurrentDataAsJSON if available
+    if (typeof getCurrentDataAsJSON === 'function') {
+      return getCurrentDataAsJSON();
+    }
+    
+    // Fallback implementation
+    const data = this.getDiagramData();
+    const title = document.getElementById('diagram-title-input')?.value || 'My Sankey Diagram';
+    
+    return {
+      title,
+      flows: data.flows.map(f => ({
+        from: f.source,
+        to: f.target,
+        amount: f.amount
+      })),
+      nodeColors: typeof nodeColors !== 'undefined' ? { ...nodeColors } : {},
+      nodeCustomizations: data.nodeCustomizations
+    };
+  },
+
+  /**
+   * Apply JSON data from the editor to the diagram
+   * Wrapper around the global applyJSONData function
+   * @returns {Object} Result with success status
+   */
+  applyJSONEditorData() {
+    if (typeof applyJSONData === 'function') {
+      try {
+        applyJSONData();
+        return { success: true };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    }
+    
+    // Fallback: manually apply
+    const result = this.readJSONEditor();
+    if (!result.success) {
+      return result;
+    }
+    
+    if (result.parsed && result.parsed.flows) {
+      return this.applyDiagramData({ flows: result.parsed.flows.map(f => ({
+        source: f.from || f.source,
+        target: f.to || f.target,
+        amount: f.amount || f.value || 0
+      }))});
+    }
+    
+    return { success: false, error: 'No flows found in JSON data' };
   }
 };
 
