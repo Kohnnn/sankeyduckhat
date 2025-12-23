@@ -1,25 +1,90 @@
-# SankeyMATIC
-## Make Beautiful Flow Diagrams
-### A [Sankey diagram](https://en.wikipedia.org/wiki/Sankey_diagram) builder for everyone
+# Sankey Diagram Builder
 
-* Describe your data using text.
-* Customize your diagram's appearance interactively.
-* Export a finished product as a PNG image and as SVG code.
-* Export/import your work in progress as readable (and diff-able) plain text files.
+A modern, interactive Sankey diagram builder with AI-powered data extraction and customization.
 
-Hosted and available for use at: **http://sankeymatic.com/build/**
+## Features
 
-Follow [@SankeyMATIC@vis.social](https://vis.social/@SankeyMATIC) on Mastodon for news and updates.
+### 🎨 Visual Diagram Editor
+- **Interactive Canvas**: Click and drag nodes and labels to customize your diagram layout
+- **Real-time Preview**: See changes instantly as you edit
+- **Multiple Export Options**: Export as PNG, SVG, or save your work as JSON
 
-Produced by **Steve Bogart** ([@nowthis@tilde.zone](https://tilde.zone/@nowthis))
+### 🛠️ Toolbar Tools
+- **Select Tool (V)**: Click to select nodes, flows, or labels for editing
+- **Pan Tool (H)**: Drag to pan around the canvas
+- **Add Node (N)**: Click on canvas to add new nodes
+- **Add Flow (F)**: Click two nodes to create a flow between them
+- **Add Label**: Add independent text labels anywhere on the canvas
 
-### Packages used:
+### 🤖 AI Assistant
+- **Natural Language Input**: Describe your data in plain text and let AI extract flows
+- **Image Upload**: Upload images of existing diagrams to extract data
+- **Smart Suggestions**: Get AI-powered suggestions for improving your diagram
 
-* [d3.js](https://github.com/d3/d3) version 7.x
-* [Canvg](https://github.com/canvg/canvg) 3.0.9
+### ⚙️ Customization Options
+- **Node Styling**: Custom colors, opacity, borders, and dimensions
+- **Label Styling**: Fonts, colors, alignment, backgrounds, and positioning
+- **Flow Styling**: Opacity, curvature, and color inheritance options
+- **Themes**: Light and dark mode support
 
-### Background:
+### 💾 Data Management
+- **Data Table Editor**: Edit flows directly in a spreadsheet-like interface
+- **CSV Import/Export**: Import data from CSV files
+- **JSON Editor**: Advanced editing with full JSON access
+- **Auto-save**: Your work is automatically saved to local storage
 
-SankeyMATIC was inspired by the big energy flow diagram in [d3](http://d3js.org/)'s gallery of examples (visible these days [at ObservableHQ](https://observablehq.com/@d3/sankey)).
+## Getting Started
 
-Initially built on a [fork of that very d3 Sankey library](https://github.com/nowthis/d3-plugin-captain-sankey) and evolving from there, SankeyMATIC is intended to make it possible for anyone with a web browser to generate complex and beautiful flow diagrams while requiring zero knowledge of coding.
+1. Open the application in your browser
+2. Enter your flow data in the Data Editor panel (format: `Source [Amount] Target`)
+3. Customize your diagram using the toolbar and menu options
+4. Export your finished diagram as PNG or SVG
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| V | Select Tool |
+| H | Pan Tool |
+| N | Add Node Tool |
+| F | Add Flow Tool |
+| L | Add Label Tool |
+| Space + Drag | Temporary Pan |
+| Ctrl + Z | Undo |
+| Ctrl + Y | Redo |
+| Ctrl + Scroll | Zoom |
+| Delete | Delete selected flow |
+| Escape | Deselect / Cancel |
+
+## Data Format
+
+Enter flows in the format:
+```
+Source [Amount] Target
+```
+
+Example:
+```
+Salary [1500] Budget
+Budget [450] Taxes
+Budget [420] Housing
+Budget [400] Food
+Budget [255] Transportation
+```
+
+## AI Features
+
+To use AI features, you'll need to configure your API key:
+1. Click "AI Settings" in the menu bar
+2. Enter your Gemini API key
+3. Start chatting with the AI assistant to describe your data
+
+## Technologies Used
+
+- [D3.js](https://d3js.org/) v7 - Data visualization
+- [Canvg](https://github.com/canvg/canvg) - SVG to Canvas conversion
+- Google Gemini API - AI-powered data extraction
+
+## License
+
+MIT License - See LICENSE.txt for details

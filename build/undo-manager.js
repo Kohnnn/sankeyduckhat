@@ -29,7 +29,9 @@ const UndoManager = {
     FLOW_ADD: 'flowAdd',
     FLOW_DELETE: 'flowDelete',
     NODE_ADD: 'nodeAdd',
-    NODE_DELETE: 'nodeDelete'
+    NODE_DELETE: 'nodeDelete',
+    AI_COMPREHENSIVE_CHANGE: 'aiComprehensiveChange',
+    AI_DATA_CHANGE: 'aiDataChange'
   },
 
   /**
@@ -229,6 +231,14 @@ const UndoManager = {
       case this.ActionTypes.NODE_DELETE:
         this._addNode(action.inverseData);
         break;
+      case this.ActionTypes.AI_COMPREHENSIVE_CHANGE:
+      case 'AI_COMPREHENSIVE_CHANGE':
+        this._applyAIComprehensiveChange(action.inverseData);
+        break;
+      case this.ActionTypes.AI_DATA_CHANGE:
+      case 'AI_DATA_CHANGE':
+        this._applyAIDataChange(action.inverseData);
+        break;
       default:
         console.warn(`UndoManager: Unknown action type: ${action.type}`);
     }
@@ -260,6 +270,14 @@ const UndoManager = {
         break;
       case this.ActionTypes.NODE_DELETE:
         this._removeNode(action.inverseData);
+        break;
+      case this.ActionTypes.AI_COMPREHENSIVE_CHANGE:
+      case 'AI_COMPREHENSIVE_CHANGE':
+        this._applyAIComprehensiveChange(action.data);
+        break;
+      case this.ActionTypes.AI_DATA_CHANGE:
+      case 'AI_DATA_CHANGE':
+        this._applyAIDataChange(action.data);
         break;
       default:
         console.warn(`UndoManager: Unknown action type: ${action.type}`);
@@ -399,6 +417,85 @@ const UndoManager = {
       }
     });
 
+    this._triggerRender();
+  },
+
+  /**
+   * Apply AI comprehensive change (full state restore)
+   * @param {Object} state - Full diagram state to restore
+   */
+  _applyAIComprehensiveChange(state) {
+    if (!state) return;
+    
+    // Restore flows
+    if (state.flows && typeof AIController !== 'undefined') {
+      AIController.applyDiagramData({ flows: state.flows }, false);
+    }
+    
+    // Restore node customizations
+    if (state.nodes && typeof nodeCustomizations !== 'undefined') {
+      // Clear existing customizations
+      Object.keys(nodeCustomizations).forEach(key => {
+        delete nodeCustomizations[key];
+      });
+      
+      // Apply restored customizations
+      Object.entries(state.nodes).forEach(([nodeName, props]) => {
+        nodeCustomizations[nodeName] = {
+          labelText: props.label !== nodeName ? props.label : undefined,
+          fillColor: props.fillColor,
+          borderColor: props.borderColor,
+          opacity: props.opacity,
+          borderOpacity: props.borderOpacity,
+          labelFontSize: props.labelFontSize,
+          labelColor: props.labelColor,
+          labelBold: props.labelBold,
+          labelItalic: props.labelItalic,
+          labelAlign: props.labelAlign,
+          labelBgEnabled: props.labelBgEnabled,
+          labelBg: props.labelBg,
+          labelBgOpacity: props.labelBgOpacity,
+          labelFontFamily: props.labelFontFamily,
+          labelX: props.labelX,
+          labelY: props.labelY,
+          labelMarginTop: props.labelMarginTop,
+          labelMarginRight: props.labelMarginRight,
+          labelMarginBottom: props.labelMarginBottom,
+          labelMarginLeft: props.labelMarginLeft
+        };
+        
+        // Also update nodeColors if it exists
+        if (props.fillColor && typeof nodeColors !== 'undefined') {
+          nodeColors[nodeName] = props.fillColor;
+        }
+      });
+    }
+    
+    // Restore independent labels
+    if (state.independentLabels && typeof IndependentLabelsManager !== 'undefined') {
+      // Clear existing labels
+      IndependentLabelsManager.clearAll();
+      
+      // Add restored labels
+      state.independentLabels.forEach(label => {
+        IndependentLabelsManager.addLabel(label);
+      });
+    }
+    
+    this._triggerRender();
+  },
+
+  /**
+   * Apply AI data change (flows only)
+   * @param {Object} data - Data with flows to restore
+   */
+  _applyAIDataChange(data) {
+    if (!data || !data.flows) return;
+    
+    if (typeof AIController !== 'undefined') {
+      AIController.applyDiagramData({ flows: data.flows }, true);
+    }
+    
     this._triggerRender();
   },
 

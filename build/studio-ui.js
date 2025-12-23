@@ -55,10 +55,10 @@ const StudioUI = {
 
   /**
    * Set the current active tool
-   * @param {string} tool - Tool name ('select' | 'pan' | 'addNode' | 'addFlow')
+   * @param {string} tool - Tool name ('select' | 'pan' | 'addNode' | 'addFlow' | 'addLabel')
    */
   setTool(tool) {
-    const validTools = ['select', 'pan', 'addNode', 'addFlow'];
+    const validTools = ['select', 'pan', 'addNode', 'addFlow', 'addLabel'];
     if (!validTools.includes(tool)) {
       console.warn(`Invalid tool: ${tool}`);
       return;

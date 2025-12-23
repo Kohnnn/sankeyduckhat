@@ -26,38 +26,153 @@ const SelectionHandlers = {
     }
     
     this._initialized = true;
+    this._ensureBackgroundRect();
     this._setupCanvasClickHandler();
     this._setupNodeClickHandlers();
     this._setupFlowClickHandlers();
     this._setupLabelClickHandlers();
+    
+    console.log('SelectionHandlers: Initialized with background click capture');
   },
   
   /**
-   * Set up click handler on canvas background for deselection
+   * Set up click handler on canvas background for deselection and tool actions
    * Requirement: 2.5 - clicking empty canvas deselects
+   * Also handles Add Node and Add Label tool clicks
    */
   _setupCanvasClickHandler() {
     if (!this._svg || typeof d3 === 'undefined') return;
     
     const svg = d3.select(this._svg);
+    const self = this;
+    
+    // Ensure there's a background rect to capture clicks on empty space
+    this._ensureBackgroundRect();
     
     // Add click handler to SVG background
-    svg.on('click.selection', (event) => {
-      // Only deselect if clicking directly on SVG or viewport background
+    svg.on('click.selection', function(event) {
+      // Only handle if clicking directly on SVG or viewport background
       const target = event.target;
       
       // Check if click was on the SVG itself or a background element
-      if (target === this._svg || 
+      const isCanvasClick = target === self._svg || 
           target.classList.contains('canvas-click-area') ||
+          target.classList.contains('canvas-background') ||
           target.classList.contains('viewport') ||
-          target.tagName === 'svg') {
-        
-        // Check if SelectionManager is available
-        if (typeof SelectionManager !== 'undefined') {
-          SelectionManager.deselect();
-        }
+          target.tagName === 'svg' ||
+          target.id === 'sankey_svg' ||
+          target.id === 'canvas-bg-rect';
+      
+      if (!isCanvasClick) return;
+      
+      // Get current tool
+      const currentTool = typeof ToolbarController !== 'undefined' 
+        ? ToolbarController.getCurrentTool() 
+        : 'select';
+      
+      // Handle Add Node tool - click on canvas to add node
+      if (currentTool === 'addNode') {
+        self._handleAddNodeClick(event);
+        return;
+      }
+      
+      // Handle Add Label tool - click on canvas to add independent label
+      if (currentTool === 'addLabel') {
+        self._handleAddLabelClick(event);
+        return;
+      }
+      
+      // Default: deselect on canvas click (Select tool)
+      if (typeof SelectionManager !== 'undefined') {
+        SelectionManager.deselect();
       }
     });
+  },
+  
+  /**
+   * Ensure there's a background rect in the SVG to capture clicks
+   */
+  _ensureBackgroundRect() {
+    if (!this._svg) return;
+    
+    const svg = d3.select(this._svg);
+    
+    // Check if background rect already exists
+    let bgRect = svg.select('#canvas-bg-rect');
+    if (!bgRect.empty()) return;
+    
+    // Get SVG dimensions
+    const width = this._svg.getAttribute('width') || 700;
+    const height = this._svg.getAttribute('height') || 500;
+    
+    // Insert background rect as first child (behind everything)
+    bgRect = svg.insert('rect', ':first-child')
+      .attr('id', 'canvas-bg-rect')
+      .attr('class', 'canvas-background')
+      .attr('x', -10000)
+      .attr('y', -10000)
+      .attr('width', 20000 + parseInt(width))
+      .attr('height', 20000 + parseInt(height))
+      .attr('fill', 'transparent')
+      .attr('pointer-events', 'all');
+  },
+  
+  /**
+   * Handle Add Node tool click
+   * @param {MouseEvent} event - Click event
+   */
+  _handleAddNodeClick(event) {
+    const svgElement = this._svg;
+    if (!svgElement) return;
+    
+    // Get click coordinates relative to SVG
+    const pt = svgElement.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    
+    // Transform to SVG coordinates
+    const ctm = svgElement.getScreenCTM();
+    if (!ctm) return;
+    
+    const svgCoords = pt.matrixTransform(ctm.inverse());
+    
+    // Call ToolbarController to handle the add node
+    if (typeof ToolbarController !== 'undefined') {
+      ToolbarController.handleCanvasClick(event, { x: svgCoords.x, y: svgCoords.y });
+    }
+  },
+  
+  /**
+   * Handle Add Label tool click
+   * @param {MouseEvent} event - Click event
+   */
+  _handleAddLabelClick(event) {
+    const svgElement = this._svg;
+    if (!svgElement) return;
+    
+    // Get click coordinates relative to SVG
+    const pt = svgElement.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    
+    // Transform to SVG coordinates
+    const ctm = svgElement.getScreenCTM();
+    if (!ctm) return;
+    
+    const svgCoords = pt.matrixTransform(ctm.inverse());
+    
+    // Add independent label at click position
+    if (typeof IndependentLabelsManager !== 'undefined') {
+      IndependentLabelsManager.addLabel({
+        x: svgCoords.x,
+        y: svgCoords.y
+      });
+      
+      // Update status
+      if (typeof updateAIStatus === 'function') {
+        updateAIStatus('Label added at clicked position', 'success');
+      }
+    }
   },
   
   /**
@@ -188,6 +303,8 @@ const SelectionHandlers = {
    */
   refresh() {
     if (this._initialized && this._svg) {
+      // Ensure background rect exists for click capture
+      this._ensureBackgroundRect();
       this._setupNodeClickHandlers();
       this._setupFlowClickHandlers();
       this._setupLabelClickHandlers();

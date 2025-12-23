@@ -35,6 +35,13 @@ const ToolbarController = {
       icon: '↗️',
       cursor: 'crosshair',
       description: 'Click two nodes to create a flow'
+    },
+    addLabel: {
+      id: 'addLabel',
+      name: 'Add Label',
+      icon: '🏷️',
+      cursor: 'crosshair',
+      description: 'Click to add an independent label'
     }
   },
 
@@ -141,6 +148,12 @@ const ToolbarController = {
     const factoryResetBtn = this._toolbarElement?.querySelector('[data-action="factory-reset"]');
     if (factoryResetBtn) {
       factoryResetBtn.addEventListener('click', () => this._handleFactoryReset());
+    }
+    
+    // Add Label button
+    const addLabelBtn = this._toolbarElement?.querySelector('[data-action="add-label"]');
+    if (addLabelBtn) {
+      addLabelBtn.addEventListener('click', () => this._handleAddLabel());
     }
     
     // Wire UndoManager stack change events to update button states
@@ -866,6 +879,25 @@ Other [250] Savings`;
     }
     
     console.log('Factory Reset: App restored to initial state');
+  },
+
+  /**
+   * Handle Add Label action
+   * Requirements: 4.1
+   */
+  _handleAddLabel() {
+    if (typeof IndependentLabelsManager !== 'undefined') {
+      // Initialize if not already
+      if (!IndependentLabelsManager.isInitialized()) {
+        IndependentLabelsManager.init();
+      }
+      IndependentLabelsManager.addLabel();
+    } else {
+      console.warn('ToolbarController: IndependentLabelsManager not available');
+      if (typeof updateAIStatus === 'function') {
+        updateAIStatus('Independent labels feature not available', 'warning');
+      }
+    }
   },
 
   /**

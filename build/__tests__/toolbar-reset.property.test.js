@@ -64,12 +64,15 @@ describe('Toolbar Reset Functionality', () => {
      * and restore nodes to their sankey-calculated positions.
      */
     it('clears all node position offsets when reset', () => {
+      // Reserved JS property names that shouldn't be used as object keys
+      const reservedNames = ['__proto__', 'constructor', 'prototype', 'hasOwnProperty', 'toString', 'valueOf'];
+      
       fc.assert(
         fc.property(
-          // Generate random node names and positions
+          // Generate random node names and positions, filtering out reserved names
           fc.array(
             fc.record({
-              name: fc.string({ minLength: 1, maxLength: 20 }),
+              name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => !reservedNames.includes(s)),
               dx: fc.integer({ min: -500, max: 500 }),
               dy: fc.integer({ min: -500, max: 500 })
             }),
