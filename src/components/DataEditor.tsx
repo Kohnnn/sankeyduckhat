@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -23,18 +23,41 @@ interface FlowRow {
   value: number | null;
 }
 
+// Convert flows to row format
+const flowsToRows = (flows: Flow[]): FlowRow[] => {
+  return flows.map((flow) => ({
+    id: flow.id,
+    source: flow.source || null,
+    target: flow.target || null,
+    value: flow.value,
+  }));
+};
+
+// Convert rows to flows format
+const rowsToFlows = (rows: FlowRow[]): Flow[] => {
+  return rows.map((row) => ({
+    id: row.id,
+    source: row.source || '',
+    target: row.target || '',
+    value: row.value ?? 0,
+  }));
+};
+
 function DataEditor() {
   const bgColor = useColorModeValue('gray.50', 'gray.800');
   const { flows, setFlows, addFlow, saveSnapshot } = useDiagramStore();
-
-  // Convert flows to row format for the grid
-  const rows: FlowRow[] = useMemo(() => {
-    return flows.map((flow) => ({
-      id: flow.id,
-      source: flow.source,
-      target: flow.target,
-      value: flow.value,
-    }));
+  
+  // Use local state for the grid to prevent re-render loops
+  const [localRows, setLocalRows] = useState<FlowRow[]>(() => flowsToRows(flows));
+  
+  // Track whether we're currently syncing from local to store
+  const isSyncingToStoreRef = useRef(false);
+  
+  // Sync local state when store flows change externally (e.g., from undo/redo)
+  useEffect(() => {
+    if (!isSyncingToStoreRef.current) {
+      setLocalRows(flowsToRows(flows));
+    }
   }, [flows]);
 
   // Define columns for the grid
@@ -68,25 +91,28 @@ function DataEditor() {
   // Handle changes from the grid
   const handleChange = useCallback(
     (newRows: FlowRow[]) => {
-      // Convert rows back to Flow format
-      const newFlows: Flow[] = newRows.map((row) => ({
-        id: row.id,
-        source: row.source || '',
-        target: row.target || '',
-        value: row.value ?? 0,
-      }));
+      // Update local state immediately
+      setLocalRows(newRows);
+      
+      // Convert and update store
+      const newFlows = rowsToFlows(newRows);
 
-      // Only save snapshot once per edit session (not on every keystroke)
+      // Only save snapshot once per edit session
       if (!hasSnapshotRef.current) {
         saveSnapshot();
         hasSnapshotRef.current = true;
-        // Reset after a short delay to allow new edit sessions
         setTimeout(() => {
           hasSnapshotRef.current = false;
         }, 500);
       }
 
+      // Mark that we're syncing to store to prevent the useEffect from overwriting
+      isSyncingToStoreRef.current = true;
       setFlows(newFlows);
+      // Reset after the state update cycle
+      setTimeout(() => {
+        isSyncingToStoreRef.current = false;
+      }, 0);
     },
     [setFlows, saveSnapshot]
   );
@@ -114,7 +140,7 @@ function DataEditor() {
 
         <Box flex="1" minH="200px">
           <DataSheetGrid
-            value={rows}
+            value={localRows}
             onChange={handleChange}
             columns={columns}
             createRow={createRow}
