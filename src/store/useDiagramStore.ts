@@ -139,7 +139,7 @@ const defaultUIState: UIState = {
   panY: 0,
   isDragging: false,
   activeTool: 'select',
-  isHydrating: true,
+  isHydrating: false, // Changed to false - don't block initial render
   lastAction: null,
 };
 

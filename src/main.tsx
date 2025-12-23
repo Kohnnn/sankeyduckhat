@@ -5,9 +5,15 @@ import 'react-datasheet-grid/dist/style.css';
 import App from './App';
 import theme from './theme';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// ColorModeScript should be rendered before ChakraProvider
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <ColorModeScript initialColorMode={theme.config?.initialColorMode} />
     <ChakraProvider theme={theme}>
       <App />
     </ChakraProvider>

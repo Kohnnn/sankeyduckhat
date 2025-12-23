@@ -4,10 +4,6 @@ import {
   Grid,
   GridItem,
   useColorModeValue,
-  Center,
-  Spinner,
-  Text,
-  VStack,
   useToast,
 } from '@chakra-ui/react';
 import Toolbar from './components/Toolbar';
@@ -31,7 +27,6 @@ function App() {
   // Get store actions for persistence
   const loadFromStorage = useDiagramStore((state) => state.loadFromStorage);
   const saveToStorage = useDiagramStore((state) => state.saveToStorage);
-  const isHydrating = useDiagramStore((state) => state.ui.isHydrating);
   const lastAction = useDiagramStore((state) => state.ui.lastAction);
   
   // Load state from localStorage on mount
@@ -96,19 +91,18 @@ function App() {
   // Use semantic tokens for colors
   const toolbarBg = useColorModeValue('gray.100', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const loadingBg = useColorModeValue('white', 'gray.800');
 
-  // Show loading indicator during hydration
-  if (isHydrating) {
-    return (
-      <Center h="100vh" bg={loadingBg}>
-        <VStack spacing={4}>
-          <Spinner size="xl" color="blue.500" thickness="4px" />
-          <Text color="gray.500">Loading your diagram...</Text>
-        </VStack>
-      </Center>
-    );
-  }
+  // Show loading indicator during hydration (optional - can be removed if causing issues)
+  // if (isHydrating) {
+  //   return (
+  //     <Center h="100vh" bg={loadingBg}>
+  //       <VStack spacing={4}>
+  //         <Spinner size="xl" color="blue.500" thickness="4px" />
+  //         <Text color="gray.500">Loading your diagram...</Text>
+  //       </VStack>
+  //     </Center>
+  //   );
+  // }
 
   return (
     <Box minH="100vh">
