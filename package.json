@@ -1,18 +1,50 @@
 {
   "name": "sankeymatic-refactor",
   "version": "1.0.0",
-  "description": "SankeyMATIC diagram builder - refactored",
+  "description": "SankeyMATIC diagram builder - React migration",
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "d3": "^7.8.5",
+    "d3-sankey": "^0.12.3",
+    "framer-motion": "^11.0.3",
+    "react": "^18.2.0",
+    "react-datasheet-grid": "^4.11.4",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "vitest": "^1.6.0",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@types/d3": "^7.4.3",
+    "@types/d3-sankey": "^0.12.4",
+    "@types/node": "^20.11.16",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^1.6.1",
     "fast-check": "^3.15.0",
-    "jsdom": "^24.0.0"
+    "jsdom": "^24.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0",
+    "vitest": "^1.6.0"
   },
-  "keywords": ["sankey", "diagram", "visualization"],
+  "keywords": [
+    "sankey",
+    "diagram",
+    "visualization",
+    "react"
+  ],
   "license": "MIT"
 }

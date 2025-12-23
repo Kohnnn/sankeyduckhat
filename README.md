@@ -1,6 +1,6 @@
 # Sankey Diagram Builder
 
-A modern, interactive Sankey diagram builder with AI-powered data extraction and customization.
+A modern, interactive Sankey diagram builder built with React, TypeScript, and D3.js.
 
 ## Features
 
@@ -14,12 +14,6 @@ A modern, interactive Sankey diagram builder with AI-powered data extraction and
 - **Pan Tool (H)**: Drag to pan around the canvas
 - **Add Node (N)**: Click on canvas to add new nodes
 - **Add Flow (F)**: Click two nodes to create a flow between them
-- **Add Label**: Add independent text labels anywhere on the canvas
-
-### 🤖 AI Assistant
-- **Natural Language Input**: Describe your data in plain text and let AI extract flows
-- **Image Upload**: Upload images of existing diagrams to extract data
-- **Smart Suggestions**: Get AI-powered suggestions for improving your diagram
 
 ### ⚙️ Customization Options
 - **Node Styling**: Custom colors, opacity, borders, and dimensions
@@ -29,16 +23,55 @@ A modern, interactive Sankey diagram builder with AI-powered data extraction and
 
 ### 💾 Data Management
 - **Data Table Editor**: Edit flows directly in a spreadsheet-like interface
-- **CSV Import/Export**: Import data from CSV files
-- **JSON Editor**: Advanced editing with full JSON access
+- **Import/Export**: Import and export diagram data as JSON
 - **Auto-save**: Your work is automatically saved to local storage
+- **Undo/Redo**: Full history support with Ctrl+Z / Ctrl+Y
+
+## Tech Stack
+
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Zustand** - State management
+- **Chakra UI** - Component library
+- **D3.js + d3-sankey** - Diagram rendering
+- **react-datasheet-grid** - Spreadsheet editor
+- **Vitest** - Testing framework
 
 ## Getting Started
 
-1. Open the application in your browser
-2. Enter your flow data in the Data Editor panel (format: `Source [Amount] Target`)
-3. Customize your diagram using the toolbar and menu options
-4. Export your finished diagram as PNG or SVG
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The app will be available at http://localhost:5173/
+
+### Windows Users
+Double-click `run-local.bat` to start the development server.
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+Output will be in the `dist` folder.
+
+### Run Tests
+
+```bash
+npm test
+```
 
 ## Keyboard Shortcuts
 
@@ -48,42 +81,31 @@ A modern, interactive Sankey diagram builder with AI-powered data extraction and
 | H | Pan Tool |
 | N | Add Node Tool |
 | F | Add Flow Tool |
-| L | Add Label Tool |
-| Space + Drag | Temporary Pan |
 | Ctrl + Z | Undo |
-| Ctrl + Y | Redo |
-| Ctrl + Scroll | Zoom |
+| Ctrl + Y / Ctrl + Shift + Z | Redo |
 | Delete | Delete selected flow |
 | Escape | Deselect / Cancel |
 
 ## Data Format
 
-Enter flows in the format:
-```
-Source [Amount] Target
-```
+Enter flows in the Data Editor with Source, Target, and Amount columns.
 
 Example:
 ```
-Salary [1500] Budget
-Budget [450] Taxes
-Budget [420] Housing
-Budget [400] Food
-Budget [255] Transportation
+Salary → Budget: 1500
+Budget → Taxes: 450
+Budget → Housing: 420
+Budget → Food: 400
+Budget → Transportation: 255
 ```
 
-## AI Features
+## Deployment
 
-To use AI features, you'll need to configure your API key:
-1. Click "AI Settings" in the menu bar
-2. Enter your Gemini API key
-3. Start chatting with the AI assistant to describe your data
+### Netlify
+The project includes `netlify.toml` for automatic deployment. Connect your repo to Netlify and it will build automatically.
 
-## Technologies Used
-
-- [D3.js](https://d3js.org/) v7 - Data visualization
-- [Canvg](https://github.com/canvg/canvg) - SVG to Canvas conversion
-- Google Gemini API - AI-powered data extraction
+### Vercel
+The project includes `vercel.json` for Vercel deployment.
 
 ## License
 
