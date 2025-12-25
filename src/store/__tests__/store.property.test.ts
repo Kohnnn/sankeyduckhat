@@ -1475,3 +1475,304 @@ describe('Feature: react-migration, Property 12: Clear All Resets State', () => 
     );
   });
 });
+
+
+// ============================================================================
+// Property 4: Comparison Value Persistence
+// Feature: sankey-enhancements, Property 4: Comparison Value Persistence
+// Validates: Requirements 1.2
+// ============================================================================
+
+describe('Feature: sankey-enhancements, Property 4: Comparison Value Persistence', () => {
+  it('*For any* flow with a comparisonValue set, storing and retrieving from the Diagram_Store SHALL preserve the exact comparisonValue', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 50 }),
+        fc.string({ minLength: 1, maxLength: 50 }),
+        fc.float({ min: 0, max: 1000000, noNaN: true }),
+        fc.float({ min: 0, max: 1000000, noNaN: true }),
+        (source, target, value, comparisonValue) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Add flow with comparisonValue
+          useDiagramStore.getState().addFlow({
+            source,
+            target,
+            value,
+            comparisonValue,
+          });
+
+          // Retrieve the flow
+          const flows = useDiagramStore.getState().flows;
+          const addedFlow = flows[0];
+
+          // Verify comparisonValue is preserved exactly
+          return (
+            addedFlow !== undefined &&
+            addedFlow.comparisonValue === comparisonValue
+          );
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('flows without comparisonValue should have undefined comparisonValue', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 50 }),
+        fc.string({ minLength: 1, maxLength: 50 }),
+        fc.float({ min: 0, max: 1000000, noNaN: true }),
+        (source, target, value) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Add flow without comparisonValue
+          useDiagramStore.getState().addFlow({
+            source,
+            target,
+            value,
+          });
+
+          // Retrieve the flow
+          const flows = useDiagramStore.getState().flows;
+          const addedFlow = flows[0];
+
+          // Verify comparisonValue is undefined
+          return (
+            addedFlow !== undefined &&
+            addedFlow.comparisonValue === undefined
+          );
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('comparisonValue should be preserved when setting multiple flows', () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            source: fc.string({ minLength: 1, maxLength: 20 }),
+            target: fc.string({ minLength: 1, maxLength: 20 }),
+            value: fc.float({ min: 0, max: 1000000, noNaN: true }),
+            comparisonValue: fc.option(fc.float({ min: 0, max: 1000000, noNaN: true }), { nil: undefined }),
+          }),
+          { minLength: 1, maxLength: 10 }
+        ),
+        (flowsData) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Add all flows
+          flowsData.forEach((flowData) => {
+            useDiagramStore.getState().addFlow(flowData);
+          });
+
+          // Retrieve flows
+          const storedFlows = useDiagramStore.getState().flows;
+
+          // Verify each flow's comparisonValue is preserved
+          return flowsData.every((original, index) => {
+            const stored = storedFlows[index];
+            if (!stored) return false;
+            return stored.comparisonValue === original.comparisonValue;
+          });
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ============================================================================
+// Property 5: Data Source Notes Persistence
+// Feature: sankey-enhancements, Property 5: Data Source Notes Persistence
+// Validates: Requirements 7.2
+// ============================================================================
+
+describe('Feature: sankey-enhancements, Property 5: Data Source Notes Persistence', () => {
+  it('*For any* non-empty dataSourceNotes string, storing and retrieving from the Diagram_Store SHALL preserve the exact string content', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 1000 }),
+        (notes) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Update data source notes
+          useDiagramStore.getState().updateDataSourceNotes(notes);
+
+          // Retrieve the notes
+          const storedNotes = useDiagramStore.getState().settings.dataSourceNotes;
+
+          // Verify notes are preserved exactly
+          return storedNotes === notes;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('empty dataSourceNotes should be preserved', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 500 }),
+        (initialNotes) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Set initial notes
+          useDiagramStore.getState().updateDataSourceNotes(initialNotes);
+
+          // Clear notes
+          useDiagramStore.getState().updateDataSourceNotes('');
+
+          // Verify notes are empty
+          return useDiagramStore.getState().settings.dataSourceNotes === '';
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('dataSourceNotes should be preserved via updateSettings', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 1000 }),
+        (notes) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Update via updateSettings
+          useDiagramStore.getState().updateSettings({ dataSourceNotes: notes });
+
+          // Retrieve the notes
+          const storedNotes = useDiagramStore.getState().settings.dataSourceNotes;
+
+          // Verify notes are preserved exactly
+          return storedNotes === notes;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ============================================================================
+// Property 6: Notes in JSON Export Round-Trip
+// Feature: sankey-enhancements, Property 6: Notes in JSON Export Round-Trip
+// Validates: Requirements 7.3
+// ============================================================================
+
+describe('Feature: sankey-enhancements, Property 6: Notes in JSON Export Round-Trip', () => {
+  it('*For any* DiagramState with dataSourceNotes, exporting to JSON and importing back SHALL preserve the notes content exactly', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 0, maxLength: 1000 }),
+        fc.array(arbitraryPartialFlow(), { minLength: 0, maxLength: 5 }),
+        (notes, flowsData) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Set up state with notes
+          useDiagramStore.getState().updateDataSourceNotes(notes);
+          flowsData.forEach((flow) => {
+            useDiagramStore.getState().addFlow(flow);
+          });
+
+          // Get current state
+          const state = useDiagramStore.getState();
+
+          // Serialize state (simulating JSON export)
+          const serialized = serialize(state);
+
+          // Deserialize (simulating JSON import)
+          const deserialized = deserialize(serialized);
+
+          // Verify notes are preserved
+          if (!deserialized) return false;
+          return deserialized.settings.dataSourceNotes === notes;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('round-trip should preserve dataSourceNotes with special characters', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 1, maxLength: 500 }),
+        (notes) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Set notes with potential special characters
+          useDiagramStore.getState().updateDataSourceNotes(notes);
+
+          // Get current state
+          const state = useDiagramStore.getState();
+
+          // Serialize and deserialize
+          const serialized = serialize(state);
+          const deserialized = deserialize(serialized);
+
+          // Verify notes are preserved exactly
+          if (!deserialized) return false;
+          return deserialized.settings.dataSourceNotes === notes;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('round-trip should preserve both comparisonValue and dataSourceNotes together', () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 0, maxLength: 500 }),
+        fc.array(
+          fc.record({
+            source: fc.string({ minLength: 1, maxLength: 20 }),
+            target: fc.string({ minLength: 1, maxLength: 20 }),
+            value: fc.float({ min: 0, max: 1000000, noNaN: true }),
+            comparisonValue: fc.option(fc.float({ min: 0, max: 1000000, noNaN: true }), { nil: undefined }),
+          }),
+          { minLength: 1, maxLength: 5 }
+        ),
+        (notes, flowsData) => {
+          // Reset store
+          useDiagramStore.getState().clearAll();
+
+          // Set up state with notes and flows with comparisonValues
+          useDiagramStore.getState().updateDataSourceNotes(notes);
+          flowsData.forEach((flow) => {
+            useDiagramStore.getState().addFlow(flow);
+          });
+
+          // Get current state
+          const state = useDiagramStore.getState();
+
+          // Serialize and deserialize
+          const serialized = serialize(state);
+          const deserialized = deserialize(serialized);
+
+          // Verify both notes and comparisonValues are preserved
+          if (!deserialized) return false;
+          if (deserialized.settings.dataSourceNotes !== notes) return false;
+
+          // Verify each flow's comparisonValue
+          return flowsData.every((original, index) => {
+            const stored = deserialized.flows[index];
+            if (!stored) return false;
+            return stored.comparisonValue === original.comparisonValue;
+          });
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});

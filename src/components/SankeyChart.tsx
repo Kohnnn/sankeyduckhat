@@ -4,6 +4,8 @@ import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal, SankeyNode as D3SankeyNode, SankeyLink as D3SankeyLink } from 'd3-sankey';
 import { useDiagramStore, Flow } from '../store/useDiagramStore';
 import { isDragThresholdMet } from '../utils/dragThreshold';
+import { formatValue } from '../utils/formatValue';
+import { calculateNodeGrowth, formatGrowth } from '../utils/calculateGrowth';
 
 // Zoom limits
 const MIN_ZOOM = 0.1;
@@ -359,20 +361,60 @@ function SankeyChart({ svgRef: externalSvgRef }: SankeyChartProps) {
       })
       .style('cursor', activeTool === 'select' ? 'pointer' : 'default');
 
-    // Add labels for nodes
-    nodeSelection.append('text')
-      .attr('x', d => {
-        const x0 = d.x0 ?? 0;
-        const x1 = d.x1 ?? 0;
-        // Position label to the right of node if on left side, left if on right side
-        return x0 < settings.width / 2 ? x1 + 6 : x0 - 6;
-      })
-      .attr('y', d => ((d.y0 ?? 0) + (d.y1 ?? 0)) / 2)
-      .attr('dy', '0.35em')
-      .attr('text-anchor', d => (d.x0 ?? 0) < settings.width / 2 ? 'start' : 'end')
-      .attr('font-size', '12px')
-      .attr('fill', textColor)
-      .text(d => d.name);
+    // Add labels for nodes - Requirements 2.3, 2.6
+    // Multi-line labels: Name, Value, Growth%
+    nodeSelection.each(function(d) {
+      const node = d3.select(this);
+      const x0 = d.x0 ?? 0;
+      const x1 = d.x1 ?? 0;
+      const y0 = d.y0 ?? 0;
+      const y1 = d.y1 ?? 0;
+      
+      // Position label to the right of node if on left side, left if on right side
+      const isLeftSide = x0 < settings.width / 2;
+      const labelX = isLeftSide ? x1 + 6 : x0 - 6;
+      const labelY = (y0 + y1) / 2;
+      const anchor = isLeftSide ? 'start' : 'end';
+      
+      // Calculate node value (sum of incoming flows, or outgoing if no incoming)
+      const incomingFlows = flows.filter(f => f.target === d.name);
+      const outgoingFlows = flows.filter(f => f.source === d.name);
+      const nodeValue = incomingFlows.length > 0 
+        ? incomingFlows.reduce((sum, f) => sum + f.value, 0)
+        : outgoingFlows.reduce((sum, f) => sum + f.value, 0);
+      
+      // Calculate growth data
+      const growthData = calculateNodeGrowth(d.name, flows);
+      
+      // Create text element with multiple tspans for multi-line label
+      const text = node.append('text')
+        .attr('x', labelX)
+        .attr('y', labelY)
+        .attr('text-anchor', anchor)
+        .attr('font-size', '12px')
+        .attr('fill', textColor);
+      
+      // Line 1: Node name
+      text.append('tspan')
+        .attr('x', labelX)
+        .attr('dy', growthData.growthPercent !== null ? '-1.2em' : '-0.6em')
+        .text(d.name);
+      
+      // Line 2: Formatted value
+      text.append('tspan')
+        .attr('x', labelX)
+        .attr('dy', '1.2em')
+        .text(formatValue(nodeValue));
+      
+      // Line 3: Growth percentage (only if comparison data exists)
+      if (growthData.growthPercent !== null) {
+        text.append('tspan')
+          .attr('x', labelX)
+          .attr('dy', '1.2em')
+          .attr('fill', growthData.growthPercent >= 0 ? '#38a169' : '#e53e3e') // green for positive, red for negative
+          .text(formatGrowth(growthData.growthPercent));
+      }
+    });
 
     // Add drag behavior to nodes
     const drag = d3.drag<SVGRectElement, SankeyNodeType>()
@@ -396,11 +438,14 @@ function SankeyChart({ svgRef: externalSvgRef }: SankeyChartProps) {
           .attr('x', newX)
           .attr('y', newY);
 
-        // Update label position
+        // Update label position (including all tspans for multi-line labels)
         const parent = d3.select(this.parentNode as SVGGElement);
+        const newLabelX = newX < settings.width / 2 ? newX + nodeWidth + 6 : newX - 6;
         parent.select('text')
-          .attr('x', newX < settings.width / 2 ? newX + nodeWidth + 6 : newX - 6)
+          .attr('x', newLabelX)
           .attr('y', newY + nodeHeight / 2);
+        parent.selectAll('tspan')
+          .attr('x', newLabelX);
       })
       .on('end', function(event, d) {
         const startX = (d as unknown as { dragStartX: number }).dragStartX;
@@ -514,6 +559,9 @@ function SankeyChart({ svgRef: externalSvgRef }: SankeyChartProps) {
 
   const hasValidFlows = positionedNodes.length > 0;
 
+  // Check if title should be displayed
+  const showTitle = settings.title && settings.title.trim() !== '';
+
   return (
     <Box
       w="100%"
@@ -521,63 +569,110 @@ function SankeyChart({ svgRef: externalSvgRef }: SankeyChartProps) {
       bg={bgColor}
       position="relative"
       overflow="hidden"
+      display="flex"
+      flexDirection="column"
     >
-      {/* SVG container with zoom/pan support */}
-      <svg
-        ref={svgRef}
-        width="100%"
-        height="100%"
-        style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0,
-          cursor: activeTool === 'pan' ? 'grab' : 'default'
-        }}
+      {/* Title display above chart - Requirements 4.1, 4.2, 4.4 */}
+      {showTitle && (
+        <Box
+          textAlign="center"
+          py={3}
+          px={4}
+          flexShrink={0}
+        >
+          <Text
+            fontSize="xl"
+            fontWeight="bold"
+            color={textColor}
+          >
+            {settings.title}
+          </Text>
+        </Box>
+      )}
+      
+      {/* Chart container */}
+      <Box
+        flex="1"
+        position="relative"
+        overflow="hidden"
       >
+        {/* SVG container with zoom/pan support */}
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0,
+            cursor: activeTool === 'pan' ? 'grab' : 'default'
+          }}
+        >
         {/* Main content group - this gets transformed for zoom/pan */}
         <g ref={contentGroupRef}>
           {/* D3 will render nodes and links here */}
         </g>
-      </svg>
-      
-      {/* Placeholder message when no valid flows */}
-      {!hasValidFlows && (
-        <Center
-          h="100%"
-          border="2px dashed"
-          borderColor={borderColor}
-          borderRadius="md"
-          m={4}
-          position="relative"
-          zIndex={1}
-          pointerEvents="none"
-        >
-          <Text color={emptyTextColor} fontSize="lg" textAlign="center">
-            Add flows in the Data Editor to see your Sankey diagram
-            <Text as="span" display="block" fontSize="sm" mt={2}>
-              Enter Source, Target, and Amount values
+        </svg>
+        
+        {/* Placeholder message when no valid flows */}
+        {!hasValidFlows && (
+          <Center
+            h="100%"
+            border="2px dashed"
+            borderColor={borderColor}
+            borderRadius="md"
+            m={4}
+            position="relative"
+            zIndex={1}
+            pointerEvents="none"
+          >
+            <Text color={emptyTextColor} fontSize="lg" textAlign="center">
+              Add flows in the Data Editor to see your Sankey diagram
+              <Text as="span" display="block" fontSize="sm" mt={2}>
+                Enter Source, Target, and Amount values
+              </Text>
             </Text>
-          </Text>
-        </Center>
-      )}
+          </Center>
+        )}
+        
+        {/* Click-to-edit hint - Requirement 6.3 */}
+        {hasValidFlows && (
+          <Box
+            position="absolute"
+            bottom={8}
+            left={0}
+            right={0}
+            textAlign="center"
+            pointerEvents="none"
+          >
+            <Text
+              fontSize="sm"
+              color={emptyTextColor}
+              fontStyle="italic"
+            >
+              Click on any element to edit it
+            </Text>
+          </Box>
+        )}
       
-      {/* Zoom indicator */}
-      {hasValidFlows && (
-        <Box
-          position="absolute"
-          bottom={2}
-          right={2}
-          bg={bgColor}
-          px={2}
-          py={1}
-          borderRadius="md"
-          fontSize="xs"
-          color={emptyTextColor}
-          opacity={0.8}
-        >
-          Zoom: {(zoom * 100).toFixed(0)}%
-        </Box>
-      )}
+        {/* Zoom indicator */}
+        {hasValidFlows && (
+          <Box
+            position="absolute"
+            bottom={2}
+            right={2}
+            bg={bgColor}
+            px={2}
+            py={1}
+            borderRadius="md"
+            fontSize="xs"
+            color={emptyTextColor}
+            opacity={0.8}
+          >
+            Zoom: {(zoom * 100).toFixed(0)}%
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

@@ -107,10 +107,15 @@ function App() {
   return (
     <Box minH="100vh">
       <Grid
-        templateAreas={`"toolbar toolbar"
-                        "chart editor"`}
-        gridTemplateRows="auto 1fr"
-        gridTemplateColumns="1fr 400px"
+        templateAreas={{
+          base: `"toolbar"
+                 "chart"
+                 "editor"`,
+          md: `"toolbar toolbar"
+               "chart editor"`
+        }}
+        gridTemplateRows={{ base: "auto 1fr 1fr", md: "auto 1fr" }}
+        gridTemplateColumns={{ base: "1fr", md: "7fr 3fr" }}
         h="100vh"
         gap="0"
       >
@@ -122,7 +127,14 @@ function App() {
             <SankeyChart svgRef={svgRef} />
           </ErrorBoundary>
         </GridItem>
-        <GridItem area="editor" borderLeft="1px" borderColor={borderColor} display="flex" flexDirection="column">
+        <GridItem 
+          area="editor" 
+          borderLeft={{ base: "none", md: "1px" }}
+          borderTop={{ base: "1px", md: "none" }}
+          borderColor={borderColor} 
+          display="flex" 
+          flexDirection="column"
+        >
           <Box flex="1" overflow="auto">
             <DataEditor />
           </Box>

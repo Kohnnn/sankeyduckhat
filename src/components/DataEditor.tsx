@@ -4,6 +4,8 @@ import {
   VStack,
   Heading,
   Button,
+  Textarea,
+  Text,
   useColorModeValue,
 } from '@chakra-ui/react';
 import {
@@ -21,6 +23,7 @@ interface FlowRow {
   source: string | null;
   target: string | null;
   value: number | null;
+  comparisonValue: number | null;
 }
 
 // Convert flows to row format
@@ -30,6 +33,7 @@ const flowsToRows = (flows: Flow[]): FlowRow[] => {
     source: flow.source || null,
     target: flow.target || null,
     value: flow.value,
+    comparisonValue: flow.comparisonValue ?? null,
   }));
 };
 
@@ -40,12 +44,14 @@ const rowsToFlows = (rows: FlowRow[]): Flow[] => {
     source: row.source || '',
     target: row.target || '',
     value: row.value ?? 0,
+    comparisonValue: row.comparisonValue ?? undefined,
   }));
 };
 
 function DataEditor() {
   const bgColor = useColorModeValue('gray.50', 'gray.800');
-  const { flows, setFlows, addFlow, saveSnapshot } = useDiagramStore();
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const { flows, setFlows, addFlow, saveSnapshot, settings, updateDataSourceNotes } = useDiagramStore();
   
   // Use local state for the grid to prevent re-render loops
   const [localRows, setLocalRows] = useState<FlowRow[]>(() => flowsToRows(flows));
@@ -65,20 +71,26 @@ function DataEditor() {
     () => [
       {
         ...keyColumn('source', textColumn),
-        title: 'Source',
+        title: 'From',
         minWidth: 100,
         grow: 1,
       },
       {
         ...keyColumn('target', textColumn),
-        title: 'Target',
+        title: 'To',
         minWidth: 100,
         grow: 1,
       },
       {
         ...keyColumn('value', floatColumn),
-        title: 'Amount',
-        minWidth: 80,
+        title: 'Amount, current',
+        minWidth: 100,
+        grow: 0.5,
+      },
+      {
+        ...keyColumn('comparisonValue', floatColumn),
+        title: 'Amount, comparison',
+        minWidth: 100,
         grow: 0.5,
       },
     ],
@@ -124,6 +136,7 @@ function DataEditor() {
       source: null,
       target: null,
       value: null,
+      comparisonValue: null,
     };
   }, []);
 
@@ -132,6 +145,14 @@ function DataEditor() {
     saveSnapshot();
     addFlow();
   }, [addFlow, saveSnapshot]);
+
+  // Handle data source notes changes
+  const handleNotesChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      updateDataSourceNotes(e.target.value);
+    },
+    [updateDataSourceNotes]
+  );
 
   return (
     <Box w="100%" h="100%" bg={bgColor} overflow="auto">
@@ -152,6 +173,22 @@ function DataEditor() {
         <Button colorScheme="blue" size="sm" onClick={handleAddRow}>
           Add Row
         </Button>
+
+        <Box>
+          <Text fontSize="sm" fontWeight="medium" mb={2}>
+            Data source notes
+          </Text>
+          <Textarea
+            value={settings.dataSourceNotes}
+            onChange={handleNotesChange}
+            placeholder="Enter notes about your data sources..."
+            size="sm"
+            minH="80px"
+            borderColor={borderColor}
+            _hover={{ borderColor: 'gray.400' }}
+            resize="vertical"
+          />
+        </Box>
       </VStack>
     </Box>
   );

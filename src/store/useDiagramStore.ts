@@ -17,6 +17,7 @@ export interface Flow {
   source: string;
   target: string;
   value: number;
+  comparisonValue?: number;  // Previous/comparison amount for Y/Y growth calculations
   color?: string;
   opacity?: number;
   metadata?: Record<string, unknown>;
@@ -49,6 +50,7 @@ export interface DiagramSettings {
   nodePadding: number;
   flowOpacity: number;
   colorScheme: 'source' | 'target' | 'gradient';
+  dataSourceNotes: string;  // Notes about data sources
 }
 
 export interface UIState {
@@ -98,6 +100,7 @@ export interface DiagramState {
 
   // Settings Actions
   updateSettings: (settings: Partial<DiagramSettings>) => void;
+  updateDataSourceNotes: (notes: string) => void;
 
   // UI Actions
   setSelectedNode: (nodeId: string | null) => void;
@@ -129,6 +132,7 @@ const defaultSettings: DiagramSettings = {
   nodePadding: 10,
   flowOpacity: 0.5,
   colorScheme: 'source',
+  dataSourceNotes: '',
 };
 
 const defaultUIState: UIState = {
@@ -347,6 +351,7 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       source: flow?.source ?? '',
       target: flow?.target ?? '',
       value: flow?.value ?? 0,
+      comparisonValue: flow?.comparisonValue,
       color: flow?.color,
       opacity: flow?.opacity,
       metadata: flow?.metadata,
@@ -411,6 +416,16 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       settings: {
         ...state.settings,
         ...settings,
+      },
+      redoStack: [], // Clear redo stack on new change
+    }));
+  },
+
+  updateDataSourceNotes: (notes: string) => {
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        dataSourceNotes: notes,
       },
       redoStack: [], // Clear redo stack on new change
     }));
