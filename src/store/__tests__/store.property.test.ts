@@ -1132,6 +1132,7 @@ const arbitraryDiagramSettings = (): fc.Arbitrary<DiagramSettings> =>
     nodePadding: fc.integer({ min: 1, max: 50 }),
     flowOpacity: fc.float({ min: 0, max: 1, noNaN: true }),
     colorScheme: fc.constantFrom('source', 'target', 'gradient') as fc.Arbitrary<'source' | 'target' | 'gradient'>,
+    dataSourceNotes: fc.string({ minLength: 0, maxLength: 500 }),
   });
 
 describe('Feature: react-migration, Property 1: State Serialization Round-Trip', () => {
