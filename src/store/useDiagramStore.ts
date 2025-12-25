@@ -4,9 +4,9 @@ import { create } from 'zustand';
 // Constants
 // ============================================================================
 
-const STORAGE_KEY = 'sankey-diagram-state';
+const STORAGE_KEY = 'sankey-store-v2';  // Changed to force fresh start and avoid old vanilla JS data corruption
 const DEBOUNCE_DELAY = 1000; // 1 second
-const SCHEMA_VERSION = '1.0.0';
+const SCHEMA_VERSION = '2.0.0';
 
 // ============================================================================
 // Type Definitions

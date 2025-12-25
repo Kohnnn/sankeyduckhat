@@ -197,10 +197,18 @@ function SankeyChart({ svgRef: externalSvgRef }: SankeyChartProps) {
         [width - margin.right, height - margin.bottom]
       ]);
 
-    const sankeyData = sankeyGenerator({
-      nodes: graph.nodes.map(d => ({ ...d })),
-      links: graph.links.map(d => ({ ...d })),
-    });
+    // Wrap in try-catch to handle circular link errors from d3-sankey
+    let sankeyData;
+    try {
+      sankeyData = sankeyGenerator({
+        nodes: graph.nodes.map(d => ({ ...d })),
+        links: graph.links.map(d => ({ ...d })),
+      });
+    } catch (error) {
+      // d3-sankey throws on circular links (A->B->A), return empty to avoid crashing React
+      console.warn('Sankey layout error (possible circular link):', error);
+      return { nodes: [] as SankeyNodeType[], links: [] as SankeyLinkType[], nodeColorMap: new Map<string, string>() };
+    }
 
     // Build node color map
     const colorMap = new Map<string, string>();
