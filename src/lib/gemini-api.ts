@@ -12,6 +12,9 @@ interface GeminiResponse {
         message: string;
         code: number;
     };
+    promptFeedback?: {
+        blockReason?: string;
+    };
 }
 
 interface Message {

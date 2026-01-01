@@ -288,7 +288,7 @@ export default function SpreadsheetEditor() {
                     return (
                         <div
                             key={i}
-                            ref={el => rowRefs.current[i] = el}
+                            ref={el => { rowRefs.current[i] = el; }}
                             className={`grid grid-cols-[1fr_1fr_100px_100px_40px] gap-0 border-b border-gray-100 dark:border-gray-800 items-center group
                             ${state.selectedLinkIndex === i ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
                             ${!state.selectedLinkIndex && isRelatedToNode ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} 

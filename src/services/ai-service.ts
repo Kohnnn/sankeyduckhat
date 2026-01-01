@@ -39,14 +39,14 @@ class AIService {
         }
 
         // Get rich formatted context for AI
-        const { getDiagramStateForAI } = await import('@/lib/ai-utils');
-        const richContext = getDiagramStateForAI(currentState);
+        // const { getDiagramStateForAI } = await import('@/lib/ai-utils');
+        // const richContext = getDiagramStateForAI(currentState);
 
         const result = await callGemini(
             settings,
             userMessage,
             this.history, // Pass history
-            richContext // Pass enhanced context with balance analysis
+            currentState.data // Pass raw data, let usage handle stringify
         );
 
         if (result.success && result.text) {

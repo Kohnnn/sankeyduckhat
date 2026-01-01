@@ -891,10 +891,11 @@ export default function SankeyCanvas() {
 
                 if (isDragging) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const isFirstColumn = (d.x0 ?? 0) === minX;
+                    const dAny = d as any;
+                    const isFirstColumn = (dAny.x0 ?? 0) === minX;
                     const isLeft = settings.labelPosition === 'left' || isFirstColumn;
-                    const defaultX = isLeft ? (d.x0 ?? 0) - 8 : (d.x1 ?? 0) + 8;
-                    const defaultY = ((d.y1 ?? 0) + (d.y0 ?? 0)) / 2;
+                    const defaultX = isLeft ? (dAny.x0 ?? 0) - 8 : (dAny.x1 ?? 0) + 8;
+                    const defaultY = ((dAny.y1 ?? 0) + (dAny.y0 ?? 0)) / 2;
 
                     const dx = event.x - defaultX;
                     const dy = event.y - defaultY;
@@ -1570,9 +1571,6 @@ export default function SankeyCanvas() {
                     node={popover.node}
                     position={popover.position}
                     onClose={closePopover}
-                    onUpdate={(updates) => {
-                        dispatch({ type: 'UPDATE_NODE_CUSTOMIZATION', payload: { nodeId: popover.node.id, customization: updates } });
-                    }}
                 />
             )}
         </div>
