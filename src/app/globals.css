@@ -1,26 +1,166 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors */
+  --color-primary: #DA2B1F;
+  --color-secondary: #00308C;
+  --color-positive: #00FF00;
+  --color-neutral: #E6E6E6;
+
+  /* Primary Tints (90-60% lighter) */
+  --color-primary-90: #FDEAE9;
+  --color-primary-80: #F9C8C5;
+  --color-primary-70: #F2938F;
+  --color-primary-60: #EB5F59;
+
+  /* Secondary Tints */
+  --color-secondary-90: #E6EBF5;
+  --color-secondary-80: #B3C2E0;
+  --color-secondary-70: #6688C2;
+  --color-secondary-60: #334EA6;
+
+  /* UI Colors */
+  --background: #f3f4f6;
+  --foreground: #111827;
+  --card-bg: #ffffff;
+  --panel-bg: #ffffff;
+  --border: #e5e7eb;
+  --primary-text: #111827;
+  --secondary-text: #6b7280;
+  --hover-bg: #f9fafb;
+  --grid-dot-color: #cbd5e1;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card-bg: #1e293b;
+  --panel-bg: #1e293b;
+  --border: #334155;
+  --primary-text: #f1f5f9;
+  --secondary-text: #94a3b8;
+  --hover-bg: #334155;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-neutral: #475569;
+  --grid-dot-color: #334155;
 }
 
 body {
+  font-family: 'Manrope', system-ui, sans-serif;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Headlines use primary brand color */
+h1,
+h2,
+h3 {
+  color: var(--color-primary);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Sankey tooltip styles */
+.sankey-tooltip {
+  font-family: 'Manrope', system-ui, sans-serif;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Smooth transitions for interactive elements */
+svg path {
+  transition: stroke-opacity 0.2s ease;
+}
+
+svg rect {
+  transition: opacity 0.2s ease;
+}
+
+/* Focus styles */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* Canvas grid background - CLEAN WHITE for SankeyArt style */
+.canvas-grid {
+  background-color: #ffffff;
+}
+
+.dark .canvas-grid {
+  background-color: #0f172a;
+  /* Dark mode background */
+}
+
+/* Selection highlight */
+.selected-node rect {
+  stroke: var(--color-secondary);
+  stroke-width: 3px;
+  stroke-dasharray: 5, 3;
+}
+
+.dark .selected-node rect {
+  stroke: #60a5fa;
+  /* Lighter blue for dark mode */
+}
+
+.selected-flow {
+  stroke-opacity: 1 !important;
+  stroke-width: 3px;
+}
+
+/* Label drag handle */
+.label-group {
+  cursor: grab;
+}
+
+.label-group:active {
+  cursor: grabbing;
+}
+
+/* Toolbar buttons */
+.toolbar-btn {
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+.toolbar-btn.active {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+/* Properties panel sections */
+.properties-section {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Dividers using neutral color */
+.divider {
+  background-color: var(--border);
 }
