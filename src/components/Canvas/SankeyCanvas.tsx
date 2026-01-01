@@ -413,6 +413,55 @@ export default function SankeyCanvas() {
                 setPopover(null);
             });
 
+        // --- Flow Particles (Visual Enhancement) ---
+        // Optional: Controlled by settings or enabled by default
+        const showParticles = (settings as any).showParticles ?? true; // Default to true if not in type
+        let timer: d3.Timer | null = null;
+
+        if (showParticles && links.length > 0) {
+            const particleGroup = g.append('g')
+                .attr('class', 'particles')
+                .style('pointer-events', 'none');
+
+            const particles: any[] = [];
+            links.forEach((link: any, i: number) => {
+                // Add particles based on link width (flow volume)
+                // More particles for wider links
+                const numParticles = Math.ceil((link.width / settings.nodeWidth) * 2) + 1;
+
+                for (let j = 0; j < numParticles; j++) {
+                    particles.push({
+                        linkIndex: i,
+                        offset: Math.random(), // Start at random pos
+                        speed: 0.001 + (Math.random() * 0.001) // Random speed
+                    });
+                }
+            });
+
+            const particleCircles = particleGroup.selectAll('circle')
+                .data(particles)
+                .join('circle')
+                .attr('r', 1.5)
+                .attr('fill', 'white')
+                .attr('opacity', 0.4);
+
+            // Animation Loop
+            timer = d3.timer(() => {
+                particleCircles.attr('transform', function (d: any) {
+                    d.offset += d.speed;
+                    if (d.offset > 1) d.offset = 0;
+
+                    // Find the path element for this link
+                    const pathNode = linkPath.nodes()[d.linkIndex] as SVGPathElement;
+                    if (!pathNode || !pathNode.getTotalLength) return '';
+
+                    const len = pathNode.getTotalLength();
+                    const point = pathNode.getPointAtLength(d.offset * len);
+                    return `translate(${point.x}, ${point.y})`;
+                });
+            });
+        }
+
         // Comparison Labels (Pills)
         if (settings.showComparisonLine) {
             const comparisonGroup = g.append('g')
@@ -523,100 +572,37 @@ export default function SankeyCanvas() {
                     let newX = event.x;
                     let newY = event.y;
 
-                    // --- Smart Guides Logic ---
-                    const snapThreshold = 10;
-                    const guides: any[] = [];
+                    // --- Column Snapping Logic ---
+                    // Extract unique column X positions
+                    const columns = Array.from(new Set(processedGraph.nodes.map((n: any) => n.x0))).sort((a: any, b: any) => a - b);
 
-                    // Find other nodes
-                    const otherNodes = processedGraph.nodes.filter((n: any) => n.id !== d.id);
+                    // Find closest column
+                    const closestColumnX = columns.reduce((prev: any, curr: any) => {
+                        return (Math.abs(curr - newX) < Math.abs(prev - newX) ? curr : prev);
+                    });
 
-                    // Candidate snap positions
-                    let snappedX = false;
-                    let snappedY = false;
+                    // Snap X to column
+                    newX = closestColumnX;
 
-                    // Y-Axis Snapping (Horizontal Lines)
-                    for (const other of otherNodes) {
-                        const targets = [other.y0, other.y1, (other.y0 + other.y1) / 2]; // Top, Bottom, Center
-                        const current = [newY, newY + nodeHeight, newY + nodeHeight / 2]; // Top, Bottom, Center
+                    // Allow free Y movement within column (Vertical Reordering)
+                    // We don't snap Y to other nodes, we just let the user position it.
+                    // The d3-sankey generator's update() might re-flow this, 
+                    // but by updating node.y0 locally and calling update(), we force the new position.
 
-                        for (const t of targets) {
-                            // Snap Top
-                            if (Math.abs(t - current[0]) < snapThreshold && !snappedY) {
-                                newY = t;
-                                snappedY = true;
-                                guides.push({ type: 'h', y: t, x1: Math.min(d.x0, other.x0), x2: Math.max(d.x1, other.x1) });
-                            }
-                            // Snap Bottom
-                            if (Math.abs(t - current[1]) < snapThreshold && !snappedY) {
-                                newY = t - nodeHeight;
-                                snappedY = true;
-                                guides.push({ type: 'h', y: t, x1: Math.min(d.x0, other.x0), x2: Math.max(d.x1, other.x1) });
-                            }
-                            // Snap Center
-                            if (Math.abs(t - current[2]) < snapThreshold && !snappedY) {
-                                newY = t - nodeHeight / 2;
-                                snappedY = true;
-                                guides.push({ type: 'h', y: t, x1: Math.min(d.x0, other.x0), x2: Math.max(d.x1, other.x1) });
-                            }
-                        }
-                        if (snappedY) break; // Only snap to one
-                    }
-
-                    // X-Axis Snapping (Vertical Lines)
-                    for (const other of otherNodes) {
-                        const targets = [other.x0, other.x1, (other.x0 + other.x1) / 2]; // Left, Right, Center
-                        const current = [newX, newX + nodeWidth, newX + nodeWidth / 2];
-
-                        for (const t of targets) {
-                            if (Math.abs(t - current[0]) < snapThreshold && !snappedX) {
-                                newX = t;
-                                snappedX = true;
-                                guides.push({ type: 'v', x: t, y1: Math.min(d.y0, other.y0), y2: Math.max(d.y1, other.y1) });
-                            }
-                            if (Math.abs(t - current[1]) < snapThreshold && !snappedX) {
-                                newX = t - nodeWidth;
-                                snappedX = true;
-                                guides.push({ type: 'v', x: t, y1: Math.min(d.y0, other.y0), y2: Math.max(d.y1, other.y1) });
-                            }
-                            if (Math.abs(t - current[2]) < snapThreshold && !snappedX) {
-                                newX = t - nodeWidth / 2;
-                                snappedX = true;
-                                guides.push({ type: 'v', x: t, y1: Math.min(d.y0, other.y0), y2: Math.max(d.y1, other.y1) });
-                            }
-                        }
-                        if (snappedX) break;
-                    }
-
-                    // --- Grid Snapping (Fallback) ---
-                    if (settings.snapToGrid) {
-                        const gridSize = settings.gridSize || 20;
-                        if (!snappedX) {
-                            newX = Math.round(newX / gridSize) * gridSize;
-                        }
-                        if (!snappedY) {
-                            newY = Math.round(newY / gridSize) * gridSize;
-                        }
-                    }
-
-                    // Render Guides
+                    // Visual Feedback for Column
                     const guideGroup = svg.select('.guides');
                     guideGroup.selectAll('*').remove();
 
-                    if (guides.length > 0) {
-                        guides.forEach(g => {
-                            if (g.type === 'h') {
-                                guideGroup.append('line')
-                                    .attr('x1', 0).attr('x2', width) // Full width guide or bounded?
-                                    .attr('y1', g.y).attr('y2', g.y)
-                                    .attr('stroke', '#ef4444').attr('stroke-width', 1).attr('stroke-dasharray', '4 2');
-                            } else {
-                                guideGroup.append('line')
-                                    .attr('x1', g.x).attr('x2', g.x)
-                                    .attr('y1', 0).attr('y2', height)
-                                    .attr('stroke', '#ef4444').attr('stroke-width', 1).attr('stroke-dasharray', '4 2');
-                            }
-                        });
-                    }
+                    // Show column guide
+                    guideGroup.append('line')
+                        .attr('x1', newX + nodeWidth / 2)
+                        .attr('x2', newX + nodeWidth / 2)
+                        .attr('y1', 0)
+                        .attr('y2', height)
+                        .attr('stroke', 'var(--color-primary)')
+                        .attr('stroke-width', 2)
+                        .attr('stroke-dasharray', '4 2')
+                        .attr('opacity', 0.5);
                     // ---------------------------
 
                     // Constrain to canvas
@@ -681,22 +667,58 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .on('mouseenter', function (event: any, d: any) {
                 if (selectedNodeId === null) {
-                    // Focus Mode: Dim everything else
-                    nodeGroup.selectAll('rect').attr('opacity', (n: any) => n.id === d.id ? 1 : 0.2);
-
-                    linkPath.attr('fill-opacity', (l: any) => {
-                        const isConnected = l.source.id === d.id || l.target.id === d.id;
-                        return isConnected ? 0.8 : 0.05;
-                    });
-
-                    // Highlight connected nodes slightly
+                    // --- PATH HIGHLIGHTING LOGIC ---
                     const connectedNodeIds = new Set<string>();
-                    links.forEach((l: any) => {
-                        if (l.source.id === d.id) connectedNodeIds.add(l.target.id);
-                        if (l.target.id === d.id) connectedNodeIds.add(l.source.id);
-                    });
-                    nodeGroup.selectAll('rect').filter((n: any) => connectedNodeIds.has(n.id))
-                        .attr('opacity', 0.8);
+                    const connectedLinkIndices = new Set<number>();
+
+                    // Helper to traverse directions
+                    const traverse = (startNode: any, direction: 'upstream' | 'downstream') => {
+                        const queue = [startNode];
+                        connectedNodeIds.add(startNode.id);
+
+                        while (queue.length > 0) {
+                            const current = queue.shift();
+                            links.forEach((l: any, idx: number) => {
+                                // Downstream: current is source -> add target
+                                if (direction === 'downstream' && l.source.id === current.id) {
+                                    if (!connectedLinkIndices.has(idx)) {
+                                        connectedLinkIndices.add(idx);
+                                        if (!connectedNodeIds.has(l.target.id)) {
+                                            connectedNodeIds.add(l.target.id);
+                                            queue.push(l.target);
+                                        }
+                                    }
+                                }
+                                // Upstream: current is target -> add source
+                                if (direction === 'upstream' && l.target.id === current.id) {
+                                    if (!connectedLinkIndices.has(idx)) {
+                                        connectedLinkIndices.add(idx);
+                                        if (!connectedNodeIds.has(l.source.id)) {
+                                            connectedNodeIds.add(l.source.id);
+                                            queue.push(l.source);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    };
+
+                    // Traverse both ways
+                    traverse(d, 'downstream');
+                    traverse(d, 'upstream');
+
+                    // Apply Styles
+                    // Dim all nodes except connected ones
+                    nodeGroup.selectAll('rect')
+                        .transition().duration(200)
+                        .attr('opacity', (n: any) => connectedNodeIds.has(n.id) ? 1 : 0.1);
+
+                    // Highlight only connected links, hide others
+                    linkPath
+                        .transition().duration(200)
+                        .attr('fill-opacity', (_: any, idx: number) => connectedLinkIndices.has(idx) ? 0.8 : 0.05)
+                        .attr('stroke-opacity', (_: any, idx: number) => connectedLinkIndices.has(idx) ? 0.8 : 0.05);
+
                 }
             })
             .on('mouseleave', function () {
@@ -1379,12 +1401,13 @@ export default function SankeyCanvas() {
 
         return () => {
             tooltip.style('visibility', 'hidden');
+            if (timer) timer.stop();
         };
 
     }, [data, settings, selectedNodeId, selectedLinkIndex, dispatch, getNodeColor, formatValue, state.customLayout, state.independentLabels, state.selectedLabelId, getCustomization, handleNodeClick]);
 
     return (
-        <div ref={containerRef} className="w-full h-full bg-white dark:bg-slate-900 border border-[var(--border)] rounded-lg shadow-sm overflow-hidden relative">
+        <div ref={containerRef} className="w-full h-full bg-white  border border-[var(--border)] rounded-lg shadow-sm overflow-hidden relative">
             <svg
                 ref={svgRef}
                 width="100%"
@@ -1397,7 +1420,7 @@ export default function SankeyCanvas() {
             {/* Empty State Overlay */}
             {(!data.nodes.length || !data.links.length) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[var(--panel-bg)]/80 backdrop-blur-sm z-10">
-                    <div className="w-16 h-16 mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <div className="w-16 h-16 mb-4 rounded-full bg-blue-100  flex items-center justify-center text-blue-600 ">
                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
@@ -1415,7 +1438,7 @@ export default function SankeyCanvas() {
             )}
 
             {/* Floating Zoom Controls */}
-            <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-white  p-1.5 rounded-lg shadow-lg border border-gray-200 ">
                 <button
                     onClick={() => {
                         const svg = d3.select(svgRef.current);
@@ -1425,7 +1448,7 @@ export default function SankeyCanvas() {
                             svg.transition().duration(300).call(zoom.scaleBy, 1.2);
                         }
                     }}
-                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300"
+                    className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700 "
                     title="Zoom In"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -1439,12 +1462,12 @@ export default function SankeyCanvas() {
                             svg.transition().duration(300).call(zoom.scaleBy, 0.8);
                         }
                     }}
-                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300"
+                    className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700 "
                     title="Zoom Out"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                 </button>
-                <div className="h-px bg-gray-200 dark:bg-gray-700 my-0.5" />
+                <div className="h-px bg-gray-200  my-0.5" />
                 <button
                     onClick={() => {
                         const svg = d3.select(svgRef.current);
@@ -1476,7 +1499,7 @@ export default function SankeyCanvas() {
                             svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
                         }
                     }}
-                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300"
+                    className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700 "
                     title="Fit to Screen"
                 >
                     <Maximize2 className="w-4 h-4" />
@@ -1486,11 +1509,11 @@ export default function SankeyCanvas() {
             {/* Top Toolbar (Undo/Redo & Export) */}
             <div className="absolute top-4 right-4 flex gap-2">
                 {/* History Controls */}
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-1 bg-white  p-1 rounded-lg shadow-lg border border-gray-200 ">
                     <button
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={() => (dispatch as any)({ type: 'UNDO' })} // Type casting for ease, better to expose Undo from context
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300 disabled:opacity-30"
+                        className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700  disabled:opacity-30"
                         title="Undo (Ctrl+Z)"
                     >
                         <Undo className="w-4 h-4" />
@@ -1498,7 +1521,7 @@ export default function SankeyCanvas() {
                     <button
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={() => (dispatch as any)({ type: 'REDO' })}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300 disabled:opacity-30"
+                        className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700  disabled:opacity-30"
                         title="Redo (Ctrl+Y)"
                     >
                         <Redo className="w-4 h-4" />
@@ -1506,7 +1529,7 @@ export default function SankeyCanvas() {
                 </div>
 
                 {/* Export Controls */}
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-1 bg-white  p-1 rounded-lg shadow-lg border border-gray-200 ">
                     <button
                         onClick={() => {
                             if (!svgRef.current) return;
@@ -1521,7 +1544,7 @@ export default function SankeyCanvas() {
                             link.click();
                             document.body.removeChild(link);
                         }}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300"
+                        className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700 "
                         title="Export SVG"
                     >
                         <Download className="w-4 h-4" />
@@ -1558,7 +1581,7 @@ export default function SankeyCanvas() {
 
                             img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
                         }}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-700 dark:text-gray-300"
+                        className="p-1.5 hover:bg-gray-100 :bg-slate-700 rounded text-gray-700 "
                         title="Export PNG"
                     >
                         <ImageIcon className="w-4 h-4" />
@@ -1576,3 +1599,4 @@ export default function SankeyCanvas() {
         </div>
     );
 }
+

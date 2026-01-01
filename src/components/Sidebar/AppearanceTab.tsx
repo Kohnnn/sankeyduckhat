@@ -133,8 +133,8 @@ export default function AppearanceTab() {
         <div className="p-4 space-y-4">
             {/* Selected Node Section */}
             {selectedNode && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4 space-y-4">
-                    <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                <div className="bg-blue-50  rounded-lg border border-blue-200  p-4 space-y-4">
+                    <h3 className="text-sm font-semibold text-blue-800  flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedNode.color || '#6b7280' }} />
                         {selectedNode.name}
                     </h3>
@@ -193,8 +193,8 @@ export default function AppearanceTab() {
                     </div>
 
                     {/* Per-Node Label Styling */}
-                    <div className="border-t border-blue-200 dark:border-blue-700 pt-3 space-y-3">
-                        <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Label Overrides</h4>
+                    <div className="border-t border-blue-200  pt-3 space-y-3">
+                        <h4 className="text-xs font-semibold text-blue-700  uppercase tracking-wide">Label Overrides</h4>
 
                         <div className="grid grid-cols-2 gap-2">
                             <div>
@@ -342,7 +342,7 @@ export default function AppearanceTab() {
                         </div>
                     </div>
 
-                    <div className="pt-2 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-3">
+                    <div className="pt-2 border-t border-gray-100  grid grid-cols-2 gap-3">
                         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                             <input
                                 type="checkbox"
@@ -751,7 +751,7 @@ export default function AppearanceTab() {
                                         const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
                                         setNewPaletteColors([...colors, randomColor].join(', '));
                                     }}
-                                    className="mt-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                    className="mt-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100  text-gray-700  rounded hover:bg-gray-200 :bg-gray-600 transition-colors"
                                 >
                                     <Plus className="w-3 h-3" />
                                     Add Color
@@ -851,3 +851,4 @@ function Section({
         </div>
     );
 }
+

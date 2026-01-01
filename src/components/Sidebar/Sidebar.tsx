@@ -43,7 +43,7 @@ export default function Sidebar() {
     const currentTabs = tabs[activeCategory];
 
     return (
-        <div className="flex h-full border-l border-[var(--border)] bg-[var(--panel-bg)] w-[30%] min-w-[320px] max-w-[480px]">
+        <div className="flex h-full border-l border-[var(--border)] bg-[var(--panel-bg)] backdrop-blur-xl w-[30%] min-w-[320px] max-w-[480px] shadow-2xl z-20">
             {/* Side Rail */}
             <div className="w-14 flex flex-col items-center py-4 gap-4 border-r border-[var(--border)] bg-[var(--card-bg)]">
                 {categories.map((cat) => (
@@ -58,7 +58,7 @@ export default function Sidebar() {
                             }
                         }}
                         className={`p-2.5 rounded-lg transition-all ${activeCategory === cat.id
-                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 shadow-sm'
+                            ? 'bg-blue-100 text-blue-600   shadow-sm'
                             : 'text-[var(--secondary-text)] hover:bg-[var(--hover-bg)] hover:text-[var(--primary-text)]'
                             }`}
                         title={cat.label}
@@ -98,3 +98,4 @@ export default function Sidebar() {
         </div>
     );
 }
+

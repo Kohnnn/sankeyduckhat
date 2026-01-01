@@ -66,7 +66,7 @@ export default function DataEditorTab() {
                 <button
                     onClick={() => setMode('grid')}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'grid'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        ? 'bg-blue-100  text-blue-700 '
                         : 'text-[var(--secondary-text)] hover:bg-[var(--hover-bg)]'
                         }`}
                 >
@@ -76,7 +76,7 @@ export default function DataEditorTab() {
                 <button
                     onClick={() => setMode('dsl')}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'dsl'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        ? 'bg-blue-100  text-blue-700 '
                         : 'text-[var(--secondary-text)] hover:bg-[var(--hover-bg)]'
                         }`}
                 >
@@ -120,7 +120,7 @@ export default function DataEditorTab() {
                     {showTemplates && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowTemplates(false)} />
-                            <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute right-0 top-full mt-1 w-64 bg-white  border border-gray-200  rounded-md shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Financial
                                 </div>
@@ -143,7 +143,7 @@ Operating Income [200] Taxes
 Operating Income [600] Net Income`);
                                         setShowTemplates(false);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 text-[var(--primary-text)]"
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 :bg-slate-700 text-[var(--primary-text)]"
                                 >
                                     SaaS P&L Statement
                                 </button>
@@ -171,12 +171,12 @@ Savings [1000] ETF Portfolio
 Savings [500] Emergency Fund`);
                                         setShowTemplates(false);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 text-[var(--primary-text)]"
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 :bg-slate-700 text-[var(--primary-text)]"
                                 >
                                     Personal Monthly Budget
                                 </button>
 
-                                <div className="px-3 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-100 dark:border-gray-700">
+                                <div className="px-3 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-100 ">
                                     Business
                                 </div>
                                 <button
@@ -199,7 +199,7 @@ Payroll [300] Sales
 Payroll [100] Admin`);
                                         setShowTemplates(false);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 text-[var(--primary-text)]"
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 :bg-slate-700 text-[var(--primary-text)]"
                                 >
                                     Startup Cash Burn
                                 </button>
@@ -221,7 +221,7 @@ Offer [20] Declined
 Offer [60] Hired`);
                                         setShowTemplates(false);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 text-[var(--primary-text)]"
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 :bg-slate-700 text-[var(--primary-text)]"
                                 >
                                     Recruitment Funnel
                                 </button>
@@ -247,7 +247,7 @@ Offer [60] Hired`);
                                 }`}
                         />
                         {dslError && (
-                            <div className="mt-2 p-2 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+                            <div className="mt-2 p-2 rounded bg-red-50  text-red-600  text-xs flex items-center gap-2">
                                 <AlertCircle className="w-4 h-4" />
                                 {dslError}
                             </div>
@@ -306,7 +306,7 @@ function BalanceIndicator() {
 
     if (imbalanced.length === 0) {
         return (
-            <div className="flex items-center gap-2 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-emerald-600 ">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
                 Flows are balanced
             </div>
@@ -314,12 +314,12 @@ function BalanceIndicator() {
     }
 
     return (
-        <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-100 dark:border-amber-800/30">
+        <div className="px-3 py-2 bg-amber-50  rounded border border-amber-100 ">
             <div className="flex items-center gap-2 mb-1">
                 <AlertCircle className="w-3 h-3 text-amber-500" />
-                <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Imbalanced Flows</span>
+                <span className="text-xs font-medium text-amber-700 ">Imbalanced Flows</span>
             </div>
-            <ul className="text-[10px] text-amber-600 dark:text-amber-400 space-y-0.5 max-h-20 overflow-y-auto">
+            <ul className="text-[10px] text-amber-600  space-y-0.5 max-h-20 overflow-y-auto">
                 {imbalanced.map((item, i) => (
                     <li key={i} className="flex justify-between">
                         <span>{item.name}</span>
@@ -330,3 +330,4 @@ function BalanceIndicator() {
         </div>
     );
 }
+

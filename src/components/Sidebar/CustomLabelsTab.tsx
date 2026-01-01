@@ -96,7 +96,7 @@ export default function CustomLabelsTab() {
             {/* Labels List */}
             {independentLabels.length > 0 && (
                 <div className="bg-[var(--card-bg)] rounded-lg border border-[var(--border)] overflow-hidden">
-                    <div className="border-b border-[var(--border)] px-3 py-2 bg-gray-50 dark:bg-gray-800">
+                    <div className="border-b border-[var(--border)] px-3 py-2 bg-gray-50 ">
                         <span className="text-xs font-medium text-[var(--secondary-text)]">
                             Labels ({independentLabels.length})
                         </span>
@@ -106,7 +106,7 @@ export default function CustomLabelsTab() {
                             <div
                                 key={label.id}
                                 onClick={() => handleSelectLabel(label.id)}
-                                className={`p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${selectedLabelId === label.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500' : ''
+                                className={`p-3 cursor-pointer transition-colors hover:bg-gray-50 :bg-gray-800 ${selectedLabelId === label.id ? 'bg-blue-50  border-l-2 border-blue-500' : ''
                                     }`}
                             >
                                 <div className="flex items-center justify-between gap-2">
@@ -124,7 +124,7 @@ export default function CustomLabelsTab() {
                                             e.stopPropagation();
                                             handleDeleteLabel(label.id);
                                         }}
-                                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                        className="p-1.5 text-red-500 hover:bg-red-50 :bg-red-900/20 rounded transition-colors"
                                         title="Delete label"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -147,8 +147,8 @@ export default function CustomLabelsTab() {
 
             {/* Selected Label Editor */}
             {selectedLabel && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4 space-y-4">
-                    <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                <div className="bg-blue-50  rounded-lg border border-blue-200  p-4 space-y-4">
+                    <h4 className="text-sm font-semibold text-blue-800 ">
                         Edit Label
                     </h4>
 
@@ -317,8 +317,8 @@ export default function CustomLabelsTab() {
                                 <button
                                     onClick={() => handleUpdateLabel(selectedLabel.id, { align: 'left' })}
                                     className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded border transition-colors ${!selectedLabel.align || selectedLabel.align === 'left'
-                                        ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 :bg-gray-800'
                                         }`}
                                 >
                                     <AlignLeft className="w-3.5 h-3.5" />
@@ -327,8 +327,8 @@ export default function CustomLabelsTab() {
                                 <button
                                     onClick={() => handleUpdateLabel(selectedLabel.id, { align: 'center' })}
                                     className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded border transition-colors ${selectedLabel.align === 'center'
-                                        ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 :bg-gray-800'
                                         }`}
                                 >
                                     <AlignCenter className="w-3.5 h-3.5" />
@@ -337,8 +337,8 @@ export default function CustomLabelsTab() {
                                 <button
                                     onClick={() => handleUpdateLabel(selectedLabel.id, { align: 'right' })}
                                     className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded border transition-colors ${selectedLabel.align === 'right'
-                                        ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                        : 'border-[var(--border)] text-[var(--secondary-text)] hover:bg-gray-50 :bg-gray-800'
                                         }`}
                                 >
                                     <AlignRight className="w-3.5 h-3.5" />
@@ -393,8 +393,8 @@ export default function CustomLabelsTab() {
                     )}
 
                     {/* Border Settings */}
-                    <div className="space-y-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <h5 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
+                    <div className="space-y-3 pt-3 border-t border-blue-200 ">
+                        <h5 className="text-xs font-semibold text-blue-700  uppercase tracking-wide">
                             Border & Spacing
                         </h5>
 
@@ -470,3 +470,4 @@ export default function CustomLabelsTab() {
         </div>
     );
 }
+

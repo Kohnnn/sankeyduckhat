@@ -1,48 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand Colors */
-  --color-primary: #DA2B1F;
-  --color-secondary: #00308C;
-  --color-positive: #00FF00;
-  --color-neutral: #E6E6E6;
+  /* Brand Colors - Indigo & Slate Theme */
+  --color-primary: #4f46e5;
+  /* Indigo-600 */
+  --color-secondary: #475569;
+  /* Slate-600 */
+  --color-positive: #10b981;
+  /* Emerald-500 */
+  --color-neutral: #94a3b8;
+  /* Slate-400 */
 
-  /* Primary Tints (90-60% lighter) */
-  --color-primary-90: #FDEAE9;
-  --color-primary-80: #F9C8C5;
-  --color-primary-70: #F2938F;
-  --color-primary-60: #EB5F59;
-
-  /* Secondary Tints */
-  --color-secondary-90: #E6EBF5;
-  --color-secondary-80: #B3C2E0;
-  --color-secondary-70: #6688C2;
-  --color-secondary-60: #334EA6;
-
-  /* UI Colors */
-  --background: #f3f4f6;
-  --foreground: #111827;
+  /* Surface & UI */
+  --background: #f8fafc;
+  /* Slate-50 */
+  --foreground: #0f172a;
+  /* Slate-900 */
   --card-bg: #ffffff;
-  --panel-bg: #ffffff;
-  --border: #e5e7eb;
-  --primary-text: #111827;
-  --secondary-text: #6b7280;
-  --hover-bg: #f9fafb;
+  --panel-bg: rgba(255, 255, 255, 0.9);
+  /* Slight texture */
+  --border: #e2e8f0;
+  /* Slate-200 */
+
+  --primary-text: #1e293b;
+  /* Slate-800 */
+  --secondary-text: #64748b;
+  /* Slate-500 */
+  --hover-bg: #f1f5f9;
+  /* Slate-100 */
+
   --grid-dot-color: #cbd5e1;
-}
-
-.dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card-bg: #1e293b;
-  --panel-bg: #1e293b;
-  --border: #334155;
-  --primary-text: #f1f5f9;
-  --secondary-text: #94a3b8;
-  --hover-bg: #334155;
-
-  --color-neutral: #475569;
-  --grid-dot-color: #334155;
+  /* Slate-300 */
 }
 
 body {
@@ -73,10 +61,6 @@ h3 {
   border-radius: 3px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
@@ -105,36 +89,41 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Canvas grid background - CLEAN WHITE for SankeyArt style */
+/* Canvas grid background - Subtle radial gradient for depth */
 .canvas-grid {
   background-color: #ffffff;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.dark .canvas-grid {
-  background-color: #0f172a;
-  /* Dark mode background */
+/* Micro-animations */
+button,
+input,
+select {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 /* Selection highlight */
 .selected-node rect {
-  stroke: var(--color-secondary);
-  stroke-width: 3px;
-  stroke-dasharray: 5, 3;
-}
-
-.dark .selected-node rect {
-  stroke: #60a5fa;
-  /* Lighter blue for dark mode */
+  stroke: var(--color-primary);
+  stroke-width: 2px;
+  stroke-dasharray: 4, 2;
 }
 
 .selected-flow {
-  stroke-opacity: 1 !important;
-  stroke-width: 3px;
+  stroke-opacity: 0.8 !important;
+  stroke: var(--color-primary) !important;
+  stroke-width: 2px;
 }
 
 /* Label drag handle */
 .label-group {
   cursor: grab;
+  transition: font-weight 0.2s;
 }
 
 .label-group:active {

@@ -269,12 +269,12 @@ export default function SpreadsheetEditor() {
         : null;
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 font-sans">
+        <div className="flex flex-col h-full bg-white  font-sans">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_1fr_100px_100px_40px] gap-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
-                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 dark:border-gray-800">From</div>
-                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 dark:border-gray-800">To</div>
-                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 dark:border-gray-800">Amount</div>
+            <div className="grid grid-cols-[1fr_1fr_100px_100px_40px] gap-0 border-b border-gray-200  bg-white  sticky top-0 z-10">
+                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 ">From</div>
+                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 ">To</div>
+                <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100 ">Amount</div>
                 <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Previous / Comp</div>
                 <div className="px-2 py-3"></div>
             </div>
@@ -289,14 +289,14 @@ export default function SpreadsheetEditor() {
                         <div
                             key={i}
                             ref={el => { rowRefs.current[i] = el; }}
-                            className={`grid grid-cols-[1fr_1fr_100px_100px_40px] gap-0 border-b border-gray-100 dark:border-gray-800 items-center group
-                            ${state.selectedLinkIndex === i ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                            ${!state.selectedLinkIndex && isRelatedToNode ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} 
-                            ${row.error ? 'bg-red-50/50 dark:bg-red-900/10' : ((state.selectedLinkIndex !== i && !isRelatedToNode) ? 'hover:bg-gray-50 dark:hover:bg-slate-800/50' : '')}`}
+                            className={`grid grid-cols-[1fr_1fr_100px_100px_40px] gap-0 border-b border-gray-100  items-center group
+                            ${state.selectedLinkIndex === i ? 'bg-blue-50 ' : ''}
+                            ${!state.selectedLinkIndex && isRelatedToNode ? 'bg-blue-50/30 ' : ''} 
+                            ${row.error ? 'bg-red-50/50 ' : ((state.selectedLinkIndex !== i && !isRelatedToNode) ? 'hover:bg-gray-50 :bg-slate-800/50' : '')}`}
                             onClick={() => handleFocus(i)}
                         >
                             {/* Source */}
-                            <div className="relative h-full border-r border-gray-100 dark:border-gray-800">
+                            <div className="relative h-full border-r border-gray-100 ">
                                 <input
                                     type="text"
                                     value={row.source}
@@ -305,12 +305,12 @@ export default function SpreadsheetEditor() {
                                     onBlur={handleBlur}
                                     onKeyDown={(e) => handleKeyDown(e, i, 'source')}
                                     placeholder="Source Node"
-                                    className="w-full h-full px-4 py-3 text-sm text-gray-900 dark:text-gray-100 bg-transparent outline-none focus:bg-blue-50/20"
+                                    className="w-full h-full px-4 py-3 text-sm text-gray-900  bg-transparent outline-none focus:bg-blue-50/20"
                                 />
                             </div>
 
                             {/* Target */}
-                            <div className="relative h-full border-r border-gray-100 dark:border-gray-800">
+                            <div className="relative h-full border-r border-gray-100 ">
                                 <input
                                     type="text"
                                     value={row.target}
@@ -319,12 +319,12 @@ export default function SpreadsheetEditor() {
                                     onBlur={handleBlur}
                                     onKeyDown={(e) => handleKeyDown(e, i, 'target')}
                                     placeholder="Target Node"
-                                    className="w-full h-full px-4 py-3 text-sm text-gray-900 dark:text-gray-100 bg-transparent outline-none focus:bg-blue-50/20"
+                                    className="w-full h-full px-4 py-3 text-sm text-gray-900  bg-transparent outline-none focus:bg-blue-50/20"
                                 />
                             </div>
 
                             {/* Value */}
-                            <div className="relative h-full border-r border-gray-100 dark:border-gray-800">
+                            <div className="relative h-full border-r border-gray-100 ">
                                 <input
                                     type="text"
                                     value={row.value}
@@ -333,7 +333,7 @@ export default function SpreadsheetEditor() {
                                     onBlur={(e) => handleValueBlur(i, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e, i, 'value')}
                                     placeholder="0 or 1k"
-                                    className="w-full h-full px-4 py-3 text-sm text-gray-900 dark:text-gray-100 bg-transparent outline-none focus:bg-blue-50/20"
+                                    className="w-full h-full px-4 py-3 text-sm text-gray-900  bg-transparent outline-none focus:bg-blue-50/20"
                                 />
                             </div>
 
@@ -347,7 +347,7 @@ export default function SpreadsheetEditor() {
                                     onBlur={handleBlur}
                                     onKeyDown={(e) => handleKeyDown(e, i, 'comparison')}
                                     placeholder="Value OR %"
-                                    className="w-full h-full px-4 py-3 text-sm text-green-600 dark:text-green-400 font-medium bg-transparent outline-none focus:bg-blue-50/20 placeholder-gray-300"
+                                    className="w-full h-full px-4 py-3 text-sm text-green-600  font-medium bg-transparent outline-none focus:bg-blue-50/20 placeholder-gray-300"
                                 />
                             </div>
 
@@ -365,10 +365,11 @@ export default function SpreadsheetEditor() {
                 })}
             </div>
 
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50 text-xs text-gray-500 font-medium flex justify-between">
+            <div className="p-3 border-t border-gray-200  bg-gray-50  text-xs text-gray-500 font-medium flex justify-between">
                 <span>{rows.filter(r => r.isValid && r.source).length} Flows</span>
                 <span>Press Enter to save • Paste Excel data directly</span>
             </div>
         </div>
     );
 }
+

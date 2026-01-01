@@ -293,7 +293,7 @@ export default function AIAssistantTab() {
     return (
         <div className="flex flex-col h-full">
             {/* Header with Settings */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] bg-gradient-to-r from-purple-50 to-blue-50  ">
                 <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-purple-500" />
                     <span className="text-sm font-medium text-[var(--primary-text)]">AI Assistant</span>
@@ -314,14 +314,14 @@ export default function AIAssistantTab() {
 
             {/* API Key Warning */}
             {!isConfigured && (
-                <div className="mx-4 mt-3 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="mx-4 mt-3 px-3 py-2 bg-amber-50  border border-amber-200  rounded-lg">
                     <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div className="text-xs text-amber-700 dark:text-amber-400">
+                        <div className="text-xs text-amber-700 ">
                             <span className="font-medium">API key required</span> for AI features.{' '}
                             <button
                                 onClick={() => setShowSettings(true)}
-                                className="text-amber-800 dark:text-amber-300 underline hover:no-underline"
+                                className="text-amber-800  underline hover:no-underline"
                             >
                                 Configure now →
                             </button>
@@ -412,3 +412,4 @@ export default function AIAssistantTab() {
         </div>
     );
 }
+

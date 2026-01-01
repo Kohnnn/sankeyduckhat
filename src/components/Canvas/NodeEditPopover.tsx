@@ -156,7 +156,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
     return (
         <div
             ref={popoverRef}
-            className="fixed z-50 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            className="fixed z-50 bg-white  rounded-xl shadow-2xl border border-gray-200  overflow-hidden animate-in fade-in zoom-in-95 duration-150"
             style={{
                 left: adjustedPosition.x,
                 top: adjustedPosition.y,
@@ -165,17 +165,17 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
             }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50   border-b border-gray-200 ">
                 <div className="flex items-center gap-2">
                     <div
                         className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
                         style={{ backgroundColor: color }}
                     />
-                    <span className="font-medium text-sm text-gray-700 dark:text-gray-200">Edit Node</span>
+                    <span className="font-medium text-sm text-gray-700 ">Edit Node</span>
                 </div>
                 <button
                     onClick={onClose}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+                    className="p-1 hover:bg-gray-200 :bg-gray-700 rounded-md transition-colors"
                 >
                     <X className="w-4 h-4 text-gray-500" />
                 </button>
@@ -185,7 +185,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
             <div className="p-4 space-y-4">
                 {/* Label Input */}
                 <div>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600  mb-1.5">
                         <Type className="w-3.5 h-3.5" />
                         Label
                     </label>
@@ -193,7 +193,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         type="text"
                         value={labelText}
                         onChange={(e) => setLabelText(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="w-full px-3 py-2 text-sm border border-gray-200  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white  text-gray-900 "
                         placeholder="Node name"
                         autoFocus
                     />
@@ -201,25 +201,25 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
 
                 {/* Color Picker */}
                 <div>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600  mb-1.5">
                         <Palette className="w-3.5 h-3.5" />
                         Color
                     </label>
                     <div className="relative">
                         <button
                             onClick={() => setShowColorPicker(!showColorPicker)}
-                            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200  rounded-lg hover:bg-gray-50 :bg-gray-800 transition-colors"
                         >
                             <div
-                                className="w-5 h-5 rounded-md border border-gray-300 dark:border-gray-600"
+                                className="w-5 h-5 rounded-md border border-gray-300 "
                                 style={{ backgroundColor: color }}
                             />
-                            <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{color}</span>
+                            <span className="text-sm text-gray-700  font-mono">{color}</span>
                             <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
                         </button>
 
                         {showColorPicker && (
-                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-white  border border-gray-200  rounded-lg shadow-lg z-10">
                                 <div className="grid grid-cols-8 gap-1 mb-2">
                                     {PRESET_COLORS.map((c) => (
                                         <button
@@ -249,7 +249,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                                 setColor(e.target.value);
                                             }
                                         }}
-                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900"
+                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded bg-white "
                                         placeholder="#000000"
                                     />
                                 </div>
@@ -260,25 +260,25 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
 
                 {/* Flow Color Picker */}
                 <div>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600  mb-1.5">
                         <Palette className="w-3.5 h-3.5" />
                         Flow Color (Outgoing)
                     </label>
                     <div className="relative">
                         <button
                             onClick={() => setShowFlowColorPicker(!showFlowColorPicker)}
-                            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200  rounded-lg hover:bg-gray-50 :bg-gray-800 transition-colors"
                         >
                             <div
-                                className="w-5 h-5 rounded-md border border-gray-300 dark:border-gray-600"
+                                className="w-5 h-5 rounded-md border border-gray-300 "
                                 style={{ backgroundColor: flowColor }}
                             />
-                            <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{flowColor}</span>
+                            <span className="text-sm text-gray-700  font-mono">{flowColor}</span>
                             <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
                         </button>
 
                         {showFlowColorPicker && (
-                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-white  border border-gray-200  rounded-lg shadow-lg z-10">
                                 <div className="grid grid-cols-8 gap-1 mb-2">
                                     {PRESET_COLORS.map((c) => (
                                         <button
@@ -308,7 +308,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                                 setFlowColor(e.target.value);
                                             }
                                         }}
-                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900"
+                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded bg-white "
                                         placeholder="#000000"
                                     />
                                 </div>
@@ -319,7 +319,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
 
                 {/* Label Alignment */}
                 <div>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600  mb-1.5">
                         <Type className="w-3.5 h-3.5" />
                         Text Alignment
                     </label>
@@ -327,8 +327,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('left')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'left'
-                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50  '
                                 }`}
                         >
                             <AlignLeft className="w-3.5 h-3.5" />
@@ -337,8 +337,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('center')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'center'
-                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50  '
                                 }`}
                         >
                             <AlignCenter className="w-3.5 h-3.5" />
@@ -347,8 +347,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('right')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'right'
-                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700  '
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50  '
                                 }`}
                         >
                             <AlignRight className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
 
                 {/* Background Highlighting */}
                 <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600  cursor-pointer">
                         <input
                             type="checkbox"
                             checked={showLabelBackground}
@@ -372,7 +372,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                     {showLabelBackground && (
                         <div className="grid grid-cols-2 gap-2 pl-6">
                             <div>
-                                <label className="block text-xs text-gray-500 dark:text-gray-500 mb-1">Background</label>
+                                <label className="block text-xs text-gray-500  mb-1">Background</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="color"
@@ -388,12 +388,12 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                                 setLabelBackgroundColor(e.target.value);
                                             }
                                         }}
-                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded"
+                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded"
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-500 dark:text-gray-500 mb-1">Border</label>
+                                <label className="block text-xs text-gray-500  mb-1">Border</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="color"
@@ -409,7 +409,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                                 setLabelBorderColor(e.target.value);
                                             }
                                         }}
-                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded"
+                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded"
                                     />
                                 </div>
                             </div>
@@ -419,7 +419,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
 
                 {/* Value Color */}
                 <div>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600  mb-1.5">
                         <Palette className="w-3.5 h-3.5" />
                         Value Text Color
                     </label>
@@ -438,14 +438,14 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                     setValueColor(e.target.value);
                                 }
                             }}
-                            className="flex-1 px-3 py-1.5 text-sm font-mono border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                            className="flex-1 px-3 py-1.5 text-sm font-mono border border-gray-200  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                         />
                     </div>
                 </div>
 
                 {/* Custom Text Lines */}
                 <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600  cursor-pointer">
                         <input
                             type="checkbox"
                             checked={showSecondLine}
@@ -460,7 +460,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                 type="text"
                                 value={secondLineText}
                                 onChange={(e) => setSecondLineText(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-200  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white "
                                 placeholder="e.g., +12% Y/Y"
                             />
                             <div className="flex gap-2">
@@ -478,7 +478,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                             setSecondLineColor(e.target.value);
                                         }
                                     }}
-                                    className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded"
+                                    className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded"
                                     placeholder="Text color"
                                 />
                             </div>
@@ -487,7 +487,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                 </div>
 
                 <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600  cursor-pointer">
                         <input
                             type="checkbox"
                             checked={showThirdLine}
@@ -502,7 +502,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                 type="text"
                                 value={thirdLineText}
                                 onChange={(e) => setThirdLineText(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-200  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white "
                                 placeholder="e.g., 29% margin"
                             />
                             <div className="flex gap-2">
@@ -520,7 +520,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                                             setThirdLineColor(e.target.value);
                                         }
                                     }}
-                                    className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded"
+                                    className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200  rounded"
                                     placeholder="Text color"
                                 />
                             </div>
@@ -530,18 +530,18 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50  border-t border-gray-200 ">
                 <div className="flex gap-1">
                     <button
                         onClick={handleAddFlow}
-                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 :bg-blue-900/20 rounded-md transition-colors"
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Add Flow
                     </button>
                     <button
                         onClick={handleDelete}
-                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 :bg-red-900/20 rounded-md transition-colors"
                     >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove
@@ -558,3 +558,4 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
         </div>
     );
 }
+

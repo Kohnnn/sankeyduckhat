@@ -78,10 +78,10 @@ export default function Toolbar() {
         setShowExportMenu(false);
     };
 
-    // Force Light Mode
-    React.useEffect(() => {
+    // Force Light Mode removed
+    /* React.useEffect(() => {
         document.documentElement.classList.remove('dark');
-    }, []);
+    }, []); */
 
     const ToolButton = ({
         tool,
@@ -94,9 +94,9 @@ export default function Toolbar() {
     }) => (
         <button
             onClick={() => setTool(tool)}
-            className={`p-2 rounded-md transition-colors ${studioState.currentTool === tool
-                ? 'bg-[var(--color-secondary)] text-white'
-                : 'hover:bg-[var(--hover-bg)] text-[var(--primary-text)]'
+            className={`p-2 rounded-full transition-all ${studioState.currentTool === tool
+                ? 'bg-[var(--color-primary)] text-white shadow-md transform scale-105'
+                : 'hover:bg-white text-[var(--secondary-text)] hover:text-[var(--primary-text)]'
                 }`}
             title={label}
         >
@@ -105,9 +105,9 @@ export default function Toolbar() {
     );
 
     return (
-        <div className="flex items-center gap-1 px-4 py-2 bg-[var(--card-bg)] border-b border-[var(--border)] text-[var(--primary-text)]">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-[var(--card-bg)]/90 backdrop-blur-md border border-[var(--border)] rounded-full shadow-lg z-30 transition-all hover:shadow-xl hover:-translate-y-0.5">
             {/* Tool Selection */}
-            <div className="flex items-center gap-0.5 bg-[var(--background)] rounded-lg p-0.5 border border-[var(--border)]">
+            <div className="flex items-center gap-1 bg-[var(--hover-bg)] rounded-full p-1">
                 <ToolButton tool="select" icon={MousePointer2} label="Select (V)" />
                 <ToolButton tool="pan" icon={Hand} label="Pan (H)" />
                 <ToolButton tool="addNode" icon={Plus} label="Add Node (N)" />
@@ -118,11 +118,11 @@ export default function Toolbar() {
 
 
             {/* Undo/Redo */}
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1 bg-[var(--hover-bg)] rounded-full p-1 ml-2">
                 <button
                     onClick={undo}
                     disabled={!history.canUndo}
-                    className="p-2 rounded-md hover:bg-[var(--hover-bg)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--secondary-text)]"
+                    className="p-2 rounded-full hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-[var(--secondary-text)] transition-all"
                     title="Undo (Ctrl+Z)"
                 >
                     <Undo2 className="w-4 h-4" />
@@ -130,7 +130,7 @@ export default function Toolbar() {
                 <button
                     onClick={redo}
                     disabled={!history.canRedo}
-                    className="p-2 rounded-md hover:bg-[var(--hover-bg)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--secondary-text)]"
+                    className="p-2 rounded-full hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-[var(--secondary-text)] transition-all"
                     title="Redo (Ctrl+Y)"
                 >
                     <Redo2 className="w-4 h-4" />
@@ -140,83 +140,80 @@ export default function Toolbar() {
             <div className="w-px h-6 bg-gray-200 mx-2" />
 
             {/* Export */}
-            <div className="relative">
-                <button
-                    onClick={() => setShowExportMenu(!showExportMenu)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--primary-text)] rounded-md hover:bg-[var(--hover-bg)]"
-                >
-                    <Download className="w-4 h-4" />
-                    Export
-                </button>
+            <div className="flex items-center gap-1 bg-[var(--hover-bg)] rounded-full p-1 ml-2">
+                <div className="relative">
+                    <button
+                        onClick={() => setShowExportMenu(!showExportMenu)}
+                        className="p-2 text-[var(--primary-text)] rounded-full hover:bg-white transition-all"
+                        title="Export"
+                    >
+                        <Download className="w-4 h-4" />
+                    </button>
 
-                {showExportMenu && (
-                    <div className="absolute top-full left-0 mt-1 py-1 bg-[var(--card-bg)] rounded-lg shadow-lg border border-[var(--border)] z-50 min-w-[160px]">
-                        <button
-                            onClick={handleExportPNG}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
-                        >
-                            <Image className="w-4 h-4" />
-                            Download PNG
-                        </button>
-                        <button
-                            onClick={handleExportSVG}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
-                        >
-                            <FileCode className="w-4 h-4" />
-                            Download SVG
-                        </button>
-                        <button
-                            onClick={handleExportJSON}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
-                        >
-                            <FileJson className="w-4 h-4" />
-                            Download JSON
-                        </button>
-                    </div>
-                )}
+                    {showExportMenu && (
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-1 bg-[var(--card-bg)] rounded-xl shadow-xl border border-[var(--border)] z-50 min-w-[160px] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                                onClick={handleExportPNG}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                            >
+                                <Image className="w-4 h-4" />
+                                PNG Image
+                            </button>
+                            <button
+                                onClick={handleExportSVG}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                            >
+                                <FileCode className="w-4 h-4" />
+                                SVG Vector
+                            </button>
+                            <button
+                                onClick={handleExportJSON}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                            >
+                                <FileJson className="w-4 h-4" />
+                                JSON Data
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative">
+                    <button
+                        onClick={() => setShowResetMenu(!showResetMenu)}
+                        className="p-2 text-[var(--secondary-text)] rounded-full hover:bg-white transition-all hover:text-red-500"
+                        title="Reset"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                    {/* Reset Menu */}
+                    {showResetMenu && (
+                        <div className="absolute top-full right-0 mt-2 py-1 bg-[var(--card-bg)] rounded-xl shadow-xl border border-[var(--border)] z-50 min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                                onClick={() => { resetNodePositions(); setShowResetMenu(false); }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                            >
+                                <RotateCw className="w-4 h-4" />
+                                Reset Node Positions
+                            </button>
+                            <button
+                                onClick={() => { resetLabelPositions(); setShowResetMenu(false); }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                            >
+                                <RotateCw className="w-4 h-4" />
+                                Reset Label Positions
+                            </button>
+                            <div className="border-t border-[var(--border)] my-1" />
+                            <button
+                                onClick={() => { resetSession(); setShowResetMenu(false); }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Factory Reset
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
-
-            <div className="flex-1" />
-
-            {/* Reset Options */}
-            <div className="relative">
-                <button
-                    onClick={() => setShowResetMenu(!showResetMenu)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--secondary-text)] rounded-md hover:bg-[var(--hover-bg)]"
-                >
-                    <RefreshCw className="w-4 h-4" />
-                    Reset
-                </button>
-
-                {showResetMenu && (
-                    <div className="absolute top-full right-0 mt-1 py-1 bg-[var(--card-bg)] rounded-lg shadow-lg border border-[var(--border)] z-50 min-w-[180px]">
-                        <button
-                            onClick={() => { resetNodePositions(); setShowResetMenu(false); }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
-                        >
-                            <RotateCw className="w-4 h-4" />
-                            Reset Node Positions
-                        </button>
-                        <button
-                            onClick={() => { resetLabelPositions(); setShowResetMenu(false); }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
-                        >
-                            <RotateCw className="w-4 h-4" />
-                            Reset Label Positions
-                        </button>
-                        <div className="border-t border-[var(--border)] my-1" />
-                        <button
-                            onClick={() => { resetSession(); setShowResetMenu(false); }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Factory Reset
-                        </button>
-                    </div>
-                )}
-            </div>
-
-
 
             {/* Click-away handler */}
             {(showExportMenu || showResetMenu) && (
@@ -231,3 +228,4 @@ export default function Toolbar() {
         </div>
     );
 }
+

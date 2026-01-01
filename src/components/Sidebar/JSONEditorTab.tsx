@@ -99,8 +99,8 @@ export default function JSONEditorTab() {
             </div>
 
             {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800">
-                    <div className="flex items-start gap-2 text-xs text-red-600 dark:text-red-400">
+                <div className="p-3 bg-red-50  border-t border-red-200 ">
+                    <div className="flex items-start gap-2 text-xs text-red-600 ">
                         <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                         <span>{error}</span>
                     </div>
@@ -108,8 +108,8 @@ export default function JSONEditorTab() {
             )}
 
             {success && (
-                <div className="p-2 bg-green-50 dark:bg-green-900/20 border-t border-green-200 dark:border-green-800 text-center">
-                    <div className="inline-flex items-center gap-2 text-xs text-green-700 dark:text-green-400 font-medium">
+                <div className="p-2 bg-green-50  border-t border-green-200  text-center">
+                    <div className="inline-flex items-center gap-2 text-xs text-green-700  font-medium">
                         <Check className="w-4 h-4" />
                         <span>Action successful</span>
                     </div>
@@ -134,3 +134,4 @@ export default function JSONEditorTab() {
         </div>
     );
 }
+
