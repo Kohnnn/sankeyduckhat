@@ -749,7 +749,8 @@ export default function SankeyCanvas() {
 
         // Data join for label groups
         const labels = labelLayer.selectAll<SVGGElement, SankeyNode>('.label-group')
-            .data(nodes, (d) => d.id);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .data(nodes, (d: any) => d.id);
 
         const labelsEnter = labels.enter()
             .append('g')
