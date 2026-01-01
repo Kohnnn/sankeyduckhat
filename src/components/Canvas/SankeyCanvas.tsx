@@ -789,10 +789,14 @@ export default function SankeyCanvas() {
             .subject(function (event, d) {
                 const customPos = state.customLayout.labels[d.id];
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const isFirstColumn = (d.x0 ?? 0) === minX;
+                const dAny = d as any;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const minX = d3.min(nodes, (n: any) => n.x0 ?? 0) ?? 0;
+
+                const isFirstColumn = (dAny.x0 ?? 0) === minX;
                 const isLeft = settings.labelPosition === 'left' || isFirstColumn;
-                const defaultX = isLeft ? (d.x0 ?? 0) - 8 : (d.x1 ?? 0) + 8;
-                const defaultY = ((d.y1 ?? 0) + (d.y0 ?? 0)) / 2;
+                const defaultX = isLeft ? (dAny.x0 ?? 0) - 8 : (dAny.x1 ?? 0) + 8;
+                const defaultY = ((dAny.y1 ?? 0) + (dAny.y0 ?? 0)) / 2;
 
                 const currentX = defaultX + (customPos?.x ?? 0);
                 const currentY = defaultY + (customPos?.y ?? 0);
