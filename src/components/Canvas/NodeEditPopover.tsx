@@ -28,6 +28,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
     const [labelText, setLabelText] = useState(node.name);
     const [color, setColor] = useState(node.color || '#6b7280');
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [flowColor, setFlowColor] = useState(node.flowColor || node.color || '#6b7280');
+    const [showFlowColorPicker, setShowFlowColorPicker] = useState(false);
     const [secondLineText, setSecondLineText] = useState('');
     const [showSecondLine, setShowSecondLine] = useState(false);
     const [thirdLineText, setThirdLineText] = useState('');
@@ -110,9 +112,9 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
             dispatch({ type: 'UPDATE_NODE', payload: { id: node.id, updates: { name: labelText } } });
         }
 
-        // Update node color
-        if (color !== node.color) {
-            dispatch({ type: 'UPDATE_NODE', payload: { id: node.id, updates: { color } } });
+        // Update node color and flow color
+        if (color !== node.color || flowColor !== node.flowColor) {
+            dispatch({ type: 'UPDATE_NODE', payload: { id: node.id, updates: { color, flowColor } } });
         }
 
         // Update customizations
@@ -256,6 +258,65 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                     </div>
                 </div>
 
+                {/* Flow Color Picker */}
+                <div>
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                        <Palette className="w-3.5 h-3.5" />
+                        Flow Color (Outgoing)
+                    </label>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFlowColorPicker(!showFlowColorPicker)}
+                            className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                            <div
+                                className="w-5 h-5 rounded-md border border-gray-300 dark:border-gray-600"
+                                style={{ backgroundColor: flowColor }}
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{flowColor}</span>
+                            <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+                        </button>
+
+                        {showFlowColorPicker && (
+                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                                <div className="grid grid-cols-8 gap-1 mb-2">
+                                    {PRESET_COLORS.map((c) => (
+                                        <button
+                                            key={c}
+                                            onClick={() => {
+                                                setFlowColor(c);
+                                                setShowFlowColorPicker(false);
+                                            }}
+                                            className={`w-6 h-6 rounded-md border-2 transition-transform hover:scale-110 ${flowColor === c ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-transparent'
+                                                }`}
+                                            style={{ backgroundColor: c }}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="color"
+                                        value={flowColor}
+                                        onChange={(e) => setFlowColor(e.target.value)}
+                                        className="w-8 h-8 rounded cursor-pointer"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={flowColor}
+                                        onChange={(e) => {
+                                            if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                                                setFlowColor(e.target.value);
+                                            }
+                                        }}
+                                        className="flex-1 px-2 py-1 text-xs font-mono border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900"
+                                        placeholder="#000000"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Label Alignment */}
                 <div>
                     <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
@@ -266,8 +327,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('left')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'left'
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
                                 }`}
                         >
                             <AlignLeft className="w-3.5 h-3.5" />
@@ -276,8 +337,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('center')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'center'
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
                                 }`}
                         >
                             <AlignCenter className="w-3.5 h-3.5" />
@@ -286,8 +347,8 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                         <button
                             onClick={() => setLabelAlignment('right')}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${labelAlignment === 'right'
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400'
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400'
                                 }`}
                         >
                             <AlignRight className="w-3.5 h-3.5" />

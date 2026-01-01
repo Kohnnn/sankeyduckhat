@@ -4,6 +4,7 @@ export interface SankeyNode {
     id: string;
     name: string;
     color?: string;
+    flowColor?: string; // Specific color for outgoing flows
     x?: number;
     y?: number;
     dx?: number;

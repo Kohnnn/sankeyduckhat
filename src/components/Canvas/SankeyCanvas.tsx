@@ -202,7 +202,11 @@ export default function SankeyCanvas() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let processedGraph: any;
         try {
-            processedGraph = sankeyGenerator(graphData);
+            // Deep clone data to prevent mutation by d3-sankey
+            // d3-sankey modifies nodes/links in place (replacing IDs with objects),
+            // which causes "circular link" errors on re-renders if we pass the same object.
+            const dataClone = JSON.parse(JSON.stringify(graphData));
+            processedGraph = sankeyGenerator(dataClone);
         } catch (e) {
             console.error('Sankey layout error:', e);
             console.error('Graph data:', graphData);
@@ -339,7 +343,7 @@ export default function SankeyCanvas() {
         // Create gradient for each link (Always create, toggle usage via CSS/Attr)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         links.forEach((link: any, i: number) => {
-            const sourceColor = getNodeColor(link.source, nodes.indexOf(link.source));
+            const sourceColor = link.source.flowColor || getNodeColor(link.source, nodes.indexOf(link.source));
             const targetColor = getNodeColor(link.target, nodes.indexOf(link.target));
 
             const gradient = defs.append('linearGradient')
@@ -375,7 +379,7 @@ export default function SankeyCanvas() {
                     return `url(#link-gradient-${i})`;
                 }
                 // Use source color for solid links (SankeyArt style)
-                return getNodeColor(d.source, nodes.indexOf(d.source));
+                return d.source.flowColor || getNodeColor(d.source, nodes.indexOf(d.source));
             })
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .attr('fill-opacity', (d: any, i: number) =>
