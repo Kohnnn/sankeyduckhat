@@ -15,12 +15,44 @@ interface AISettingsContextType {
     resetPrompt: () => void;
     resetAll: () => void;
     isConfigured: boolean;
+    // Chat History Persistence
+    messages: Message[];
+    addMessage: (message: Message) => void;
+    setMessages: (messages: Message[]) => void;
+    clearMessages: () => void;
+}
+
+export interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+    attachments?: Attachment[];
+    actions?: {
+        label: string;
+        onClick: () => void;
+        type: 'primary' | 'secondary';
+    }[];
+}
+
+export interface Attachment {
+    type: string;
+    data: string;
+    name: string;
 }
 
 const AISettingsContext = createContext<AISettingsContextType | null>(null);
 
 export function AISettingsProvider({ children }: { children: React.ReactNode }) {
     const [settings, setSettings] = useState<AISettings>(defaultAISettings);
+    const [messages, setMessagesState] = useState<Message[]>([
+        {
+            id: '1',
+            role: 'assistant',
+            content: 'Hi! I can help you create Sankey diagrams from financial data. Try:\n\n• Paste an image of a financial statement\n• Type data like "Revenue [1000] Expenses"\n• Ask me to modify colors or layout\n• Request changes to your current diagram',
+            timestamp: new Date(),
+        },
+    ]);
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from localStorage on mount
@@ -73,6 +105,25 @@ export function AISettingsProvider({ children }: { children: React.ReactNode }) 
         localStorage.removeItem(STORAGE_KEY);
     }, []);
 
+    const addMessage = useCallback((message: Message) => {
+        setMessagesState(prev => [...prev, message]);
+    }, []);
+
+    const setMessages = useCallback((messages: Message[]) => {
+        setMessagesState(messages);
+    }, []);
+
+    const clearMessages = useCallback(() => {
+        setMessagesState([
+            {
+                id: '1',
+                role: 'assistant',
+                content: 'Hi! I can help you create Sankey diagrams from financial data. Try:\n\n• Paste an image of a financial statement\n• Type data like "Revenue [1000] Expenses"\n• Ask me to modify colors or layout\n• Request changes to your current diagram',
+                timestamp: new Date(),
+            },
+        ]);
+    }, []);
+
     const isConfigured = settings.apiKey.trim().length > 0;
 
     const value: AISettingsContextType = {
@@ -85,6 +136,10 @@ export function AISettingsProvider({ children }: { children: React.ReactNode }) 
         resetPrompt,
         resetAll,
         isConfigured,
+        messages,
+        addMessage,
+        setMessages,
+        clearMessages
     };
 
     return <AISettingsContext.Provider value={value}>{children}</AISettingsContext.Provider>;

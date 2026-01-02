@@ -1,45 +1,16 @@
-'use client';
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Send, Upload, Sparkles, HelpCircle, FileText, Image as ImageIcon, Copy, Check, Settings, AlertCircle, Loader2, XCircle } from 'lucide-react';
 import { useDiagram } from '@/context/DiagramContext';
 import { aiService } from '@/services/ai-service';
-import { useAISettings } from '@/context/AISettingsContext';
+import { useAISettings, Message, Attachment } from '@/context/AISettingsContext';
 import { parseDSL } from '@/lib/dsl-parser';
 import { callGemini, parseJsonFromResponse } from '@/lib/gemini-api';
 import AISettingsPanel from './AISettingsPanel';
 
-interface Attachment {
-    type: string;
-    data: string; // base64
-    name?: string;
-}
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-    attachments?: Attachment[];
-    actions?: {
-        label: string;
-        onClick: () => void;
-        type: 'primary' | 'secondary';
-    }[];
-}
-
 export default function AIAssistantTab() {
     const { state, dispatch } = useDiagram();
-    const { settings, isConfigured } = useAISettings();
-
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            content: 'Hi! I can help you create Sankey diagrams from financial data. Try:\n\n• Paste an image of a financial statement\n• Type data like "Revenue [1000] Expenses"\n• Ask me to modify colors or layout\n• Request changes to your current diagram',
-            timestamp: new Date(),
-        },
-    ]);
+    const { settings, isConfigured, messages, addMessage, setMessages } = useAISettings();
+    // Removed local messages state initialization as it is now handled by context
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -109,13 +80,13 @@ export default function AIAssistantTab() {
         setIsProcessing(true);
 
         // Add user message to UI immediately
-        setMessages(prev => [...prev, {
+        addMessage({
             id: Date.now().toString(),
             role: 'user',
             content: userMessage,
             attachments: attachmentsToSend,
             timestamp: new Date()
-        }]);
+        });
 
         try {
             // Create settings override with attachments
@@ -127,28 +98,29 @@ export default function AIAssistantTab() {
             const response = await aiService.sendMessage(userMessage || (attachmentsToSend.length > 0 ? "Analyze this image" : ""), state, settingsOverride);
 
             if (response.success) {
-                setMessages(prev => [...prev, {
+                addMessage({
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
                     content: response.content,
                     timestamp: new Date()
-                }]);
+                });
 
                 // Check for JSON changes in the response
                 const jsonMatch = response.content.match(/```json\n([\s\S]*?)\n```/);
                 if (jsonMatch) {
                     try {
                         const changes = JSON.parse(jsonMatch[1]);
+                        console.log('AI Parsed Changes:', changes); // Debug Log
 
                         // Handle SETTINGS changes (theming)
                         if (changes.settings) {
                             dispatch({ type: 'UPDATE_SETTINGS', payload: changes.settings });
-                            setMessages(prev => [...prev, {
+                            addMessage({
                                 id: (Date.now() + 2).toString(),
                                 role: 'assistant',
                                 content: '🎨 Theme applied!',
                                 timestamp: new Date()
-                            }]);
+                            });
                         }
                         // Handle SUGGESTIONS (node breakdown)
                         else if (changes.suggestions) {
@@ -158,7 +130,7 @@ export default function AIAssistantTab() {
                                 `  • ${b.name}: ${b.value}`
                             ).join('\n') || '';
 
-                            setMessages(prev => [...prev, {
+                            addMessage({
                                 id: (Date.now() + 2).toString(),
                                 role: 'assistant',
                                 content: `💡 **Suggestion for ${nodeId}:**\n${insight}\n\nProposed breakdown:\n${breakdownText}`,
@@ -170,37 +142,38 @@ export default function AIAssistantTab() {
                                         const { applyBreakdown } = await import('@/lib/ai-utils');
                                         const result = applyBreakdown(state, changes.suggestions);
                                         dispatch({ type: 'SET_DATA', payload: result.data });
-                                        setMessages(p => [...p, {
+                                        addMessage({
                                             id: Date.now().toString(),
                                             role: 'assistant',
                                             content: '✅ Breakdown applied!',
                                             timestamp: new Date()
-                                        }]);
+                                        });
                                     }
                                 }]
-                            }]);
+                            });
                         }
                         // Handle DATA changes (nodes/flows)
                         else if (changes.nodes || changes.flows) {
                             const { applyAIChanges } = await import('@/lib/ai-utils');
                             const result = applyAIChanges(state, changes);
+                            console.log('AI Application Result:', result); // Debug Log
 
                             if (result.success && result.newState) {
                                 dispatch({ type: 'SET_DATA', payload: result.newState.data });
-                                setMessages(prev => [...prev, {
+                                addMessage({
                                     id: (Date.now() + 2).toString(),
                                     role: 'assistant',
                                     content: '✅ Changes applied successfully!',
                                     timestamp: new Date()
-                                }]);
+                                });
                             } else {
                                 const errorMsg = result.errors?.join('\n') || 'Failed to apply changes';
-                                setMessages(prev => [...prev, {
+                                addMessage({
                                     id: (Date.now() + 2).toString(),
                                     role: 'assistant',
                                     content: `⚠️ Could not apply changes:\n${errorMsg}`,
                                     timestamp: new Date()
-                                }]);
+                                });
                             }
                         }
                     } catch (e) {
@@ -208,21 +181,21 @@ export default function AIAssistantTab() {
                     }
                 }
             } else {
-                setMessages(prev => [...prev, {
+                addMessage({
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
                     content: response.error || 'Sorry, I encountered an error processing your request.',
                     timestamp: new Date()
-                }]);
+                });
             }
         } catch (error) {
             console.error('AI Service Error:', error);
-            setMessages(prev => [...prev, {
+            addMessage({
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: 'Sorry, something went wrong.',
                 timestamp: new Date()
-            }]);
+            });
         } finally {
             setIsProcessing(false);
         }
