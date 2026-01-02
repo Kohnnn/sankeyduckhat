@@ -729,6 +729,37 @@ export default function AppearanceTab() {
                             className="w-full"
                         />
                     </div>
+
+                    <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">
+                                Radius: {settings.nodeBorderRadius}px
+                            </label>
+                            <input
+                                type="range"
+                                value={settings.nodeBorderRadius ?? 0}
+                                onChange={(e) => updateSetting('nodeBorderRadius', Number(e.target.value))}
+                                min={0}
+                                max={20}
+                                step={1}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">
+                                Border: {Math.round((settings.nodeBorderOpacity ?? 0) * 100)}%
+                            </label>
+                            <input
+                                type="range"
+                                value={settings.nodeBorderOpacity ?? 0}
+                                onChange={(e) => updateSetting('nodeBorderOpacity', Number(e.target.value))}
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                className="w-full"
+                            />
+                        </div>
+                    </div>
                 </div>
             </Section>
 

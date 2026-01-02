@@ -348,12 +348,8 @@ export default function SankeyCanvas() {
             .attr('class', 'sankey-link cursor-pointer')
             .attr('opacity', 0);
 
-        // Entrance Draw Animation
+        // Entrance Draw Animation (Simple Fade In)
         linkEnter.transition().duration(1000).ease(d3.easeCubicOut)
-            .attrTween("stroke-dasharray", function () {
-                const len = (this as SVGPathElement).getTotalLength();
-                return d3.interpolateString(`0,${len}`, `${len},${len}`);
-            })
             .attr('opacity', settings.linkOpacity);
 
         linkEnter.merge(linkSel as any)
@@ -804,29 +800,7 @@ export default function SankeyCanvas() {
             </div>
 
             {/* Top Toolbar */}
-            <div className="absolute top-4 right-4 flex gap-2">
-                <div className="flex items-center gap-1 bg-white p-1 rounded-lg shadow-lg border border-gray-200">
-                    <button onClick={() => (dispatch as any)({ type: 'UNDO' })} className="p-1.5 hover:bg-gray-100 rounded text-gray-700 disabled:opacity-30">
-                        <Undo className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => (dispatch as any)({ type: 'REDO' })} className="p-1.5 hover:bg-gray-100 rounded text-gray-700 disabled:opacity-30">
-                        <Redo className="w-4 h-4" />
-                    </button>
-                </div>
-                <div className="flex items-center gap-1 bg-white p-1 rounded-lg shadow-lg border border-gray-200">
-                    <button onClick={() => {
-                        if (!svgRef.current) return;
-                        const source = new XMLSerializer().serializeToString(svgRef.current);
-                        const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url; link.download = 'sankey.svg';
-                        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-                    }} className="p-1.5 hover:bg-gray-100 rounded text-gray-700">
-                        <Download className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
+            {/* Top Toolbar - REMOVED (Handled by Toolbar component) */}
 
             {popover && (
                 <NodeEditPopover
