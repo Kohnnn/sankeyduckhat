@@ -51,10 +51,10 @@ export default function SankeyCanvas() {
     }, [getCustomization]);
 
     // Format value for display
-    const formatValue = useCallback((value: number): string => {
+    const formatValue = useCallback((value: number, forceDisplay = false): string => {
         const { valuePrefix, valueSuffix, valueDecimals, valueMode } = settings;
 
-        if (valueMode === 'hidden') return '';
+        if (!forceDisplay && valueMode === 'hidden') return '';
 
         let formatted: string;
         if (valueMode === 'short') {
@@ -203,6 +203,21 @@ export default function SankeyCanvas() {
             return data.nodes.some(n => n.id === source) && data.nodes.some(n => n.id === target);
         });
 
+        if (validLinks.length === 0 && data.links.length > 0) {
+            // Links exist but none are valid - show empty message
+            mainGroup.selectAll('.layer-links, .layer-nodes, .layer-labels, .layer-particles').transition().duration(500).attr('opacity', 0).remove();
+            const emptyMsg = svg.selectAll('.empty-message').data([1]);
+            emptyMsg.enter().append('text')
+                .attr('class', 'empty-message')
+                .attr('x', width / 2).attr('y', height / 2)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#9ca3af')
+                .attr('font-size', '16px')
+                .text('Flows defined but cannot connect to nodes. Check Data Editor.')
+                .attr('opacity', 0).transition().duration(500).attr('opacity', 1);
+            return;
+        }
+
         let processedGraph;
         try {
             const calcData = {
@@ -325,6 +340,7 @@ export default function SankeyCanvas() {
         }
 
         const isDimmed = (nId?: string, linkKey?: string) => {
+            if (!settings.enableFocusMode) return false;
             if (!selectedNodeId && selectedLinkIndex === null) return false;
             // Link Hover takes precedence
             if (selectedLinkIndex !== null) return true; // Handled by hover logic
@@ -422,9 +438,9 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .on('mouseenter', function (e, d: any) {
                 if (selectedLinkIndex === null) {
-                    linkLayer.selectAll('.sankey-link').transition().duration(200).attr('opacity', 0.1);
                     d3.select(this).transition().duration(200).attr('opacity', 0.8);
-                    showTooltip(e, `${d.source.name} → ${d.target.name}: ${formatValue(d.value)}`);
+                    const formatted = formatValue(d.value, true);
+                    showTooltip(e, `${d.source.name} → ${d.target.name}${formatted ? `: ${formatted}` : ''}`);
                 }
             })
             .on('mouseleave', function () {

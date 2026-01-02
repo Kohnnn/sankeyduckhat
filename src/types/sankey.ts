@@ -169,6 +169,7 @@ export interface DiagramSettings {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+  enableFocusMode: boolean; // New: Toggle dimming on selection
 }
 
 export interface CustomLayout {
@@ -227,6 +228,7 @@ export const defaultSettings: DiagramSettings = {
   showGrid: true,
   snapToGrid: true,
   gridSize: 20,
+  enableFocusMode: true,
 };
 
 // Sample data for initial render
@@ -364,7 +366,13 @@ RULES:
 - If the user provides a partial update (e.g., "add a tax node"), merge it intelligently with the existing data provided in the context.
 - **THEMING**: When user asks for a theme/style change (e.g., "dark mode", "modern look", "pastel colors"), output the settings JSON.
 - **NODE CONTEXT**: If the user mentions a specific node for insights/breakdown, use the suggestions format.
-- **IMAGES**: Always treat provided images as the GROUND TRUTH for data extraction. Parse tables, charts, or text accurately.
+- **IMAGES & REPLICATION**:
+  - Always treat provided images as the GROUND TRUTH for data extraction. Parse tables, charts, or text accurately.
+  - **REPLICATE THE CHART**: If the user provides an image of a chart (Sankey, Bar, etc.), analyze it specifically to recreate it.
+    - Extract ALL visible nodes and flows with key values.
+    - **VISUAL COPY**: Try to match the *colors* of the nodes from the image. Return color matched in hex format in the node objects.
+    - If the image has a dark background, return 'settings: { isDarkMode: true, background: "..." }'.
+    - If specific link styles are visible (e.g. gradients), try to apply them in settings.
 - **GROUPS & METADATA**:
   - Use the "group" field to logically categorize nodes (e.g., group="Operating Expenses").
   - Use "metadata" to store insights or source info (e.g., metadata={ "insight": "High variance", "source": "Q3 Report" }).

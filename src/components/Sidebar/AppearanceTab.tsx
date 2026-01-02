@@ -799,6 +799,16 @@ export default function AppearanceTab() {
                     <label className="flex items-center gap-2 text-sm">
                         <input
                             type="checkbox"
+                            checked={settings.enableFocusMode ?? true}
+                            onChange={(e) => updateSetting('enableFocusMode', e.target.checked)}
+                            className="rounded"
+                        />
+                        Dim unconnected on select
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
                             checked={settings.linkGradient}
                             onChange={(e) => updateSetting('linkGradient', e.target.checked)}
                             className="rounded"

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Send, Upload, Sparkles, HelpCircle, FileText, Image as ImageIcon, Copy, Check, Settings, AlertCircle, Loader2, XCircle } from 'lucide-react';
+import { Send, Upload, Sparkles, HelpCircle, FileText, Image as ImageIcon, Copy, Check, Settings, AlertCircle, Loader2, XCircle, Trash2 } from 'lucide-react';
 import { useDiagram } from '@/context/DiagramContext';
 import { aiService } from '@/services/ai-service';
 import { useAISettings, Message, Attachment } from '@/context/AISettingsContext';
@@ -9,7 +9,7 @@ import AISettingsPanel from './AISettingsPanel';
 
 export default function AIAssistantTab() {
     const { state, dispatch } = useDiagram();
-    const { settings, isConfigured, messages, addMessage, setMessages } = useAISettings();
+    const { settings, isConfigured, messages, addMessage, setMessages, clearMessages } = useAISettings();
     // Removed local messages state initialization as it is now handled by context
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -68,10 +68,13 @@ export default function AIAssistantTab() {
         return () => window.removeEventListener('ai-node-action', handleAINodeAction as EventListener);
     }, []);
 
-    const handleSend = async () => {
-        if ((!input.trim() && pendingFiles.length === 0) || isProcessing) return;
+    const handleSend = async (textOverride?: string) => {
+        // Allow override, otherwise use input state
+        const textToSend = typeof textOverride === 'string' ? textOverride : input;
 
-        const userMessage = input.trim();
+        if ((!textToSend.trim() && pendingFiles.length === 0) || isProcessing) return;
+
+        const userMessage = textToSend.trim();
         const attachmentsToSend = [...pendingFiles];
 
         // Clear inputs immediately
@@ -252,26 +255,37 @@ export default function AIAssistantTab() {
         }
     }, []);
 
+    const SUGGESTED_QUESTIONS = [
+        "Analyze the flow balance",
+        "Make the diagram look professional",
+        "Explain the cost structure",
+        "Highlight the largest expenses"
+    ];
+
     return (
-        <div className="flex flex-col h-full">
-            {/* Header with Settings */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] bg-gradient-to-r from-purple-50 to-blue-50  ">
-                <div className="flex items-center gap-2">
+        <div className="flex flex-col h-full bg-[var(--panel-bg)]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border)] bg-[var(--card-bg)]">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary-text)]">
                     <Sparkles className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-[var(--primary-text)]">AI Assistant</span>
-                    {!isConfigured && (
-                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
-                            Not Configured
-                        </span>
-                    )}
+                    AI Assistant
                 </div>
-                <button
-                    onClick={() => setShowSettings(true)}
-                    className="p-2 text-[var(--secondary-text)] hover:text-[var(--primary-text)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
-                    title="AI Settings"
-                >
-                    <Settings className="w-4 h-4" />
-                </button>
+                <div className="flex gap-1">
+                    <button
+                        onClick={clearMessages}
+                        className="p-1.5 text-[var(--secondary-text)] hover:text-red-500 rounded-md transition-colors"
+                        title="Clear History"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className={`p-1.5 rounded-md transition-colors ${!isConfigured ? 'text-amber-500 bg-amber-50 animate-pulse' : 'text-[var(--secondary-text)] hover:text-[var(--primary-text)]'}`}
+                        title="Settings"
+                    >
+                        <Settings className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             {/* API Key Warning */}
@@ -294,6 +308,28 @@ export default function AIAssistantTab() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4 opacity-80">
+                        <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mb-4">
+                            <Sparkles className="w-6 h-6 text-purple-400" />
+                        </div>
+                        <h3 className="text-sm font-medium text-[var(--primary-text)] mb-2">How can I help?</h3>
+                        <p className="text-xs text-[var(--secondary-text)] mb-6 max-w-[200px]">
+                            Ask me to analyze data, change colors, or explain the flow.
+                        </p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {SUGGESTED_QUESTIONS.map((q, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => handleSend(q)}
+                                    className="px-3 py-1.5 bg-white border border-purple-100 text-purple-600 text-xs rounded-full hover:bg-purple-50 transition-colors shadow-sm"
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
@@ -421,7 +457,7 @@ export default function AIAssistantTab() {
                     />
 
                     <button
-                        onClick={handleSend}
+                        onClick={() => handleSend()} // Fix checking TS strictness
                         disabled={(!input.trim() && pendingFiles.length === 0) || isProcessing}
                         className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >

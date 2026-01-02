@@ -12,6 +12,7 @@ export function getDiagramStateForAI(state: DiagramState): string {
         id: n.id,
         name: n.name,
         value: n.value,
+        color: n.color,
         ...(n.category ? { category: n.category } : {}),
         ...(n.group ? { group: n.group } : {}),
         ...(n.metadata ? { metadata: n.metadata } : {}),
@@ -23,6 +24,7 @@ export function getDiagramStateForAI(state: DiagramState): string {
         s: typeof l.source === 'object' ? (l.source as any).id : l.source,
         t: typeof l.target === 'object' ? (l.target as any).id : l.target,
         v: l.value,
+        c: l.comparisonValue, // Add comparison (e.g., "+10%")
         ...(l.metadata ? { metadata: l.metadata } : {}),
         ...(l.originalValue !== undefined ? { originalValue: l.originalValue } : {})
     }));
