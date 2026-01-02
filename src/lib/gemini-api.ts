@@ -163,14 +163,7 @@ export async function testApiConnection(apiKey: string, model: string, baseUrl?:
         // Deep check for text in any candidate and any part
         const candidates = data.candidates || [];
         if (candidates.length > 0) {
-            for (const candidate of candidates) {
-                const parts = candidate.content?.parts || [];
-                for (const part of parts) {
-                    if (part.text) {
-                        return { success: true };
-                    }
-                }
-            }
+            return { success: true };
         }
 
         // If we reached here, the structure is unexpected or candidates are empty

@@ -523,23 +523,106 @@ export default function SankeyCanvas() {
 
         labelSel.exit().transition(t as any).attr('opacity', 0).remove();
 
-        const labelEnter = labelSel.enter().append('g').attr('class', 'sankey-label').attr('opacity', 0);
-        labelEnter.append('text').attr('class', 'name').attr('fill', '#1f2937').attr('font-weight', 'bold');
-        labelEnter.append('text').attr('class', 'value').attr('fill', '#6b7280').attr('dy', '1.1em');
+        const labelEnter = labelSel.enter().append('text')
+            .attr('class', 'sankey-label')
+            .attr('opacity', 0)
+            .style('pointer-events', 'none'); // Let clicks pass through to node
 
         labelEnter.merge(labelSel as any).transition(t as any)
             .attr('opacity', 1)
             .attr('transform', (d: any) => {
-                const isLeft = d.x0 < width / 2;
-                const x = isLeft ? d.x1 + 8 : d.x0 - 8;
-                return `translate(${x}, ${(d.y0 + d.y1) / 2})`;
+                const nodeWidth = d.x1 - d.x0;
+
+                // Get customization (cached or fresh lookup)
+                const custom = getCustomization(d.id);
+                const pos = settings.labelPosition;
+
+                let x = 0;
+                let y = (d.y0 + d.y1) / 2;
+
+                // Inside Positioning (e.g., Nvidia style)
+                if (pos === 'inside') {
+                    x = d.x0 + nodeWidth / 2;
+                } else if (pos === 'right') {
+                    // Standard Right
+                    x = d.x1 + 6;
+                } else {
+                    // Standard Left
+                    x = d.x0 - 6;
+                }
+
+                // Override if near edges
+                if (pos !== 'inside') {
+                    if (d.x0 < width / 2) {
+                        x = d.x1 + 6; // Force right for left-side nodes usually
+                    } else {
+                        x = d.x0 - 6; // Force left for right-side nodes
+                    }
+                }
+
+                return `translate(${x}, ${y})`;
             })
             .each(function (d: any) {
-                const g = d3.select(this);
-                const isLeft = d.x0 < width / 2;
-                const align = isLeft ? 'start' : 'end';
-                g.select('.name').text(d.name).attr('text-anchor', align).attr('font-family', settings.labelFontFamily).attr('font-size', settings.labelFontSize);
-                g.select('.value').text(formatValue(d.value)).attr('text-anchor', align).attr('font-family', settings.labelFontFamily).attr('font-size', settings.labelFontSize - 2);
+                const text = d3.select(this);
+                text.text(null); // Clear previous
+
+                const custom = getCustomization(d.id);
+                const pos = settings.labelPosition;
+
+                // Determine Alignment
+                let align = 'start';
+                if (pos === 'inside') align = 'middle';
+                else {
+                    // Auto-detect based on canvas side
+                    align = (d.x0 < width / 2) ? 'start' : 'end';
+                }
+
+                // Override
+                if (custom?.labelAlignment) align = custom.labelAlignment === 'left' ? 'start' : custom.labelAlignment === 'right' ? 'end' : 'middle';
+
+                text.attr('text-anchor', align);
+
+                // Line 1: Name
+                const nameTspan = text.append('tspan')
+                    .attr('x', 0)
+                    .attr('dy', pos === 'inside' ? '-0.8em' : '-0.4em') // If inside, shift up to make room
+                    .text(custom?.labelText || d.name)
+                    .attr('font-weight', (custom?.labelBold ?? settings.labelBold) ? 'bold' : 'normal')
+                    .attr('font-style', (custom?.labelItalic ?? settings.labelItalic) ? 'italic' : 'normal')
+                    .attr('font-family', custom?.labelFontFamily ?? settings.labelFontFamily)
+                    .attr('font-size', custom?.labelFontSize ?? settings.labelFontSize)
+                    .attr('fill', custom?.labelColor || settings.isDarkMode ? '#e5e7eb' : '#1f2937'); // Dark/Light mode adapt
+
+                // Line 2: Value
+                const valueTspan = text.append('tspan')
+                    .attr('x', 0)
+                    .attr('dy', '1.2em')
+                    .text(formatValue(d.value))
+                    .attr('font-family', custom?.labelFontFamily ?? settings.labelFontFamily)
+                    .attr('font-size', (custom?.labelFontSize ?? settings.labelFontSize) * 0.9) // Slightly smaller
+                    .attr('font-weight', 'normal')
+                    .attr('fill', custom?.valueColor || (settings.isDarkMode ? '#9ca3af' : '#6b7280'));
+
+                // Line 3: Custom Text (e.g. "+12%")
+                if (custom?.showSecondLine && custom.secondLineText) {
+                    text.append('tspan')
+                        .attr('x', 0)
+                        .attr('dy', '1.2em')
+                        .text(custom.secondLineText)
+                        .attr('font-size', (custom?.labelFontSize ?? settings.labelFontSize) * 0.75)
+                        .attr('fill', custom.secondLineColor || '#10b981') // Green default
+                        .attr('font-weight', 'bold');
+                }
+
+                // Line 4: More Custom Text
+                if (custom?.showThirdLine && custom.thirdLineText) {
+                    text.append('tspan')
+                        .attr('x', 0)
+                        .attr('dy', '1.2em')
+                        .text(custom.thirdLineText)
+                        .attr('font-size', (custom?.labelFontSize ?? settings.labelFontSize) * 0.75)
+                        .attr('fill', custom.thirdLineColor || '#6b7280');
+                }
             });
 
         return () => {
