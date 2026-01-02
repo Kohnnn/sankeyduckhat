@@ -23,6 +23,11 @@ export interface SankeyNode {
     layer?: number;
     sourceLinks?: SankeyLink[];
     targetLinks?: SankeyLink[];
+
+    // Data Structure Extensions (V2)
+    group?: string; // Logical group (e.g., "Expenses", "Revenue")
+    metadata?: Record<string, any>; // Flexible context (AI reasoning, source ref)
+    originalValue?: number; // Pre-scaling value
 }
 
 export interface SankeyLink {
@@ -39,6 +44,10 @@ export interface SankeyLink {
     y0?: number;
     y1?: number;
     index?: number;
+
+    // Data Structure Extensions (V2)
+    metadata?: Record<string, any>;
+    originalValue?: number;
 }
 
 export interface IndependentLabel {
@@ -290,6 +299,7 @@ AVAILABLE ACTIONS:
 5. Analyze the diagram and provide insights about the data.
 6. **THEMING**: Apply visual themes based on natural language (e.g., "make it dark mode", "corporate blue theme", "vibrant startup look").
 7. **NODE INSIGHTS**: When asked about a specific node, provide breakdown suggestions, anomaly detection, or improvement tips.
+8. **IMAGE PARSING**: When images are attached, extract all financial flows. If multiple images are provided, aggregate the data, handling any overlaps or duplicates (e.g., from scrolling screenshots) intelligently.
 
 OUTPUT FORMATS:
 You must ALWAYS respond in one of these ways:
@@ -349,7 +359,12 @@ RULES:
 - When the user asks about balance issues, refer to the IMBALANCED NODES section in the diagram state.
 - If the user provides a partial update (e.g., "add a tax node"), merge it intelligently with the existing data provided in the context.
 - **THEMING**: When user asks for a theme/style change (e.g., "dark mode", "modern look", "pastel colors"), output the settings JSON.
-- **NODE CONTEXT**: If the user mentions a specific node for insights/breakdown, use the suggestions format.`;
+- **NODE CONTEXT**: If the user mentions a specific node for insights/breakdown, use the suggestions format.
+- **IMAGES**: Always treat provided images as the GROUND TRUTH for data extraction. Parse tables, charts, or text accurately.
+- **GROUPS & METADATA**:
+  - Use the "group" field to logically categorize nodes (e.g., group="Operating Expenses").
+  - Use "metadata" to store insights or source info (e.g., metadata={ "insight": "High variance", "source": "Q3 Report" }).
+  - Use "originalValue" if you are scaling numbers for visuals but want to keep the true value.`;
 
 // AI Settings interface
 export interface AISettings {

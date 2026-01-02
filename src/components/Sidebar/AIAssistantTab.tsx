@@ -21,6 +21,11 @@ interface Message {
     content: string;
     timestamp: Date;
     attachments?: Attachment[];
+    actions?: {
+        label: string;
+        onClick: () => void;
+        type: 'primary' | 'secondary';
+    }[];
 }
 
 export default function AIAssistantTab() {
@@ -156,8 +161,23 @@ export default function AIAssistantTab() {
                             setMessages(prev => [...prev, {
                                 id: (Date.now() + 2).toString(),
                                 role: 'assistant',
-                                content: `💡 **Suggestion for ${nodeId}:**\n${insight}\n\nProposed breakdown:\n${breakdownText}\n\nWould you like me to apply this breakdown?`,
-                                timestamp: new Date()
+                                content: `💡 **Suggestion for ${nodeId}:**\n${insight}\n\nProposed breakdown:\n${breakdownText}`,
+                                timestamp: new Date(),
+                                actions: [{
+                                    label: 'Apply Breakdown',
+                                    type: 'primary',
+                                    onClick: async () => {
+                                        const { applyBreakdown } = await import('@/lib/ai-utils');
+                                        const result = applyBreakdown(state, changes.suggestions);
+                                        dispatch({ type: 'SET_DATA', payload: result.data });
+                                        setMessages(p => [...p, {
+                                            id: Date.now().toString(),
+                                            role: 'assistant',
+                                            content: '✅ Breakdown applied!',
+                                            timestamp: new Date()
+                                        }]);
+                                    }
+                                }]
                             }]);
                         }
                         // Handle DATA changes (nodes/flows)
@@ -340,6 +360,22 @@ export default function AIAssistantTab() {
                                     </div>
                                 )}
                                 {msg.content}
+                                {msg.actions && (
+                                    <div className="mt-3 flex gap-2">
+                                        {msg.actions.map((action, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={action.onClick}
+                                                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${action.type === 'primary'
+                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+                                                    }`}
+                                            >
+                                                {action.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -35,7 +35,7 @@ export async function callGemini(
     settings: AISettings,
     userMessage: string,
     conversationHistory: Message[] = [],
-    currentData?: SankeyData
+    currentData?: SankeyData | string
 ): Promise<{ success: boolean; text?: string; error?: string }> {
     if (!settings.apiKey) {
         return { success: false, error: 'API key is not configured. Please add your Gemini API key in Settings.' };
@@ -45,15 +45,25 @@ export async function callGemini(
     const apiUrl = `${baseUrl}/v1beta/models/${settings.model}:generateContent?key=${settings.apiKey}`;
 
     // Build the system context
-    const systemContext = settings.customPrompt + (currentData ? `
-
+    let dataContext = '';
+    if (currentData) {
+        if (typeof currentData === 'string') {
+            // Already formatted rich context
+            dataContext = currentData;
+        } else {
+            // Raw object, stringify it
+            dataContext = `
 === CURRENT DIAGRAM DATA ===
 The user is currently working on the following diagram. Use this as the baseline for any modifications.
 ${JSON.stringify(currentData, null, 2)}
 ============================
 
 If the user asks to modify this data, provide the transformation results as a valid JSON object.
-` : '');
+`;
+        }
+    }
+
+    const systemContext = settings.customPrompt + (dataContext ? `\n${dataContext}` : '');
 
     // Build contents array with conversation history
     const contents = [
