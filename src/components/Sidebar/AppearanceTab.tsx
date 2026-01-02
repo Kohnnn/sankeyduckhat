@@ -284,13 +284,58 @@ export default function AppearanceTab() {
                                 2nd Line Text
                             </label>
                             {selectedCustomization?.showSecondLine && (
-                                <input
-                                    type="text"
-                                    value={selectedCustomization?.secondLineText ?? ''}
-                                    onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineText: e.target.value })}
-                                    placeholder="e.g., $1.2M"
-                                    className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
-                                />
+                                <div className="mt-2 space-y-2">
+                                    <input
+                                        type="text"
+                                        value={selectedCustomization?.secondLineText ?? ''}
+                                        onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineText: e.target.value })}
+                                        placeholder="e.g., $1.2M"
+                                        className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-[10px] text-gray-500">Color</label>
+                                            <div className="flex gap-1">
+                                                <input
+                                                    type="color"
+                                                    value={selectedCustomization?.secondLineColor || '#10b981'}
+                                                    onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineColor: e.target.value })}
+                                                    className="w-6 h-6 rounded cursor-pointer border border-gray-200"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-gray-500">Font Size</label>
+                                            <input
+                                                type="number"
+                                                value={selectedCustomization?.secondLineFontSize ?? ''}
+                                                placeholder="Default"
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineFontSize: Number(e.target.value) })}
+                                                className="w-full px-2 py-0.5 text-xs border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <label className="flex items-center gap-1 text-[10px]">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCustomization?.secondLineBold ?? false}
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineBold: e.target.checked })}
+                                                className="rounded"
+                                            />
+                                            Bold
+                                        </label>
+                                        <label className="flex items-center gap-1 text-[10px]">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCustomization?.secondLineItalic ?? false}
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { secondLineItalic: e.target.checked })}
+                                                className="rounded"
+                                            />
+                                            Italic
+                                        </label>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
@@ -305,13 +350,58 @@ export default function AppearanceTab() {
                                 3rd Line Text
                             </label>
                             {selectedCustomization?.showThirdLine && (
-                                <input
-                                    type="text"
-                                    value={selectedCustomization?.thirdLineText ?? ''}
-                                    onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineText: e.target.value })}
-                                    placeholder="e.g., +15% Y/Y"
-                                    className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
-                                />
+                                <div className="mt-2 space-y-2">
+                                    <input
+                                        type="text"
+                                        value={selectedCustomization?.thirdLineText ?? ''}
+                                        onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineText: e.target.value })}
+                                        placeholder="e.g., +15% Y/Y"
+                                        className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-[10px] text-gray-500">Color</label>
+                                            <div className="flex gap-1">
+                                                <input
+                                                    type="color"
+                                                    value={selectedCustomization?.thirdLineColor || '#6b7280'}
+                                                    onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineColor: e.target.value })}
+                                                    className="w-6 h-6 rounded cursor-pointer border border-gray-200"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-gray-500">Font Size</label>
+                                            <input
+                                                type="number"
+                                                value={selectedCustomization?.thirdLineFontSize ?? ''}
+                                                placeholder="Default"
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineFontSize: Number(e.target.value) })}
+                                                className="w-full px-2 py-0.5 text-xs border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <label className="flex items-center gap-1 text-[10px]">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCustomization?.thirdLineBold ?? false}
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineBold: e.target.checked })}
+                                                className="rounded"
+                                            />
+                                            Bold
+                                        </label>
+                                        <label className="flex items-center gap-1 text-[10px]">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCustomization?.thirdLineItalic ?? false}
+                                                onChange={(e) => updateNodeCustomization(selectedNodeId!, { thirdLineItalic: e.target.checked })}
+                                                className="rounded"
+                                            />
+                                            Italic
+                                        </label>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -440,58 +530,107 @@ export default function AppearanceTab() {
             )}
 
             {/* Smart Layout Section */}
-            <Section title="Smart Layouts" isOpen={true} onToggle={() => { }}>
-                <div className="grid grid-cols-2 gap-2">
-                    <button
-                        onClick={() => {
-                            updateSetting('nodeWidth', 20);
-                            updateSetting('linkCurvature', 0.5);
-                            updateSetting('linkOpacity', 0.4);
-                            updateSetting('nodePadding', 20);
-                            updateSetting('labelPosition', 'right');
-                        }}
-                        className="p-2 text-xs border rounded bg-gray-50 hover:bg-white transition-colors text-center"
-                    >
-                        Standard
-                    </button>
-                    <button
-                        onClick={() => {
-                            updateSetting('nodeWidth', 120);
-                            updateSetting('linkCurvature', 0.5);
-                            updateSetting('linkOpacity', 0.6);
-                            updateSetting('nodePadding', 50);
-                            updateSetting('labelPosition', 'inside');
-                            updateSetting('labelFontSize', 14);
-                            updateSetting('labelBold', true);
-                        }}
-                        className="p-2 text-xs border rounded bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors text-center font-medium"
-                    >
-                        Nvidia Style (Pro)
-                    </button>
-                    <button
-                        onClick={() => {
-                            updateSetting('nodeWidth', 8);
-                            updateSetting('linkCurvature', 0.2);
-                            updateSetting('linkOpacity', 0.2);
-                            updateSetting('nodePadding', 12);
-                            updateSetting('labelPosition', 'right');
-                        }}
-                        className="p-2 text-xs border rounded bg-gray-50 hover:bg-white transition-colors text-center"
-                    >
-                        Dense / Compact
-                    </button>
-                    <button
-                        onClick={() => {
-                            updateSetting('nodeWidth', 60);
-                            updateSetting('linkCurvature', 0.8);
-                            updateSetting('linkOpacity', 0.5);
-                            updateSetting('nodePadding', 30);
-                            updateSetting('labelPosition', 'inside');
-                        }}
-                        className="p-2 text-xs border rounded bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors text-center font-medium"
-                    >
-                        Blocks
-                    </button>
+            <Section title="Smart Layouts" isOpen={openSections.has('smartLayouts')} onToggle={() => toggleSection('smartLayouts')}>
+                <div className="space-y-2">
+                    <p className="text-xs text-[var(--secondary-text)] mb-2">Apply professional preset styles instantly.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => {
+                                updateSetting('nodeWidth', 20);
+                                updateSetting('linkCurvature', 0.5);
+                                updateSetting('linkOpacity', 0.4);
+                                updateSetting('nodePadding', 20);
+                                updateSetting('labelPosition', 'right');
+                            }}
+                            className="p-2 text-xs border rounded bg-white hover:bg-gray-50 border-gray-200 transition-all shadow-sm hover:shadow text-center"
+                        >
+                            Standard
+                        </button>
+                        <button
+                            onClick={() => {
+                                updateSetting('nodeWidth', 120);
+                                updateSetting('linkCurvature', 0.5);
+                                updateSetting('linkOpacity', 0.6);
+                                updateSetting('nodePadding', 50);
+                                updateSetting('labelPosition', 'inside');
+                                updateSetting('labelFontSize', 14);
+                                updateSetting('labelBold', true);
+                            }}
+                            className="p-2 text-xs border rounded bg-gradient-to-r from-blue-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm hover:shadow text-center font-medium"
+                        >
+                            ✨ Nvidia Style (Pro)
+                        </button>
+                        <button
+                            onClick={() => {
+                                updateSetting('nodeWidth', 8);
+                                updateSetting('linkCurvature', 0.2);
+                                updateSetting('linkOpacity', 0.2);
+                                updateSetting('nodePadding', 12);
+                                updateSetting('labelPosition', 'right');
+                            }}
+                            className="p-2 text-xs border rounded bg-white hover:bg-gray-50 border-gray-200 transition-all shadow-sm hover:shadow text-center"
+                        >
+                            Dense / Compact
+                        </button>
+                        <button
+                            onClick={() => {
+                                updateSetting('nodeWidth', 60);
+                                updateSetting('linkCurvature', 0.8);
+                                updateSetting('linkOpacity', 0.5);
+                                updateSetting('nodePadding', 30);
+                                updateSetting('labelPosition', 'inside');
+                            }}
+                            className="p-2 text-xs border rounded bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 transition-all shadow-sm hover:shadow text-center font-medium"
+                        >
+                            Blocks
+                        </button>
+                    </div>
+                </div>
+            </Section>
+
+            {/* Global Palette Section */}
+            <Section title="Global Colors" isOpen={openSections.has('palette')} onToggle={() => toggleSection('palette')}>
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-[var(--secondary-text)] mb-2">Color Palette</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {getAllPalettes().map(palette => (
+                                <button
+                                    key={palette.id}
+                                    onClick={() => {
+                                        updateSetting('colorPalette', palette.id);
+                                        updateSetting('useDefaultPalette', false);
+                                    }}
+                                    className={`relative p-2 border rounded-md text-left transition-all ${settings.colorPalette === palette.id ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : 'hover:bg-gray-50 border-[var(--border)]'}`}
+                                >
+                                    <span className="block text-xs font-medium mb-1 truncate">{palette.name}</span>
+                                    <div className="flex h-2 rounded overflow-hidden">
+                                        {palette.colors.slice(0, 5).map((c, i) => (
+                                            <div key={i} style={{ backgroundColor: c, width: '20%' }} />
+                                        ))}
+                                    </div>
+                                </button>
+                            ))}
+                            {/* Create Custom */}
+                            <button
+                                onClick={() => setShowCustomPaletteModal(true)}
+                                className="flex flex-col items-center justify-center p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                            >
+                                <Plus className="w-4 h-4 mb-1" />
+                                <span className="text-xs">Create Custom</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm mt-2">
+                        <input
+                            type="checkbox"
+                            checked={settings.isDarkMode}
+                            onChange={(e) => updateSetting('isDarkMode', e.target.checked)}
+                            className="rounded"
+                        />
+                        Dark Mode
+                    </label>
                 </div>
             </Section>
 
@@ -1065,17 +1204,15 @@ function Section({
     return (
         <div className="bg-[var(--card-bg)] rounded-lg border border-[var(--border)] overflow-hidden">
             <button
-                onClick={onToggle}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium text-[var(--primary-text)] hover:bg-[var(--hover-bg)]"
+                onClick={(e) => { e.preventDefault(); onToggle(); }}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium text-[var(--primary-text)] hover:bg-[var(--hover-bg)] focus:outline-none"
             >
                 {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 {title}
             </button>
-            {isOpen && (
-                <div className="border-t border-gray-200 p-4">
-                    {children}
-                </div>
-            )}
+            <div className={`border-t border-gray-200 transition-all duration-200 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 p-4' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                {children}
+            </div>
         </div>
     );
 }

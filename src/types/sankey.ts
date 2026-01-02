@@ -116,11 +116,13 @@ export interface NodeCustomization {
   secondLineColor?: string;
   secondLineFontSize?: number;
   secondLineBold?: boolean;
+  secondLineItalic?: boolean;
   secondLineAlignment?: 'left' | 'center' | 'right';
 
   thirdLineColor?: string;
   thirdLineFontSize?: number;
   thirdLineBold?: boolean;
+  thirdLineItalic?: boolean;
   thirdLineAlignment?: 'left' | 'center' | 'right';
 }
 

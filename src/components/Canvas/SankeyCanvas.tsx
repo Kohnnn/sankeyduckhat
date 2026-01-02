@@ -122,15 +122,21 @@ export default function SankeyCanvas() {
         if (defs.empty()) {
             defs = svg.insert('defs', ':first-child');
 
-            // 1. Drop Shadow for Nodes
+            // 1. Drop Shadow for Nodes (Softer)
             const shadow = defs.append('filter')
                 .attr('id', 'node-shadow')
                 .attr('height', '130%');
-            shadow.append('feGaussianBlur').attr('in', 'SourceAlpha').attr('stdDeviation', 3).attr('result', 'blur');
-            shadow.append('feOffset').attr('in', 'blur').attr('dx', 2).attr('dy', 2).attr('result', 'offsetBlur');
+            shadow.append('feGaussianBlur').attr('in', 'SourceAlpha').attr('stdDeviation', 2).attr('result', 'blur');
+            shadow.append('feOffset').attr('in', 'blur').attr('dx', 1).attr('dy', 1).attr('result', 'offsetBlur');
+
+            // Soften shadow alpha
+            const transfer = shadow.append('feComponentTransfer').attr('in', 'offsetBlur').attr('result', 'softShadow');
+            transfer.append('feFuncA').attr('type', 'linear').attr('slope', '0.2');
+
             const feMerge = shadow.append('feMerge');
-            feMerge.append('feMergeNode').attr('in', 'offsetBlur');
+            feMerge.append('feMergeNode').attr('in', 'softShadow');
             feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
 
             // 2. Gloss Gradient (Subtle 3D effect)
             const gloss = defs.append('linearGradient')
@@ -611,9 +617,10 @@ export default function SankeyCanvas() {
                         .attr('x', 0)
                         .attr('dy', '1.2em')
                         .text(custom.secondLineText)
-                        .attr('font-size', (custom?.labelFontSize ?? settings.labelFontSize) * 0.75)
-                        .attr('fill', custom.secondLineColor || '#10b981') // Green default
-                        .attr('font-weight', 'bold');
+                        .attr('font-size', custom.secondLineFontSize || ((custom?.labelFontSize ?? settings.labelFontSize) * 0.85))
+                        .attr('font-weight', custom.secondLineBold ? 'bold' : 'normal')
+                        .attr('font-style', custom.secondLineItalic ? 'italic' : 'normal')
+                        .attr('fill', custom.secondLineColor || '#10b981'); // Green default
                 }
 
                 // Line 4: More Custom Text
@@ -622,7 +629,9 @@ export default function SankeyCanvas() {
                         .attr('x', 0)
                         .attr('dy', '1.2em')
                         .text(custom.thirdLineText)
-                        .attr('font-size', (custom?.labelFontSize ?? settings.labelFontSize) * 0.75)
+                        .attr('font-size', custom.thirdLineFontSize || ((custom?.labelFontSize ?? settings.labelFontSize) * 0.75))
+                        .attr('font-weight', custom.thirdLineBold ? 'bold' : 'normal')
+                        .attr('font-style', custom.thirdLineItalic ? 'italic' : 'normal')
                         .attr('fill', custom.thirdLineColor || '#6b7280');
                 }
             });
