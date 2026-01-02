@@ -19,7 +19,13 @@ interface GeminiResponse {
 
 interface Message {
     role: 'user' | 'model';
-    parts: Array<{ text: string }>;
+    parts: Array<{
+        text?: string;
+        inline_data?: {
+            mime_type: string;
+            data: string;
+        };
+    }>;
 }
 
 /**
@@ -35,7 +41,8 @@ export async function callGemini(
         return { success: false, error: 'API key is not configured. Please add your Gemini API key in Settings.' };
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${settings.model}:generateContent?key=${settings.apiKey}`;
+    const baseUrl = settings.baseUrl || 'https://generativelanguage.googleapis.com';
+    const apiUrl = `${baseUrl}/v1beta/models/${settings.model}:generateContent?key=${settings.apiKey}`;
 
     // Build the system context
     const systemContext = settings.customPrompt + (currentData ? `
@@ -106,12 +113,13 @@ If the user asks to modify this data, provide the transformation results as a va
 /**
  * Test the API connection with the given API key
  */
-export async function testApiConnection(apiKey: string, model: string): Promise<{ success: boolean; error?: string }> {
+export async function testApiConnection(apiKey: string, model: string, baseUrl?: string): Promise<{ success: boolean; error?: string }> {
     if (!apiKey) {
         return { success: false, error: 'API key is required' };
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const validBaseUrl = baseUrl || 'https://generativelanguage.googleapis.com';
+    const apiUrl = `${validBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     try {
         const response = await fetch(apiUrl, {
@@ -172,7 +180,7 @@ export async function testApiConnection(apiKey: string, model: string): Promise<
         return { success: false, error: `Unexpected response format: ${snippet}...` };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        return { success: false, error: `Connection failed: ${message}` };
+        return { success: false, error: `Connection failed: ${message}. If you are behind a firewall, try configuring a Base URL (Proxy).` };
     }
 }
 

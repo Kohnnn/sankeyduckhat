@@ -12,10 +12,10 @@ interface AISettingsPanelProps {
 }
 
 export default function AISettingsPanel({ isOpen, onClose }: AISettingsPanelProps) {
-    const { settings, updateApiKey, updateModel, updateCustomPrompt, resetPrompt, resetAll, isConfigured } = useAISettings();
-
+    const { settings, updateApiKey, updateModel, updateCustomPrompt, updateBaseUrl, resetPrompt, resetAll, isConfigured } = useAISettings();
     const [showApiKey, setShowApiKey] = useState(false);
     const [localApiKey, setLocalApiKey] = useState(settings.apiKey);
+    const [localBaseUrl, setLocalBaseUrl] = useState(settings.baseUrl || '');
     const [localModel, setLocalModel] = useState(settings.model);
     const [localPrompt, setLocalPrompt] = useState(settings.customPrompt);
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -31,7 +31,7 @@ export default function AISettingsPanel({ isOpen, onClose }: AISettingsPanelProp
         setTestStatus('testing');
         setTestMessage('');
 
-        const result = await testApiConnection(localApiKey.trim(), localModel);
+        const result = await testApiConnection(localApiKey.trim(), localModel, localBaseUrl.trim());
 
         if (result.success) {
             setTestStatus('success');
@@ -40,14 +40,15 @@ export default function AISettingsPanel({ isOpen, onClose }: AISettingsPanelProp
             setTestStatus('error');
             setTestMessage(result.error || 'Connection failed');
         }
-    }, [localApiKey, localModel]);
+    }, [localApiKey, localModel, localBaseUrl]);
 
     const handleSave = useCallback(() => {
         updateApiKey(localApiKey.trim());
+        updateBaseUrl(localBaseUrl.trim());
         updateModel(localModel);
         updateCustomPrompt(localPrompt);
         onClose();
-    }, [localApiKey, localModel, localPrompt, updateApiKey, updateModel, updateCustomPrompt, onClose]);
+    }, [localApiKey, localBaseUrl, localModel, localPrompt, updateApiKey, updateBaseUrl, updateModel, updateCustomPrompt, onClose]);
 
     const handleResetPrompt = useCallback(() => {
         setLocalPrompt(DEFAULT_AI_PROMPT);
@@ -56,6 +57,7 @@ export default function AISettingsPanel({ isOpen, onClose }: AISettingsPanelProp
 
     const handleResetAll = useCallback(() => {
         setLocalApiKey('');
+        setLocalBaseUrl('');
         setLocalModel('gemini-2.0-flash');
         setLocalPrompt(DEFAULT_AI_PROMPT);
         resetAll();
@@ -120,6 +122,26 @@ export default function AISettingsPanel({ isOpen, onClose }: AISettingsPanelProp
                             <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
                                 Google AI Studio
                             </a>
+                        </p>
+                    </div>
+
+                    {/* Base URL (Optional) */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                            Base URL (Optional)
+                        </label>
+                        <input
+                            type="text"
+                            value={localBaseUrl}
+                            onChange={(e) => {
+                                setLocalBaseUrl(e.target.value);
+                                setTestStatus('idle');
+                            }}
+                            placeholder="https://generativelanguage.googleapis.com"
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                        />
+                        <p className="text-xs text-gray-500">
+                            Custom API endpoint for proxies or enterprise gateways. Leave empty for default.
                         </p>
                     </div>
 

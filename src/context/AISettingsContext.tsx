@@ -11,6 +11,7 @@ interface AISettingsContextType {
     updateApiKey: (key: string) => void;
     updateModel: (model: string) => void;
     updateCustomPrompt: (prompt: string) => void;
+    updateBaseUrl: (url: string) => void;
     resetPrompt: () => void;
     resetAll: () => void;
     isConfigured: boolean;
@@ -59,6 +60,10 @@ export function AISettingsProvider({ children }: { children: React.ReactNode }) 
         setSettings(prev => ({ ...prev, customPrompt: prompt }));
     }, []);
 
+    const updateBaseUrl = useCallback((url: string) => {
+        setSettings(prev => ({ ...prev, baseUrl: url }));
+    }, []);
+
     const resetPrompt = useCallback(() => {
         setSettings(prev => ({ ...prev, customPrompt: defaultAISettings.customPrompt }));
     }, []);
@@ -76,6 +81,7 @@ export function AISettingsProvider({ children }: { children: React.ReactNode }) 
         updateApiKey,
         updateModel,
         updateCustomPrompt,
+        updateBaseUrl,
         resetPrompt,
         resetAll,
         isConfigured,

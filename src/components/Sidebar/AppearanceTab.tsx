@@ -646,11 +646,64 @@ export default function AppearanceTab() {
                         />
                         Use Gradient Links
                     </label>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            checked={settings.linkGradient}
+                            onChange={(e) => updateSetting('linkGradient', e.target.checked)}
+                            className="rounded"
+                        />
+                        Use Gradient Links
+                    </label>
+
+                    <div>
+                        <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Blend Mode</label>
+                        <select
+                            value={settings.linkBlendMode ?? 'normal'}
+                            onChange={(e) => updateSetting('linkBlendMode', e.target.value as any)}
+                            className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                        >
+                            <option value="normal">Normal</option>
+                            <option value="multiply">Multiply (Darker Overlaps)</option>
+                            <option value="screen">Screen (Lighter Overlaps)</option>
+                            <option value="overlay">Overlay</option>
+                        </select>
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-100">
+                        <label className="flex items-center gap-2 text-sm mb-2">
+                            <input
+                                type="checkbox"
+                                checked={settings.showParticles ?? false}
+                                onChange={(e) => updateSetting('showParticles', e.target.checked)}
+                                className="rounded"
+                            />
+                            Show Flow Animation
+                            <span className="text-[10px] text-blue-500 bg-blue-50 px-1 rounded border border-blue-100">BETA</span>
+                        </label>
+
+                        {(settings.showParticles) && (
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">
+                                    Animation Speed: {settings.particleSpeed}x
+                                </label>
+                                <input
+                                    type="range"
+                                    value={settings.particleSpeed ?? 1}
+                                    onChange={(e) => updateSetting('particleSpeed', Number(e.target.value))}
+                                    min={0.1}
+                                    max={2.0}
+                                    step={0.1}
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </Section>
+            </Section >
 
             {/* Value Formatting Section */}
-            <Section title="Value Formatting" isOpen={openSections.has('value')} onToggle={() => toggleSection('value')}>
+            < Section title="Value Formatting" isOpen={openSections.has('value')} onToggle={() => toggleSection('value')}>
                 <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -675,150 +728,154 @@ export default function AppearanceTab() {
                         </div>
                     </div>
                 </div>
-            </Section>
+            </Section >
 
             {/* Custom Palette Modal */}
-            {showCustomPaletteModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-[var(--card-bg)] rounded-lg p-6 w-96 max-w-[90vw] border border-[var(--border)]">
-                        <h3 className="text-lg font-semibold mb-4 text-[var(--primary-text)]">Create Custom Palette</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--secondary-text)] mb-1">Name</label>
-                                <input
-                                    type="text"
-                                    value={newPaletteName}
-                                    onChange={(e) => setNewPaletteName(e.target.value)}
-                                    placeholder="My Palette"
-                                    className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--card-bg)] text-[var(--primary-text)]"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--secondary-text)] mb-2">
-                                    Colors ({parseColorsFromString(newPaletteColors).length} colors)
-                                </label>
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                    {(() => {
-                                        const colors = parseColorsFromString(newPaletteColors);
-                                        if (colors.length === 0) {
-                                            return (
-                                                <p className="text-sm text-gray-400 text-center py-4">
-                                                    Click &quot;Add Color&quot; to start
-                                                </p>
-                                            );
-                                        }
-                                        return colors.map((color, index) => (
-                                            <div key={index} className="flex items-center gap-2">
-                                                <input
-                                                    type="color"
-                                                    value={color}
-                                                    onChange={(e) => {
-                                                        const newColors = [...colors];
-                                                        newColors[index] = e.target.value;
-                                                        setNewPaletteColors(newColors.join(', '));
-                                                    }}
-                                                    className="w-10 h-8 rounded cursor-pointer border border-[var(--border)]"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={color}
-                                                    onChange={(e) => {
-                                                        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+            {
+                showCustomPaletteModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-[var(--card-bg)] rounded-lg p-6 w-96 max-w-[90vw] border border-[var(--border)]">
+                            <h3 className="text-lg font-semibold mb-4 text-[var(--primary-text)]">Create Custom Palette</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--secondary-text)] mb-1">Name</label>
+                                    <input
+                                        type="text"
+                                        value={newPaletteName}
+                                        onChange={(e) => setNewPaletteName(e.target.value)}
+                                        placeholder="My Palette"
+                                        className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--secondary-text)] mb-2">
+                                        Colors ({parseColorsFromString(newPaletteColors).length} colors)
+                                    </label>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                        {(() => {
+                                            const colors = parseColorsFromString(newPaletteColors);
+                                            if (colors.length === 0) {
+                                                return (
+                                                    <p className="text-sm text-gray-400 text-center py-4">
+                                                        Click &quot;Add Color&quot; to start
+                                                    </p>
+                                                );
+                                            }
+                                            return colors.map((color, index) => (
+                                                <div key={index} className="flex items-center gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={color}
+                                                        onChange={(e) => {
                                                             const newColors = [...colors];
                                                             newColors[index] = e.target.value;
                                                             setNewPaletteColors(newColors.join(', '));
-                                                        }
-                                                    }}
-                                                    className="flex-1 px-2 py-1 text-sm font-mono border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
-                                                />
-                                                <button
-                                                    onClick={() => {
-                                                        const newColors = colors.filter((_, i) => i !== index);
-                                                        setNewPaletteColors(newColors.join(', '));
-                                                    }}
-                                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                                    title="Remove color"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ));
-                                    })()}
+                                                        }}
+                                                        className="w-10 h-8 rounded cursor-pointer border border-[var(--border)]"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={color}
+                                                        onChange={(e) => {
+                                                            if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                                                                const newColors = [...colors];
+                                                                newColors[index] = e.target.value;
+                                                                setNewPaletteColors(newColors.join(', '));
+                                                            }
+                                                        }}
+                                                        className="flex-1 px-2 py-1 text-sm font-mono border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            const newColors = colors.filter((_, i) => i !== index);
+                                                            setNewPaletteColors(newColors.join(', '));
+                                                        }}
+                                                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                                        title="Remove color"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const colors = parseColorsFromString(newPaletteColors);
+                                            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                                            setNewPaletteColors([...colors, randomColor].join(', '));
+                                        }}
+                                        className="mt-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100  text-gray-700  rounded hover:bg-gray-200 :bg-gray-600 transition-colors"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                        Add Color
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        const colors = parseColorsFromString(newPaletteColors);
-                                        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-                                        setNewPaletteColors([...colors, randomColor].join(', '));
-                                    }}
-                                    className="mt-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100  text-gray-700  rounded hover:bg-gray-200 :bg-gray-600 transition-colors"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Add Color
-                                </button>
-                            </div>
-                            <div className="flex gap-2 justify-end">
-                                <button
-                                    onClick={() => {
-                                        setShowCustomPaletteModal(false);
-                                        setNewPaletteName('');
-                                        setNewPaletteColors('');
-                                    }}
-                                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveCustomPalette}
-                                    disabled={parseColorsFromString(newPaletteColors).length < 2 || !newPaletteName}
-                                    className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Save
-                                </button>
+                                <div className="flex gap-2 justify-end">
+                                    <button
+                                        onClick={() => {
+                                            setShowCustomPaletteModal(false);
+                                            setNewPaletteName('');
+                                            setNewPaletteColors('');
+                                        }}
+                                        className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveCustomPalette}
+                                        disabled={parseColorsFromString(newPaletteColors).length < 2 || !newPaletteName}
+                                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Save Template Modal */}
-            {showSaveTemplateModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-[var(--card-bg)] rounded-lg p-6 w-96 max-w-[90vw] border border-[var(--border)]">
-                        <h3 className="text-lg font-semibold mb-4 text-[var(--primary-text)]">Save Template</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--secondary-text)] mb-1">Template Name</label>
-                                <input
-                                    type="text"
-                                    value={newTemplateName}
-                                    onChange={(e) => setNewTemplateName(e.target.value)}
-                                    placeholder="My Template"
-                                    className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--card-bg)] text-[var(--primary-text)]"
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500">
-                                This will save all current styling settings (fonts, colors, sizes) but not the diagram data.
-                            </p>
-                            <div className="flex gap-2 justify-end">
-                                <button
-                                    onClick={() => setShowSaveTemplateModal(false)}
-                                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveTemplate}
-                                    className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    Save
-                                </button>
+            {
+                showSaveTemplateModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-[var(--card-bg)] rounded-lg p-6 w-96 max-w-[90vw] border border-[var(--border)]">
+                            <h3 className="text-lg font-semibold mb-4 text-[var(--primary-text)]">Save Template</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--secondary-text)] mb-1">Template Name</label>
+                                    <input
+                                        type="text"
+                                        value={newTemplateName}
+                                        onChange={(e) => setNewTemplateName(e.target.value)}
+                                        placeholder="My Template"
+                                        className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    This will save all current styling settings (fonts, colors, sizes) but not the diagram data.
+                                </p>
+                                <div className="flex gap-2 justify-end">
+                                    <button
+                                        onClick={() => setShowSaveTemplateModal(false)}
+                                        className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveTemplate}
+                                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 

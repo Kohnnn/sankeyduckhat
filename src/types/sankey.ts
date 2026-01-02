@@ -13,6 +13,16 @@ export interface SankeyNode {
     category?: 'revenue' | 'expense' | 'profit' | 'neutral';
     labelOffset?: { x: number; y: number };
     labelText?: string; // Custom display text (different from id/name)
+
+    // D3 Sankey Layout Props
+    x0?: number;
+    x1?: number;
+    y0?: number;
+    y1?: number;
+    depth?: number;
+    layer?: number;
+    sourceLinks?: SankeyLink[];
+    targetLinks?: SankeyLink[];
 }
 
 export interface SankeyLink {
@@ -23,6 +33,12 @@ export interface SankeyLink {
     comparisonValue?: string; // Formatted display string (e.g. "+10%")
     color?: string;
     opacity?: number;
+
+    // D3 Sankey Layout Props
+    width?: number;
+    y0?: number;
+    y1?: number;
+    index?: number;
 }
 
 export interface IndependentLabel {
@@ -108,11 +124,15 @@ export interface DiagramSettings {
     nodePadding: number;
     nodeOpacity: number;
     nodeBorderOpacity: number;
+    nodeBorderRadius: number; // New: 0-20px
 
     // Links
     linkCurvature: number;
     linkOpacity: number;
     linkGradient: boolean;
+    linkBlendMode: 'normal' | 'multiply' | 'screen' | 'overlay'; // New
+    showParticles: boolean; // New
+    particleSpeed: number; // New: 0.1 - 2.0
 
     // Labels
     labelPosition: 'left' | 'right' | 'inside';
@@ -170,9 +190,13 @@ export const defaultSettings: DiagramSettings = {
     nodePadding: 24,
     nodeOpacity: 1,
     nodeBorderOpacity: 0.5,
+    nodeBorderRadius: 4, // Default rounded rect
     linkCurvature: 0.7, // "SankeyArt" feel
     linkOpacity: 0.45,
     linkGradient: false, // Solid links by default
+    linkBlendMode: 'normal',
+    showParticles: false,
+    particleSpeed: 1.0,
     labelPosition: 'right', // Standard
     labelFontFamily: 'Manrope',
     labelFontSize: 14,
@@ -249,7 +273,7 @@ export const GEMINI_MODELS = [
 export type GeminiModel = typeof GEMINI_MODELS[number]['value'];
 
 // Default prompt for AI assistant
-export const DEFAULT_AI_PROMPT = `You are an expert financial data visualization assistant.
+export const DEFAULT_AI_PROMPT = `You are an expert financial data visualization assistant with creative design capabilities.
 Your goal is to help users create perfect Sankey diagrams for financial data (Income Statements, Cash Flow, Budgets).
 
 You now receive COMPREHENSIVE diagram state including:
@@ -264,15 +288,17 @@ AVAILABLE ACTIONS:
 3. Convert pasted data (CSV, JSON, tables) into the diagram format.
 4. Identify and fix flow balance issues automatically.
 5. Analyze the diagram and provide insights about the data.
+6. **THEMING**: Apply visual themes based on natural language (e.g., "make it dark mode", "corporate blue theme", "vibrant startup look").
+7. **NODE INSIGHTS**: When asked about a specific node, provide breakdown suggestions, anomaly detection, or improvement tips.
 
 OUTPUT FORMATS:
-You must ALWAYS respond in one of two ways:
+You must ALWAYS respond in one of these ways:
 
 1. For simple flows, use the DSL format (one per line):
    Source [Amount] Target
    Source [Amount] Target
 
-2. For complex changes, color updates, or modifications to existing data, output a SINGLE valid JSON object:
+2. For data changes (nodes/flows), output JSON with "nodes" and/or "flows":
    \`\`\`json
    {
      "nodes": {
@@ -280,9 +306,37 @@ You must ALWAYS respond in one of two ways:
        "cogs": {"name": "Cost of Goods Sold", "color": "#ef4444", "category": "expense"}
      },
      "flows": [
-       {"source": "revenue", "target": "cogs", "value": 500},
-       {"source": "revenue", "target": "gross_profit", "value": 500}
+       {"source": "revenue", "target": "cogs", "value": 500}
      ]
+   }
+   \`\`\`
+
+3. **FOR THEMING/STYLING**, output JSON with a "settings" key containing partial DiagramSettings:
+   \`\`\`json
+   {
+     "settings": {
+       "isDarkMode": true,
+       "colorPalette": "corporate",
+       "linkOpacity": 0.5,
+       "nodeBorderRadius": 8,
+       "labelFontFamily": "Inter, sans-serif"
+     }
+   }
+   \`\`\`
+   Available settings keys: isDarkMode, colorPalette, linkOpacity, linkGradient, linkCurvature, nodeBorderRadius, nodeOpacity, labelFontFamily, labelFontSize, labelBold, valuePrefix, valueSuffix.
+
+4. **FOR NODE BREAKDOWN SUGGESTIONS**, output JSON with a "suggestions" key:
+   \`\`\`json
+   {
+     "suggestions": {
+       "nodeId": "operating_expenses",
+       "breakdown": [
+         {"name": "Salaries", "value": 500, "color": "#ef4444"},
+         {"name": "Marketing", "value": 200, "color": "#f97316"},
+         {"name": "R&D", "value": 300, "color": "#8b5cf6"}
+       ],
+       "insight": "Operating expenses can be broken down into these typical categories."
+     }
    }
    \`\`\`
 
@@ -293,11 +347,14 @@ RULES:
 - Node Names should be Title Case (e.g., "Gross Profit").
 - IMPORTANT: Pay attention to flow balance analysis in the diagram state. If nodes are imbalanced, mention it and offer to fix them.
 - When the user asks about balance issues, refer to the IMBALANCED NODES section in the diagram state.
-- If the user provides a partial update (e.g., "add a tax node"), merge it intelligently with the existing data provided in the context.`;
+- If the user provides a partial update (e.g., "add a tax node"), merge it intelligently with the existing data provided in the context.
+- **THEMING**: When user asks for a theme/style change (e.g., "dark mode", "modern look", "pastel colors"), output the settings JSON.
+- **NODE CONTEXT**: If the user mentions a specific node for insights/breakdown, use the suggestions format.`;
 
 // AI Settings interface
 export interface AISettings {
     apiKey: string;
+    baseUrl?: string; // Optional custom base URL (e.g. for proxies)
     model: string;  // Any Gemini model name (e.g., gemini-2.0-flash, gemini-1.5-pro)
     customPrompt: string;
     isEnabled: boolean;
@@ -307,6 +364,7 @@ export interface AISettings {
 // Default AI settings
 export const defaultAISettings: AISettings = {
     apiKey: '',
+    baseUrl: '', // Default to empty (uses standard Google URL)
     model: 'gemini-2.0-flash',
     customPrompt: DEFAULT_AI_PROMPT,
     isEnabled: true,

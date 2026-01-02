@@ -10,7 +10,13 @@ export interface AIResponse {
 const STORAGE_KEY = 'sankey-ai-settings';
 
 class AIService {
-    private history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+    private history: Array<{
+        role: 'user' | 'model';
+        parts: Array<{
+            text?: string;
+            inline_data?: { mime_type: string; data: string }
+        }>
+    }> = [];
 
     private getSettings(): AISettings {
         if (typeof window !== 'undefined') {
@@ -50,8 +56,23 @@ class AIService {
         );
 
         if (result.success && result.text) {
-            // Update history
-            this.history.push({ role: 'user', parts: [{ text: userMessage }] });
+            // Update history with text and attachments
+            const userParts: Array<{
+                text?: string;
+                inline_data?: { mime_type: string; data: string }
+            }> = [{ text: userMessage }];
+            if (settings.attachments && settings.attachments.length > 0) {
+                settings.attachments.forEach(att => {
+                    userParts.push({
+                        inline_data: {
+                            mime_type: att.type,
+                            data: att.data.split(',')[1] // Remove base64 header
+                        }
+                    });
+                });
+            }
+
+            this.history.push({ role: 'user', parts: userParts });
             this.history.push({ role: 'model', parts: [{ text: result.text }] });
 
             // Keep history manageable

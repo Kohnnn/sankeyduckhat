@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Palette, Type, Plus, Trash2, Check, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter } from 'lucide-react';
+import { X, Palette, Type, Plus, Trash2, Check, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Sparkles } from 'lucide-react';
 import { useDiagram } from '@/context/DiagramContext';
 import { SankeyNode } from '@/types/sankey';
 
@@ -9,6 +9,7 @@ interface NodeEditPopoverProps {
     node: SankeyNode;
     position: { x: number; y: number };
     onClose: () => void;
+    onAIAction?: (nodeId: string, action: string) => void;
 }
 
 const PRESET_COLORS = [
@@ -22,7 +23,7 @@ const PRESET_COLORS = [
     '#0ea5e9', '#0284c7', // Sky blues
 ];
 
-export default function NodeEditPopover({ node, position, onClose }: NodeEditPopoverProps) {
+export default function NodeEditPopover({ node, position, onClose, onAIAction }: NodeEditPopoverProps) {
     const { state, dispatch } = useDiagram();
     const popoverRef = useRef<HTMLDivElement>(null);
     const [labelText, setLabelText] = useState(node.name);
@@ -43,6 +44,7 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
     const [valueColor, setValueColor] = useState('#6b7280');
     const [secondLineColor, setSecondLineColor] = useState('#059669');
     const [thirdLineColor, setThirdLineColor] = useState('#6b7280');
+    const [showAIMenu, setShowAIMenu] = useState(false);
 
     // Get existing customization if any
     const existingCustomization = state.nodeCustomizations?.find(c => c.nodeId === node.id);
@@ -152,6 +154,14 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
         dispatch({ type: 'ADD_LINK', payload: { source: node.id, target: '', value: 100 } });
         onClose();
     }, [dispatch, node.id, onClose]);
+
+    const handleAIAction = useCallback((action: string) => {
+        setShowAIMenu(false);
+        if (onAIAction) {
+            onAIAction(node.id, action);
+        }
+        onClose();
+    }, [node.id, onAIAction, onClose]);
 
     return (
         <div
@@ -534,18 +544,50 @@ export default function NodeEditPopover({ node, position, onClose }: NodeEditPop
                 <div className="flex gap-1">
                     <button
                         onClick={handleAddFlow}
-                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 :bg-blue-900/20 rounded-md transition-colors"
+                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Add Flow
                     </button>
                     <button
                         onClick={handleDelete}
-                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 :bg-red-900/20 rounded-md transition-colors"
+                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
                     >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove
                     </button>
+                    {/* AI Actions */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowAIMenu(!showAIMenu)}
+                            className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            AI
+                        </button>
+                        {showAIMenu && (
+                            <div className="absolute bottom-full left-0 mb-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                                <button
+                                    onClick={() => handleAIAction('breakdown')}
+                                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 text-gray-700"
+                                >
+                                    🔍 Suggest Breakdown
+                                </button>
+                                <button
+                                    onClick={() => handleAIAction('insights')}
+                                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 text-gray-700"
+                                >
+                                    💡 Get Insights
+                                </button>
+                                <button
+                                    onClick={() => handleAIAction('optimize')}
+                                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 text-gray-700"
+                                >
+                                    ⚡ Suggest Optimization
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <button
                     onClick={handleSave}

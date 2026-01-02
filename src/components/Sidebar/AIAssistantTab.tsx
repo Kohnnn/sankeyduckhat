@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { Send, Upload, Sparkles, HelpCircle, FileText, Image as ImageIcon, Copy, Check, Settings, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Send, Upload, Sparkles, HelpCircle, FileText, Image as ImageIcon, Copy, Check, Settings, AlertCircle, Loader2, XCircle } from 'lucide-react';
 import { useDiagram } from '@/context/DiagramContext';
 import { aiService } from '@/services/ai-service';
 import { useAISettings } from '@/context/AISettingsContext';
@@ -9,11 +9,18 @@ import { parseDSL } from '@/lib/dsl-parser';
 import { callGemini, parseJsonFromResponse } from '@/lib/gemini-api';
 import AISettingsPanel from './AISettingsPanel';
 
+interface Attachment {
+    type: string;
+    data: string; // base64
+    name?: string;
+}
+
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     timestamp: Date;
+    attachments?: Attachment[];
 }
 
 export default function AIAssistantTab() {
@@ -31,21 +38,69 @@ export default function AIAssistantTab() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Convert messages to Gemini format for context
     const getConversationHistory = useCallback(() => {
-        return messages.slice(1).map(msg => ({
-            role: msg.role === 'user' ? 'user' as const : 'model' as const,
-            parts: [{ text: msg.content }]
-        }));
+        return messages.slice(1).map(msg => {
+            const parts: any[] = [{ text: msg.content }];
+
+            if (msg.attachments && msg.attachments.length > 0) {
+                msg.attachments.forEach(att => {
+                    parts.push({
+                        inline_data: {
+                            mime_type: att.type,
+                            data: att.data.split(',')[1] // Remove base64 header
+                        }
+                    });
+                });
+            }
+
+            return {
+                role: msg.role === 'user' ? 'user' as const : 'model' as const,
+                parts: parts
+            };
+        });
     }, [messages]);
 
+    // Listen for AI actions from canvas (node context menu)
+    useEffect(() => {
+        const handleAINodeAction = (e: CustomEvent<{ nodeId: string; action: string; nodeName: string }>) => {
+            const { nodeId, action, nodeName } = e.detail;
+
+            let prompt = '';
+            switch (action) {
+                case 'breakdown':
+                    prompt = `Suggest a breakdown for the node "${nodeName}" (ID: ${nodeId}). What sub-categories or components might this node contain?`;
+                    break;
+                case 'insights':
+                    prompt = `Provide insights about the node "${nodeName}" (ID: ${nodeId}). What observations can you make based on its inflows, outflows, and value?`;
+                    break;
+                case 'optimize':
+                    prompt = `Suggest optimizations for the node "${nodeName}" (ID: ${nodeId}). How could this value be improved or balanced?`;
+                    break;
+                default:
+                    prompt = `Tell me about the node "${nodeName}" (ID: ${nodeId}).`;
+            }
+
+            // Set the input and trigger send
+            setInput(prompt);
+        };
+
+        window.addEventListener('ai-node-action', handleAINodeAction as EventListener);
+        return () => window.removeEventListener('ai-node-action', handleAINodeAction as EventListener);
+    }, []);
+
     const handleSend = async () => {
-        if (!input.trim() || isProcessing) return;
+        if ((!input.trim() && pendingFiles.length === 0) || isProcessing) return;
 
         const userMessage = input.trim();
+        const attachmentsToSend = [...pendingFiles];
+
+        // Clear inputs immediately
         setInput('');
+        setPendingFiles([]);
         setIsProcessing(true);
 
         // Add user message to UI immediately
@@ -53,11 +108,18 @@ export default function AIAssistantTab() {
             id: Date.now().toString(),
             role: 'user',
             content: userMessage,
+            attachments: attachmentsToSend,
             timestamp: new Date()
         }]);
 
         try {
-            const response = await aiService.sendMessage(userMessage, state);
+            // Create settings override with attachments
+            const settingsOverride = {
+                ...settings,
+                attachments: attachmentsToSend
+            };
+
+            const response = await aiService.sendMessage(userMessage || (attachmentsToSend.length > 0 ? "Analyze this image" : ""), state, settingsOverride);
 
             if (response.success) {
                 setMessages(prev => [...prev, {
@@ -73,39 +135,56 @@ export default function AIAssistantTab() {
                     try {
                         const changes = JSON.parse(jsonMatch[1]);
 
-                        // Use AI utils for structured change application
-                        const { applyAIChanges } = await import('@/lib/ai-utils');
-                        const result = applyAIChanges(state, changes);
-
-                        if (result.success && result.newState) {
-                            // Apply the validated changes
-                            dispatch({ type: 'SET_DATA', payload: result.newState.data });
-
-                            // Show success feedback
+                        // Handle SETTINGS changes (theming)
+                        if (changes.settings) {
+                            dispatch({ type: 'UPDATE_SETTINGS', payload: changes.settings });
                             setMessages(prev => [...prev, {
                                 id: (Date.now() + 2).toString(),
                                 role: 'assistant',
-                                content: '✅ Changes applied successfully!',
-                                timestamp: new Date()
-                            }]);
-                        } else {
-                            // Show validation errors
-                            const errorMsg = result.errors?.join('\n') || 'Failed to apply changes';
-                            setMessages(prev => [...prev, {
-                                id: (Date.now() + 2).toString(),
-                                role: 'assistant',
-                                content: `⚠️ Could not apply changes:\n${errorMsg}`,
+                                content: '🎨 Theme applied!',
                                 timestamp: new Date()
                             }]);
                         }
+                        // Handle SUGGESTIONS (node breakdown)
+                        else if (changes.suggestions) {
+                            const { nodeId, breakdown, insight } = changes.suggestions;
+                            // For now, just show the insight. Later we can auto-apply breakdown.
+                            const breakdownText = breakdown?.map((b: { name: string; value: number }) =>
+                                `  • ${b.name}: ${b.value}`
+                            ).join('\n') || '';
+
+                            setMessages(prev => [...prev, {
+                                id: (Date.now() + 2).toString(),
+                                role: 'assistant',
+                                content: `💡 **Suggestion for ${nodeId}:**\n${insight}\n\nProposed breakdown:\n${breakdownText}\n\nWould you like me to apply this breakdown?`,
+                                timestamp: new Date()
+                            }]);
+                        }
+                        // Handle DATA changes (nodes/flows)
+                        else if (changes.nodes || changes.flows) {
+                            const { applyAIChanges } = await import('@/lib/ai-utils');
+                            const result = applyAIChanges(state, changes);
+
+                            if (result.success && result.newState) {
+                                dispatch({ type: 'SET_DATA', payload: result.newState.data });
+                                setMessages(prev => [...prev, {
+                                    id: (Date.now() + 2).toString(),
+                                    role: 'assistant',
+                                    content: '✅ Changes applied successfully!',
+                                    timestamp: new Date()
+                                }]);
+                            } else {
+                                const errorMsg = result.errors?.join('\n') || 'Failed to apply changes';
+                                setMessages(prev => [...prev, {
+                                    id: (Date.now() + 2).toString(),
+                                    role: 'assistant',
+                                    content: `⚠️ Could not apply changes:\n${errorMsg}`,
+                                    timestamp: new Date()
+                                }]);
+                            }
+                        }
                     } catch (e) {
                         console.error('Failed to parse/apply AI changes', e);
-                        setMessages(prev => [...prev, {
-                            id: (Date.now() + 2).toString(),
-                            role: 'assistant',
-                            content: '⚠️ Changes detected but could not be parsed. Please try rephrasing your request.',
-                            timestamp: new Date()
-                        }]);
                     }
                 }
             } else {
@@ -137,118 +216,25 @@ export default function AIAssistantTab() {
         const isPDF = file.type === 'application/pdf';
 
         if (!isImage && !isPDF) {
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: Date.now().toString(),
-                    role: 'assistant',
-                    content: 'Please upload an image (PNG, JPG) or PDF file.',
-                    timestamp: new Date(),
-                },
-            ]);
+            alert('Please upload an image (PNG, JPG) or PDF file.');
             return;
         }
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             const base64Data = e.target?.result as string;
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: Date.now().toString(),
-                    role: 'user',
-                    content: `[Uploaded: ${file.name}]`,
-                    timestamp: new Date(),
-                },
-            ]);
-
-            // Temporarily update settings with attachment for the next call
-            // specific to this "turn"
-            const attachment = { type: file.type, data: base64Data };
-
-            // We need to trigger a send, but we might want to ask the user what to do with it first?
-            // For now, let's just say "I received it" but actually pass it to the AI on the *next* message?
-            // OR better: Send a specific prompt "Analyze this file" immediately.
-
-            setIsProcessing(true);
-
-            // Hack: Modify settings for this call specifically
-            const settingsWithAttachment = { ...settings, attachments: [attachment] };
-
-            try {
-                const response = await aiService.sendMessage("Extract Sankey data from this file.", state, settingsWithAttachment); // We need to update sendMessage signature or context? 
-
-                // wait, aiService.sendMessage uses 'state' context but 'settings' are global context?
-                // we updated gemini-api to look at settings.attachments.
-                // We need to pass the attachment to the service call.
-                // But `aiService` is a wrapper around `callGemini`.
-                // Let's check ai-service.ts again... wait, the import was:
-                // import { callGemini } from '@/lib/gemini-api';
-                // and in this file: 
-                // const response = await aiService.sendMessage(userMessage, state);
-
-                // We need to update aiService.sendMessage to accept attachments or options
-                // OR we just use callGemini directly here for file uploads?
-
-                // ACTUALLY: The previous code was `aiService.sendMessage(userMessage, state)`.
-                // Let's modify aiService to accept options/overrides.
-
-                // But for now, since I can't see ai-service.ts in this context, 
-                // I will assume I need to pass it.
-                // Let's check `services/ai-service.ts`... wait, I didn't read that file yet.
-                // I read `lib/gemini-api.ts`.
-
-                // The `callGemini` function takes (settings, userMessage, history, data).
-                // `aiService` probably wraps this. 
-                // Let's assume for this specific file upload, we want to call the API directly 
-                // OR update aiService. 
-
-                // Let's use `callGemini` directly for now to ensure it works with our modified signature?
-                // usage in `handleSend`: await aiService.sendMessage(userMessage, state);
-
-                // Let's look at `handleSend` again...
-                // It calls `aiService.sendMessage`.
-
-                // I'll update this component to use `callGemini` specifically for the file upload 
-                // or just update how it works.
-
-                // WAIT. I modified `lib/gemini-api.ts` `callGemini` to look at `settings.attachments`.
-                // So if I update `settings` context with attachments, it should work?
-                // But `settings` from `useAISettings` is likely immutable directly here.
-                // Accessing `settings` inside `callGemini`... `callGemini` accepts `settings` as ARGUMENT.
-
-                if (response.success && response.content) {
-                    setMessages(prev => [...prev, {
-                        id: (Date.now() + 1).toString(),
-                        role: 'assistant',
-                        content: response.content,
-                        timestamp: new Date()
-                    }]);
-                } else {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: (Date.now() + 1).toString(),
-                            role: 'assistant',
-                            content: response.error || "Failed to analyze image.",
-                            timestamp: new Date(),
-                        },
-                    ]);
-                }
-            } catch (err) {
-                // ... handle error
-            } finally {
-                setIsProcessing(false);
-            }
+            setPendingFiles(prev => [...prev, {
+                type: file.type,
+                data: base64Data,
+                name: file.name
+            }]);
         };
         reader.readAsDataURL(file);
 
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
-    }, [isConfigured, settings, state]);
+    }, []);
 
     const handlePaste = useCallback((e: React.ClipboardEvent) => {
         const items = e.clipboardData.items;
@@ -257,38 +243,21 @@ export default function AIAssistantTab() {
                 e.preventDefault();
                 const file = item.getAsFile();
                 if (file) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: Date.now().toString(),
-                            role: 'user',
-                            content: '[Pasted image]',
-                            timestamp: new Date(),
-                        },
-                    ]);
-
-                    setIsProcessing(true);
-                    setTimeout(() => {
-                        const message = isConfigured
-                            ? 'I can see you pasted an image.\n\n⚠️ Image analysis requires vision API setup. Please describe the data in text, or type it in the format:\n\nRevenue [1000] Expenses\nRevenue [500] Profit'
-                            : '⚠️ Image OCR requires an AI API connection.\n\nPlease configure your API key in Settings, or type your data manually:\n\nRevenue [1000] Expenses\nRevenue [500] Profit';
-
-                        setMessages((prev) => [
-                            ...prev,
-                            {
-                                id: (Date.now() + 1).toString(),
-                                role: 'assistant',
-                                content: message,
-                                timestamp: new Date(),
-                            },
-                        ]);
-                        setIsProcessing(false);
-                    }, 1000);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const base64Data = e.target?.result as string;
+                        setPendingFiles(prev => [...prev, {
+                            type: file.type,
+                            data: base64Data,
+                            name: "Pasted Image"
+                        }]);
+                    };
+                    reader.readAsDataURL(file);
                 }
                 break;
             }
         }
-    }, [isConfigured]);
+    }, []);
 
     return (
         <div className="flex flex-col h-full">
@@ -337,19 +306,41 @@ export default function AIAssistantTab() {
                         key={msg.id}
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                        <div
-                            className={`max-w-[85%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user'
-                                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                                : 'bg-[var(--background)] text-[var(--primary-text)]'
-                                }`}
-                        >
-                            {msg.role === 'assistant' && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                                    <Sparkles className="w-3 h-3" />
-                                    AI Assistant
+                        <div className={`flex flex-col gap-2 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            {msg.attachments && msg.attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-1 justify-end">
+                                    {msg.attachments.map((att, i) => (
+                                        <div key={i} className="relative group">
+                                            {att.type.startsWith('image/') ? (
+                                                <img
+                                                    src={att.data}
+                                                    alt="Attachment"
+                                                    className="h-20 w-auto rounded-lg border border-gray-200 shadow-sm"
+                                                />
+                                            ) : (
+                                                <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg border border-gray-200">
+                                                    <FileText className="w-4 h-4 text-gray-500" />
+                                                    <span className="text-xs text-gray-600 truncate max-w-[100px]">{att.name || 'File'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             )}
-                            {msg.content}
+                            <div
+                                className={`rounded-lg px-4 py-2 text-sm whitespace-pre-wrap w-full ${msg.role === 'user'
+                                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+                                    : 'bg-[var(--background)] text-[var(--primary-text)]'
+                                    }`}
+                            >
+                                {msg.role === 'assistant' && (
+                                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                                        <Sparkles className="w-3 h-3" />
+                                        AI Assistant
+                                    </div>
+                                )}
+                                {msg.content}
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -365,6 +356,33 @@ export default function AIAssistantTab() {
 
             {/* Input Area */}
             <div className="border-t border-[var(--border)] p-4 bg-[var(--card-bg)]">
+                {/* Pending Files Staging Area */}
+                {pendingFiles.length > 0 && (
+                    <div className="flex gap-2 mb-3 overflow-x-auto py-2">
+                        {pendingFiles.map((file, index) => (
+                            <div key={index} className="relative group shrink-0">
+                                {file.type.startsWith('image/') ? (
+                                    <img
+                                        src={file.data}
+                                        alt="Preview"
+                                        className="h-16 w-auto rounded-md border border-gray-200"
+                                    />
+                                ) : (
+                                    <div className="h-16 w-16 flex items-center justify-center bg-gray-100 rounded-md border border-gray-200">
+                                        <FileText className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== index))}
+                                    className="absolute -top-1.5 -right-1.5 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex gap-2">
                     <input
                         type="file"
@@ -395,7 +413,7 @@ export default function AIAssistantTab() {
 
                     <button
                         onClick={handleSend}
-                        disabled={!input.trim() || isProcessing}
+                        disabled={(!input.trim() && pendingFiles.length === 0) || isProcessing}
                         className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                         <Send className="w-5 h-5" />
