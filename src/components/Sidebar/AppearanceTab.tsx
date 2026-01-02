@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Save, Trash2, Check, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Save, Trash2, Check, Plus, Type, Image as ImageIcon } from 'lucide-react';
 import { useDiagram } from '@/context/DiagramContext';
 import { getAllPalettes, saveCustomPalette, deleteCustomPalette, getDefaultPaletteId, setDefaultPalette, parseColorsFromString, ColorPalette } from '@/lib/colorPalettes';
 import { getTemplates, saveTemplate, deleteTemplate, applyTemplate, PRESET_TEMPLATES, DiagramTemplate } from '@/lib/templates';
@@ -128,6 +128,12 @@ export default function AppearanceTab() {
     }, [dispatch]);
 
     const selectedCustomization = selectedNodeId ? getNodeCustomization(selectedNodeId) : null;
+
+    // Independent Label Logic
+    const selectedLabel = state.selectedLabelId ? state.independentLabels?.find(l => l.id === state.selectedLabelId) : null;
+    const updateIndependentLabel = useCallback((id: string, updates: import('@/types/sankey').IndependentLabel) => {
+        dispatch({ type: 'UPDATE_INDEPENDENT_LABEL', payload: { id, updates } });
+    }, [dispatch]);
 
     return (
         <div className="p-4 space-y-4">
@@ -309,6 +315,127 @@ export default function AppearanceTab() {
                             )}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Selected Label Section */}
+            {selectedLabel && (
+                <div className="bg-purple-50 rounded-lg border border-purple-200 p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+                            {selectedLabel.type === 'image' ? <ImageIcon className="w-4 h-4" /> : <Type className="w-4 h-4" />}
+                            Edit {selectedLabel.type === 'image' ? 'Image' : 'Text'}
+                        </h3>
+                        <button
+                            onClick={() => dispatch({ type: 'DELETE_INDEPENDENT_LABEL', payload: selectedLabel.id })}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {selectedLabel.type === 'text' && (
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Text</label>
+                                <input
+                                    type="text"
+                                    value={selectedLabel.text}
+                                    onChange={(e) => updateIndependentLabel(selectedLabel.id, { text: e.target.value } as any)}
+                                    className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Font Size</label>
+                                    <input
+                                        type="number"
+                                        value={selectedLabel.fontSize || 16}
+                                        onChange={(e) => updateIndependentLabel(selectedLabel.id, { fontSize: Number(e.target.value) } as any)}
+                                        className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Color</label>
+                                    <div className="flex gap-1">
+                                        <input
+                                            type="color"
+                                            value={selectedLabel.color || '#000000'}
+                                            onChange={(e) => updateIndependentLabel(selectedLabel.id, { color: e.target.value } as any)}
+                                            className="w-8 h-8 rounded cursor-pointer border border-[var(--border)]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedLabel.bold || false}
+                                        onChange={(e) => updateIndependentLabel(selectedLabel.id, { bold: e.target.checked } as any)}
+                                        className="rounded"
+                                    />
+                                    Bold
+                                </label>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedLabel.italic || false}
+                                        onChange={(e) => updateIndependentLabel(selectedLabel.id, { italic: e.target.checked } as any)}
+                                        className="rounded"
+                                    />
+                                    Italic
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedLabel.type === 'image' && (
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Image URL</label>
+                                <input
+                                    type="text"
+                                    value={selectedLabel.src || ''}
+                                    onChange={(e) => updateIndependentLabel(selectedLabel.id, { src: e.target.value } as any)}
+                                    className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Width</label>
+                                    <input
+                                        type="number"
+                                        value={selectedLabel.width || 100}
+                                        onChange={(e) => updateIndependentLabel(selectedLabel.id, { width: Number(e.target.value) } as any)}
+                                        className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Height</label>
+                                    <input
+                                        type="number"
+                                        value={selectedLabel.height || 100}
+                                        onChange={(e) => updateIndependentLabel(selectedLabel.id, { height: Number(e.target.value) } as any)}
+                                        className="w-full px-2 py-1 text-sm border border-[var(--border)] rounded bg-[var(--card-bg)] text-[var(--primary-text)]"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--secondary-text)] mb-1">Opacity</label>
+                                <input
+                                    type="range"
+                                    value={selectedLabel.opacity ?? 1}
+                                    onChange={(e) => updateIndependentLabel(selectedLabel.id, { opacity: Number(e.target.value) } as any)}
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

@@ -88,7 +88,7 @@ export default function Toolbar() {
         icon: Icon,
         label
     }: {
-        tool: 'select' | 'pan' | 'addNode' | 'addFlow' | 'addLabel';
+        tool: 'select' | 'pan' | 'addNode' | 'addFlow' | 'addLabel' | 'addImage';
         icon: React.ElementType;
         label: string
     }) => (
@@ -112,7 +112,8 @@ export default function Toolbar() {
                 <ToolButton tool="pan" icon={Hand} label="Pan (H)" />
                 <ToolButton tool="addNode" icon={Plus} label="Add Node (N)" />
                 <ToolButton tool="addFlow" icon={GitBranch} label="Add Flow (F)" />
-                <ToolButton tool="addLabel" icon={Type} label="Add Label (L)" />
+                <ToolButton tool="addLabel" icon={Type} label="Add Text (T)" />
+                <ToolButton tool="addImage" icon={Image} label="Add Image (I)" />
             </div>
 
 

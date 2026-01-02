@@ -4,7 +4,8 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 import { sankey } from 'd3-sankey';
 import { useDiagram } from '@/context/DiagramContext';
-import { SankeyNode, NodeCustomization } from '@/types/sankey';
+import { useStudio } from '@/context/StudioContext';
+import { SankeyNode, NodeCustomization, IndependentLabel } from '@/types/sankey';
 import NodeEditPopover from './NodeEditPopover';
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Undo, Redo, Download, Image as ImageIcon } from 'lucide-react';
 
@@ -31,7 +32,8 @@ export default function SankeyCanvas() {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { state, dispatch } = useDiagram();
-    const { data, settings, selectedNodeId, selectedLinkIndex, nodeCustomizations } = state;
+    const { state: studioState, setTool } = useStudio();
+    const { data, settings, selectedNodeId, selectedLinkIndex, nodeCustomizations, independentLabels } = state;
     const [popover, setPopover] = useState<PopoverState | null>(null);
 
     // Get customization for a node
@@ -625,11 +627,121 @@ export default function SankeyCanvas() {
                 }
             });
 
+        // --- Independent Labels (Rich Content) ---
+        const independentLayer = getLayer('layer-independent');
+        independentLayer.raise(); // Ensure on top
+
+        const indepSel = independentLayer.selectAll('.indep-label')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .data(state.independentLabels || [], (d: any) => d.id);
+
+        indepSel.exit().remove();
+
+        const indepEnter = indepSel.enter().append('g')
+            .attr('class', 'indep-label cursor-move');
+
+        const indepUpdate = indepEnter.merge(indepSel as any)
+            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+
+        // Render Content
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        indepUpdate.each(function (d: any) {
+            const g = d3.select(this);
+            g.selectAll('*').remove(); // Re-render
+
+            if (d.type === 'image') {
+                g.append('image')
+                    .attr('href', d.src || '')
+                    .attr('width', d.width || 100)
+                    .attr('height', d.height || 100)
+                    .attr('preserveAspectRatio', 'xMidYMid meet')
+                    .attr('opacity', d.opacity ?? 1);
+            } else {
+                // Text
+                g.append('text')
+                    .text(d.text)
+                    .attr('font-size', d.fontSize || 16)
+                    .attr('font-family', d.fontFamily || 'Inter, sans-serif')
+                    .attr('font-weight', d.bold ? 'bold' : 'normal')
+                    .attr('font-style', d.italic ? 'italic' : 'normal')
+                    .attr('fill', d.color || '#333333')
+                    .attr('opacity', d.opacity ?? 1);
+            }
+
+            // Selection Outline
+            if (state.selectedLabelId === d.id) {
+                const w = d.width || (d.fontSize || 16) * (d.text?.length || 5) * 0.6;
+                const h = d.height || (d.fontSize || 16);
+                g.append('rect')
+                    .attr('x', d.type === 'image' ? 0 : -5)
+                    .attr('y', d.type === 'image' ? 0 : -h)
+                    .attr('width', w + 10)
+                    .attr('height', h + 10)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#3b82f6')
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '4 2');
+            }
+        });
+
+        // Drag Behavior for Independent Labels
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dragLabel = d3.drag<any, any>()
+            .on('start', function () {
+                d3.select(this).raise();
+            })
+            .on('drag', function (e, d) {
+                d3.select(this).attr('transform', `translate(${e.x},${e.y})`);
+            })
+            .on('end', function (e, d) {
+                dispatch({ type: 'UPDATE_INDEPENDENT_LABEL', payload: { id: d.id, updates: { x: e.x, y: e.y } } });
+            });
+
+        indepEnter.call(dragLabel)
+            .on('click', (e, d) => {
+                e.stopPropagation();
+                dispatch({ type: 'SELECT_LABEL', payload: d.id });
+            });
+
+
+        // --- Canvas Interactions (Add Items) ---
+        svg.on('click', (event) => {
+            // Ignore if handled by children
+            if (event.defaultPrevented) return;
+
+            // Only handle if we are in an adding mode
+            if (studioState.currentTool === 'select' || studioState.currentTool === 'pan') return;
+
+            const [x, y] = d3.pointer(event, mainGroup.node());
+
+            if (studioState.currentTool === 'addLabel') {
+                const id = `label-${Date.now()}`;
+                dispatch({
+                    type: 'ADD_INDEPENDENT_LABEL', payload: {
+                        id, type: 'text', text: 'Double click to edit', x, y, fontSize: 24, fontFamily: 'Inter, sans-serif', color: '#111827', bold: true
+                    }
+                });
+                setTool('select');
+            } else if (studioState.currentTool === 'addImage') {
+                const url = window.prompt("Enter Image URL (e.g. Logo)", "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg");
+                if (url) {
+                    const id = `img-${Date.now()}`;
+                    dispatch({
+                        type: 'ADD_INDEPENDENT_LABEL', payload: {
+                            id, type: 'image', text: 'Image', src: url, x, y, width: 80, height: 80
+                        }
+                    });
+                }
+                setTool('select');
+            }
+        });
+
         return () => {
             if ((svg.node() as any).__particleTimer) ((svg.node() as any).__particleTimer as d3.Timer).stop();
+            svg.on('click', null); // Cleanup click listener
         };
 
-    }, [data, settings, selectedNodeId, selectedLinkIndex, state.customLayout, dispatch, getNodeColor, formatValue, getCustomization, handleNodeClick]);
+    }, [data, settings, selectedNodeId, selectedLinkIndex, state.customLayout, state.independentLabels, state.selectedLabelId, studioState.currentTool, dispatch, getNodeColor, formatValue, getCustomization, handleNodeClick, setTool]);
 
     return (
         <div ref={containerRef} className="w-full h-full bg-white  border border-[var(--border)] rounded-lg shadow-sm overflow-hidden relative">

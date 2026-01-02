@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 
 // Tool types for the studio
-export type StudioTool = 'select' | 'pan' | 'addNode' | 'addFlow' | 'addLabel';
+export type StudioTool = 'select' | 'pan' | 'addNode' | 'addFlow' | 'addLabel' | 'addImage';
 
 // Element types that can be selected
 export type SelectedElementType = 'node' | 'flow' | 'label' | 'independentLabel' | null;
@@ -185,6 +185,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
             case 'addNode': return 'crosshair';
             case 'addFlow': return state.isAddingFlow ? 'pointer' : 'crosshair';
             case 'addLabel': return 'text';
+            case 'addImage': return 'copy';
             default: return 'default';
         }
     }, [state.currentTool, state.isPanning, state.isAddingFlow]);

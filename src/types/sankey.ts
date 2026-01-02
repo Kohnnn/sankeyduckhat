@@ -1,282 +1,284 @@
 // Sankey Diagram Types
 
 export interface SankeyNode {
-    id: string;
-    name: string;
-    color?: string;
-    flowColor?: string; // Specific color for outgoing flows
-    x?: number;
-    y?: number;
-    dx?: number;
-    dy?: number;
-    value?: number;
-    category?: 'revenue' | 'expense' | 'profit' | 'neutral';
-    labelOffset?: { x: number; y: number };
-    labelText?: string; // Custom display text (different from id/name)
+  id: string;
+  name: string;
+  color?: string;
+  flowColor?: string; // Specific color for outgoing flows
+  x?: number;
+  y?: number;
+  dx?: number;
+  dy?: number;
+  value?: number;
+  category?: 'revenue' | 'expense' | 'profit' | 'neutral';
+  labelOffset?: { x: number; y: number };
+  labelText?: string; // Custom display text (different from id/name)
 
-    // D3 Sankey Layout Props
-    x0?: number;
-    x1?: number;
-    y0?: number;
-    y1?: number;
-    depth?: number;
-    layer?: number;
-    sourceLinks?: SankeyLink[];
-    targetLinks?: SankeyLink[];
+  // D3 Sankey Layout Props
+  x0?: number;
+  x1?: number;
+  y0?: number;
+  y1?: number;
+  depth?: number;
+  layer?: number;
+  sourceLinks?: SankeyLink[];
+  targetLinks?: SankeyLink[];
 
-    // Data Structure Extensions (V2)
-    group?: string; // Logical group (e.g., "Expenses", "Revenue")
-    metadata?: Record<string, any>; // Flexible context (AI reasoning, source ref)
-    originalValue?: number; // Pre-scaling value
+  // Data Structure Extensions (V2)
+  group?: string; // Logical group (e.g., "Expenses", "Revenue")
+  metadata?: Record<string, any>; // Flexible context (AI reasoning, source ref)
+  originalValue?: number; // Pre-scaling value
 }
 
 export interface SankeyLink {
-    source: string | number;
-    target: string | number;
-    value: number;
-    previousValue?: number; // Raw previous value for calculation
-    comparisonValue?: string; // Formatted display string (e.g. "+10%")
-    color?: string;
-    opacity?: number;
+  source: string | number;
+  target: string | number;
+  value: number;
+  previousValue?: number; // Raw previous value for calculation
+  comparisonValue?: string; // Formatted display string (e.g. "+10%")
+  color?: string;
+  opacity?: number;
 
-    // D3 Sankey Layout Props
-    width?: number;
-    y0?: number;
-    y1?: number;
-    index?: number;
+  // D3 Sankey Layout Props
+  width?: number;
+  y0?: number;
+  y1?: number;
+  index?: number;
 
-    // Data Structure Extensions (V2)
-    metadata?: Record<string, any>;
-    originalValue?: number;
+  // Data Structure Extensions (V2)
+  metadata?: Record<string, any>;
+  originalValue?: number;
 }
 
 export interface IndependentLabel {
-    id: string;
-    type?: 'text' | 'box'; // Default to 'text' if undefined
-    text: string;
-    x: number;
-    y: number;
-    fontSize?: number;
-    fontFamily?: string;
-    color?: string;
-    bold?: boolean;
-    italic?: boolean;
-    backgroundColor?: string;
-    backgroundOpacity?: number;
-    borderColor?: string;
-    borderWidth?: number;
-    borderRadius?: number;
-    padding?: number;
-    width?: number; // For box type
-    height?: number; // For box type
-    align?: 'left' | 'center' | 'right';
+  id: string;
+  type?: 'text' | 'box' | 'image'; // Added 'image'
+  text: string;
+  src?: string; // For images
+  x: number;
+  y: number;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  opacity?: number;
+  bold?: boolean;
+  italic?: boolean;
+  backgroundColor?: string;
+  backgroundOpacity?: number;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  padding?: number;
+  width?: number; // For box/image
+  height?: number; // For box/image
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface SankeyData {
-    nodes: SankeyNode[];
-    links: SankeyLink[];
+  nodes: SankeyNode[];
+  links: SankeyLink[];
 }
 
 export interface NodeCustomization {
-    nodeId: string;
-    fillColor?: string;
-    labelText?: string;
-    labelFontSize?: number;
-    labelFontFamily?: string;
-    labelColor?: string;
-    labelAlignment?: 'left' | 'center' | 'right';
-    labelBold?: boolean;
-    labelItalic?: boolean;
-    showSecondLine?: boolean;
-    secondLineText?: string;
-    showThirdLine?: boolean;
-    thirdLineText?: string;
-    x?: number;
-    y?: number;
-    labelOffsetX?: number;
-    labelOffsetY?: number;
+  nodeId: string;
+  fillColor?: string;
+  labelText?: string;
+  labelFontSize?: number;
+  labelFontFamily?: string;
+  labelColor?: string;
+  labelAlignment?: 'left' | 'center' | 'right';
+  labelBold?: boolean;
+  labelItalic?: boolean;
+  showSecondLine?: boolean;
+  secondLineText?: string;
+  showThirdLine?: boolean;
+  thirdLineText?: string;
+  x?: number;
+  y?: number;
+  labelOffsetX?: number;
+  labelOffsetY?: number;
 
-    // Background/Highlighting
-    showLabelBackground?: boolean;
-    labelBackgroundColor?: string;
-    labelBackgroundOpacity?: number;
-    labelBorderColor?: string;
-    labelBorderWidth?: number;
-    labelPadding?: number;
-    labelBorderRadius?: number;
+  // Background/Highlighting
+  showLabelBackground?: boolean;
+  labelBackgroundColor?: string;
+  labelBackgroundOpacity?: number;
+  labelBorderColor?: string;
+  labelBorderWidth?: number;
+  labelPadding?: number;
+  labelBorderRadius?: number;
 
-    // Per-element formatting
-    valueAlignment?: 'left' | 'center' | 'right';
-    valueFontSize?: number;
-    valueColor?: string;
-    valueBold?: boolean;
+  // Per-element formatting
+  valueAlignment?: 'left' | 'center' | 'right';
+  valueFontSize?: number;
+  valueColor?: string;
+  valueBold?: boolean;
 
-    secondLineColor?: string;
-    secondLineFontSize?: number;
-    secondLineBold?: boolean;
-    secondLineAlignment?: 'left' | 'center' | 'right';
+  secondLineColor?: string;
+  secondLineFontSize?: number;
+  secondLineBold?: boolean;
+  secondLineAlignment?: 'left' | 'center' | 'right';
 
-    thirdLineColor?: string;
-    thirdLineFontSize?: number;
-    thirdLineBold?: boolean;
-    thirdLineAlignment?: 'left' | 'center' | 'right';
+  thirdLineColor?: string;
+  thirdLineFontSize?: number;
+  thirdLineBold?: boolean;
+  thirdLineAlignment?: 'left' | 'center' | 'right';
 }
 
 export interface DiagramSettings {
-    // Canvas
-    width: number;
-    height: number;
-    padding: { top: number; right: number; bottom: number; left: number };
+  // Canvas
+  width: number;
+  height: number;
+  padding: { top: number; right: number; bottom: number; left: number };
 
-    // Nodes
-    nodeWidth: number;
-    nodePadding: number;
-    nodeOpacity: number;
-    nodeBorderOpacity: number;
-    nodeBorderRadius: number; // New: 0-20px
+  // Nodes
+  nodeWidth: number;
+  nodePadding: number;
+  nodeOpacity: number;
+  nodeBorderOpacity: number;
+  nodeBorderRadius: number; // New: 0-20px
 
-    // Links
-    linkCurvature: number;
-    linkOpacity: number;
-    linkGradient: boolean;
-    linkBlendMode: 'normal' | 'multiply' | 'screen' | 'overlay'; // New
-    showParticles: boolean; // New
-    particleSpeed: number; // New: 0.1 - 2.0
+  // Links
+  linkCurvature: number;
+  linkOpacity: number;
+  linkGradient: boolean;
+  linkBlendMode: 'normal' | 'multiply' | 'screen' | 'overlay'; // New
+  showParticles: boolean; // New
+  particleSpeed: number; // New: 0.1 - 2.0
 
-    // Labels
-    labelPosition: 'left' | 'right' | 'inside';
-    labelFontFamily: string;
-    labelFontSize: number;
-    labelBold: boolean;
-    labelItalic: boolean;
-    labelMargin: { top: number; right: number; bottom: number; left: number };
-    showComparisonLine: boolean;
+  // Labels
+  labelPosition: 'left' | 'right' | 'inside';
+  labelFontFamily: string;
+  labelFontSize: number;
+  labelBold: boolean;
+  labelItalic: boolean;
+  labelMargin: { top: number; right: number; bottom: number; left: number };
+  showComparisonLine: boolean;
 
-    // Value formatting
-    valuePrefix: string;
-    valueSuffix: string;
-    valueDecimals: 0 | 1 | 2 | -1; // -1 = All
-    valueMode: 'absolute' | 'short' | 'hidden';
+  // Value formatting
+  valuePrefix: string;
+  valueSuffix: string;
+  valueDecimals: 0 | 1 | 2 | -1; // -1 = All
+  valueMode: 'absolute' | 'short' | 'hidden';
 
-    // Theme
-    colorPalette: string;
-    useDefaultPalette: boolean;
-    isDarkMode: boolean;
-    showGrid: boolean;
-    snapToGrid: boolean;
-    gridSize: number;
+  // Theme
+  colorPalette: string;
+  useDefaultPalette: boolean;
+  isDarkMode: boolean;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
 }
 
 export interface CustomLayout {
-    nodes: Record<string, { x: number; y: number }>;
-    labels: Record<string, { x: number; y: number }>;
+  nodes: Record<string, { x: number; y: number }>;
+  labels: Record<string, { x: number; y: number }>;
 }
 
 export interface DiagramState {
-    data: SankeyData;
-    settings: DiagramSettings;
-    selectedNodeId: string | null;
-    selectedLinkIndex: number | null;
-    selectedLabelId: string | null;
-    dslText: string;
-    nodeCustomizations: NodeCustomization[];
-    independentLabels: IndependentLabel[];
-    customLayout: CustomLayout;
+  data: SankeyData;
+  settings: DiagramSettings;
+  selectedNodeId: string | null;
+  selectedLinkIndex: number | null;
+  selectedLabelId: string | null;
+  dslText: string;
+  nodeCustomizations: NodeCustomization[];
+  independentLabels: IndependentLabel[];
+  customLayout: CustomLayout;
 }
 
 export interface HistoryState {
-    past: DiagramState[];
-    present: DiagramState;
-    future: DiagramState[];
+  past: DiagramState[];
+  present: DiagramState;
+  future: DiagramState[];
 }
 
 // Default settings
 export const defaultSettings: DiagramSettings = {
-    width: 1000,
-    height: 600,
-    padding: { top: 40, right: 120, bottom: 40, left: 120 }, // Generous padding
-    nodeWidth: 20,
-    nodePadding: 24,
-    nodeOpacity: 1,
-    nodeBorderOpacity: 0.5,
-    nodeBorderRadius: 4, // Default rounded rect
-    linkCurvature: 0.7, // "SankeyArt" feel
-    linkOpacity: 0.45,
-    linkGradient: false, // Solid links by default
-    linkBlendMode: 'normal',
-    showParticles: false,
-    particleSpeed: 1.0,
-    labelPosition: 'right', // Standard
-    labelFontFamily: 'Manrope',
-    labelFontSize: 14,
-    labelBold: true,
-    labelItalic: false,
-    labelMargin: { top: 4, right: 8, bottom: 4, left: 8 },
-    showComparisonLine: false,
-    valuePrefix: '$',
-    valueSuffix: '',
-    valueDecimals: 0,
-    valueMode: 'absolute',
-    colorPalette: 'financial',
-    useDefaultPalette: true,
-    isDarkMode: false,
-    showGrid: true,
-    snapToGrid: true,
-    gridSize: 20,
+  width: 1000,
+  height: 600,
+  padding: { top: 40, right: 120, bottom: 40, left: 120 }, // Generous padding
+  nodeWidth: 20,
+  nodePadding: 24,
+  nodeOpacity: 1,
+  nodeBorderOpacity: 0.5,
+  nodeBorderRadius: 4, // Default rounded rect
+  linkCurvature: 0.7, // "SankeyArt" feel
+  linkOpacity: 0.45,
+  linkGradient: false, // Solid links by default
+  linkBlendMode: 'normal',
+  showParticles: false,
+  particleSpeed: 1.0,
+  labelPosition: 'right', // Standard
+  labelFontFamily: 'Manrope',
+  labelFontSize: 14,
+  labelBold: true,
+  labelItalic: false,
+  labelMargin: { top: 4, right: 8, bottom: 4, left: 8 },
+  showComparisonLine: false,
+  valuePrefix: '$',
+  valueSuffix: '',
+  valueDecimals: 0,
+  valueMode: 'absolute',
+  colorPalette: 'financial',
+  useDefaultPalette: true,
+  isDarkMode: false,
+  showGrid: true,
+  snapToGrid: true,
+  gridSize: 20,
 };
 
 // Sample data for initial render
 export const sampleData: SankeyData = {
-    nodes: [
-        { id: 'revenue', name: 'Revenue', category: 'revenue' },
-        { id: 'cogs', name: 'Cost of Goods Sold', category: 'expense' },
-        { id: 'gross_profit', name: 'Gross Profit', category: 'profit' },
-        { id: 'operating_expenses', name: 'Operating Expenses', category: 'expense' },
-        { id: 'net_income', name: 'Net Income', category: 'profit' },
-    ],
-    links: [
-        { source: 'revenue', target: 'cogs', value: 400 },
-        { source: 'revenue', target: 'gross_profit', value: 600 },
-        { source: 'gross_profit', target: 'operating_expenses', value: 200 },
-        { source: 'gross_profit', target: 'net_income', value: 400 },
-    ],
+  nodes: [
+    { id: 'revenue', name: 'Revenue', category: 'revenue' },
+    { id: 'cogs', name: 'Cost of Goods Sold', category: 'expense' },
+    { id: 'gross_profit', name: 'Gross Profit', category: 'profit' },
+    { id: 'operating_expenses', name: 'Operating Expenses', category: 'expense' },
+    { id: 'net_income', name: 'Net Income', category: 'profit' },
+  ],
+  links: [
+    { source: 'revenue', target: 'cogs', value: 400 },
+    { source: 'revenue', target: 'gross_profit', value: 600 },
+    { source: 'gross_profit', target: 'operating_expenses', value: 200 },
+    { source: 'gross_profit', target: 'net_income', value: 400 },
+  ],
 };
 
 // Google Fonts options
 export const DEFAULT_PALETTE = [
-    '#059669', // Strong Green (Revenue)
-    '#dc2626', // Strong Red (Expenses)
-    '#2563eb', // Blue
-    '#d97706', // Amber/Orange
-    '#7c3aed', // Purple
-    '#db2777', // Pink
-    '#4b5563', // Gray
-    '#0891b2', // Cyan
-    '#be123c', // Rose
-    '#15803d', // Dark Green
+  '#059669', // Strong Green (Revenue)
+  '#dc2626', // Strong Red (Expenses)
+  '#2563eb', // Blue
+  '#d97706', // Amber/Orange
+  '#7c3aed', // Purple
+  '#db2777', // Pink
+  '#4b5563', // Gray
+  '#0891b2', // Cyan
+  '#be123c', // Rose
+  '#15803d', // Dark Green
 ];
 export const GOOGLE_FONTS = [
-    { value: 'Manrope, sans-serif', label: 'Manrope' },
-    { value: 'Inter, sans-serif', label: 'Inter' },
-    { value: 'Roboto, sans-serif', label: 'Roboto' },
-    { value: 'Open Sans, sans-serif', label: 'Open Sans' },
-    { value: 'Poppins, sans-serif', label: 'Poppins' },
-    { value: 'Montserrat, sans-serif', label: 'Montserrat' },
-    { value: 'Lato, sans-serif', label: 'Lato' },
-    { value: 'Source Sans Pro, sans-serif', label: 'Source Sans Pro' },
-    { value: 'Nunito, sans-serif', label: 'Nunito' },
-    { value: 'Arial, sans-serif', label: 'Arial' },
-    { value: 'Georgia, serif', label: 'Georgia' },
-    { value: 'monospace', label: 'Monospace' },
+  { value: 'Manrope, sans-serif', label: 'Manrope' },
+  { value: 'Inter, sans-serif', label: 'Inter' },
+  { value: 'Roboto, sans-serif', label: 'Roboto' },
+  { value: 'Open Sans, sans-serif', label: 'Open Sans' },
+  { value: 'Poppins, sans-serif', label: 'Poppins' },
+  { value: 'Montserrat, sans-serif', label: 'Montserrat' },
+  { value: 'Lato, sans-serif', label: 'Lato' },
+  { value: 'Source Sans Pro, sans-serif', label: 'Source Sans Pro' },
+  { value: 'Nunito, sans-serif', label: 'Nunito' },
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'monospace', label: 'Monospace' },
 ];
 
 // Gemini AI model options
 export const GEMINI_MODELS = [
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Newest Preview)' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Recommended)' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-    { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Experimental' },
+  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Newest Preview)' },
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Recommended)' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+  { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Experimental' },
 ] as const;
 
 export type GeminiModel = typeof GEMINI_MODELS[number]['value'];
@@ -368,21 +370,21 @@ RULES:
 
 // AI Settings interface
 export interface AISettings {
-    apiKey: string;
-    baseUrl?: string; // Optional custom base URL (e.g. for proxies)
-    model: string;  // Any Gemini model name (e.g., gemini-2.0-flash, gemini-1.5-pro)
-    customPrompt: string;
-    isEnabled: boolean;
-    attachments?: Array<{ type: string; data: string }>; // base64 data
+  apiKey: string;
+  baseUrl?: string; // Optional custom base URL (e.g. for proxies)
+  model: string;  // Any Gemini model name (e.g., gemini-2.0-flash, gemini-1.5-pro)
+  customPrompt: string;
+  isEnabled: boolean;
+  attachments?: Array<{ type: string; data: string }>; // base64 data
 }
 
 // Default AI settings
 export const defaultAISettings: AISettings = {
-    apiKey: '',
-    baseUrl: '', // Default to empty (uses standard Google URL)
-    model: 'gemini-2.0-flash',
-    customPrompt: DEFAULT_AI_PROMPT,
-    isEnabled: true,
-    attachments: [],
+  apiKey: '',
+  baseUrl: '', // Default to empty (uses standard Google URL)
+  model: 'gemini-2.0-flash',
+  customPrompt: DEFAULT_AI_PROMPT,
+  isEnabled: true,
+  attachments: [],
 };
 
