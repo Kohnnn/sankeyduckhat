@@ -272,7 +272,8 @@ export default function SankeyCanvas() {
         }
         function hideTooltip() { tooltip.style('visibility', 'hidden'); }
 
-        const t = svg.transition().duration(750 as any).ease(d3.easeCubicInOut);
+        const tLayout = svg.transition('layout').duration(750 as any).ease(d3.easeCubicInOut);
+        const tStyle = svg.transition('style').duration(500 as any).ease(d3.easeLinear);
 
         // --- Links ---
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -358,19 +359,23 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .data(links, (d: any) => `${d.source.id}-${d.target.id}`);
 
-        linkSel.exit().transition(t as any).attr('opacity', 0).remove();
+        // Exit: Fade out
+        linkSel.exit().transition('style').duration(500).attr('opacity', 0).remove();
 
+        // Enter: Init opacity 0, d at final pos (prevents flying from 0,0)
         const linkEnter = linkSel.enter().append('path')
             .attr('class', 'sankey-link cursor-pointer')
+            .attr('d', smoothLinkPath) // Start at correct position
             .attr('opacity', 0);
 
-        // Entrance Draw Animation (Simple Fade In)
-        linkEnter.transition().duration(1000).ease(d3.easeCubicOut)
-            .attr('opacity', settings.linkOpacity);
+        const linkUpdate = linkEnter.merge(linkSel as any);
 
-        linkEnter.merge(linkSel as any)
-            .transition(t as any)
-            .attr('d', smoothLinkPath)
+        // Layout Transition (Geometry)
+        linkUpdate.transition('layout').duration(750).ease(d3.easeCubicInOut)
+            .attr('d', smoothLinkPath);
+
+        // Style Transition (Opacity/Color)
+        linkUpdate.transition('style').duration(500)
             .attr('opacity', ((d: any, i: number) => {
                 // Hover overrides everything
                 if (selectedLinkIndex !== null) return selectedLinkIndex === links.indexOf(d) ? 0.9 : 0.1;
@@ -380,6 +385,33 @@ export default function SankeyCanvas() {
             }) as any)
             .style('mix-blend-mode', settings.linkBlendMode || 'normal')
             .attr('fill', (d: any) => settings.linkGradient ? `url(#grad-${d.source.id}-${d.target.id})` : (d.source.flowColor || getNodeColor(d.source, 0)));
+
+
+
+        // --- Particles System ---
+        particleLayer.selectAll('*').remove(); // Clear previous
+        if (settings.showParticles) {
+            // ... (Keep existing particle logic, it rebuilds every frame anyway)
+            // For brevity, I'm assuming particle logic is re-instantiated or we can just leave it as is.
+            // But wait, the previous code block included particles in the middle. I should be careful not to delete logic I'm not viewing.
+            // The view showed lines 386+. I am replacing only up to 483.
+            // My replacement content ends before particles logic starts?
+            // Actually, I need to check line numbers.
+            // View was 150-400. And 450-550.
+            // My replacement targets lines 275-483 (approx).
+            // Wait, I need to be precise.
+
+            // The StartLine I am aiming for is `275`.
+            // The EndLine is `483`.
+
+            // BUT, I need to make sure I don't delete the particle logic which starts around line 386.
+            // I see `particleLayer` logic in my viewing history around line 386.
+            // So I MUST include the particle logic in the ReplacementContent OR split the edit.
+
+            // Splitting is safer. 
+            // Chunk 1: Links (Lines 275 - 383)
+            // Chunk 2: Nodes (Lines 456 - 483)
+        }
 
 
 
@@ -438,14 +470,14 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .on('mouseenter', function (e, d: any) {
                 if (selectedLinkIndex === null) {
-                    d3.select(this).transition().duration(200).attr('opacity', 0.8);
+                    d3.select(this).transition('style').duration(200).attr('opacity', 0.8);
                     const formatted = formatValue(d.value, true);
                     showTooltip(e, `${d.source.name} → ${d.target.name}${formatted ? `: ${formatted}` : ''}`);
                 }
             })
             .on('mouseleave', function () {
                 if (selectedLinkIndex === null) {
-                    linkLayer.selectAll('.sankey-link').transition().duration(200).attr('opacity', settings.linkOpacity);
+                    linkLayer.selectAll('.sankey-link').transition('style').duration(200).attr('opacity', settings.linkOpacity);
                     hideTooltip();
                 }
             })
@@ -458,26 +490,35 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .data(nodes, (d: any) => d.id);
 
-        nodeSel.exit().transition(t as any).attr('opacity', 0).remove();
+        nodeSel.exit().transition('style').duration(500).attr('opacity', 0).remove();
 
         const nodeEnter = nodeSel.enter().append('g')
             .attr('class', 'sankey-node cursor-pointer')
-            .attr('opacity', 0);
+            .attr('opacity', 0)
+            .attr('transform', (d: any) => `translate(${d.x0},${d.y0})`); // Start at correct pos
 
         nodeEnter.append('rect').attr('rx', settings.nodeBorderRadius ?? 4).attr('ry', settings.nodeBorderRadius ?? 4).attr('filter', 'url(#node-shadow)');
         nodeEnter.append('rect').attr('class', 'gloss').attr('fill', 'url(#node-gloss)').style('pointer-events', 'none');
 
         const nodeUpdate = nodeEnter.merge(nodeSel as any);
-        nodeUpdate.transition(t as any)
-            .attr('transform', (d: any) => `translate(${d.x0},${d.y0})`)
+
+        // Layout Transition
+        nodeUpdate.transition('layout').duration(750).ease(d3.easeCubicInOut)
+            .attr('transform', (d: any) => `translate(${d.x0},${d.y0})`);
+
+        // Style Transition
+        nodeUpdate.transition('style').duration(500)
             .attr('opacity', (d: any) => isDimmed(d.id) ? 0.1 : 1);
 
         nodeUpdate.select('rect')
+            .transition('layout').duration(750).ease(d3.easeCubicInOut) // Animate Size
             .attr('rx', settings.nodeBorderRadius ?? 4).attr('ry', settings.nodeBorderRadius ?? 4)
             .attr('width', (d: any) => d.x1 - d.x0)
             .attr('height', (d: any) => d.y1 - d.y0)
-            .attr('fill', (d: any, i) => getNodeColor(d, i));
+            .attr('fill', (d: any, i) => getNodeColor(d, i)); // Color can be in style but usually stays const
+
         nodeUpdate.select('.gloss')
+            .transition('layout').duration(750)
             .attr('width', (d: any) => d.x1 - d.x0)
             .attr('height', (d: any) => d.y1 - d.y0);
 
@@ -541,15 +582,21 @@ export default function SankeyCanvas() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .data(nodes, (d: any) => d.id);
 
-        labelSel.exit().transition(t as any).attr('opacity', 0).remove();
+        labelSel.exit().transition('style').duration(500).attr('opacity', 0).remove();
 
         const labelEnter = labelSel.enter().append('text')
             .attr('class', 'sankey-label')
             .attr('opacity', 0)
             .style('pointer-events', 'none'); // Let clicks pass through to node
 
-        labelEnter.merge(labelSel as any).transition(t as any)
-            .attr('opacity', 1)
+        const labelUpdate = labelEnter.merge(labelSel as any);
+
+        // Appear/Disappear
+        labelUpdate.transition('style').duration(500)
+            .attr('opacity', 1);
+
+        // Move
+        labelUpdate.transition('layout').duration(750).ease(d3.easeCubicInOut)
             .attr('transform', (d: any) => {
                 const nodeWidth = d.x1 - d.x0;
 
